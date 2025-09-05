@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Corti Embedded Web Component Demo</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Corti Embedded Web Component Demo</h1>
+        </header>
+
+        <div class="main-layout">
+            <!-- Left Panel - Settings and Controls -->
+            <div class="left-panel">
+                <div class="demo-section">
+                    <div class="demo-title">Component Controls</div>
+                    <div class="controls">
+                        <button class="show-btn" id="show-btn">Show Corti</button>
+                        <button class="hide-btn" id="hide-btn">Hide Corti</button>
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <div class="demo-title">Authentication</div>
+                    <div class="section-row">
+                        <details class="auth-payload-section">
+                            <summary>⚙️ Settings</summary>
+                            <label for="auth-payload">Payload (JSON):</label>
+                            <textarea
+                                id="auth-payload"
+                                placeholder='{"token": "your-auth-token", "userId": "user-123"}'
+                            >{"token": "test-token-123", "userId": "demo-user"}</textarea>
+                        </details>
+                        <button class="postmessage-btn" id="auth-btn">Send</button>
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <div class="demo-title">1. Create Interaction</div>
+                    <div class="section-row">
+                        <details class="auth-payload-section">
+                            <summary>⚙️ Settings</summary>
+                            <label for="create-interaction-payload">Payload:</label>
+                            <textarea
+                                id="create-interaction-payload"
+                                placeholder='{"encounter": {"identifier": "encounter-123", "status": "planned", "type": "first_consultation"}}'
+                            >{"encounter": {"identifier": "encounter-123", "status": "planned", "type": "first_consultation"}}</textarea>
+                        </details>
+                        <button class="postmessage-btn" id="create-interaction-btn">Send</button>
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <div class="demo-title">2. Configure Session</div>
+                    <div class="section-row">
+                        <details class="auth-payload-section">
+                            <summary>⚙️ Settings</summary>
+                            <label for="configure-session-payload">Payload:</label>
+                            <textarea
+                                id="configure-session-payload"
+                                placeholder='{"defaultLanguage": "en", "defaultOutputLanguage": "en", "defaultTemplateKey": "soap_note", "defaultMode": "virtual"}'
+                            >{"defaultLanguage": "en", "defaultOutputLanguage": "en", "defaultTemplateKey": "soap_note", "defaultMode": "virtual"}</textarea>
+                        </details>
+                        <button class="postmessage-btn" id="configure-session-btn">Send</button>
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <div class="demo-title">3. Add Facts</div>
+                    <div class="section-row">
+                        <details class="auth-payload-section">
+                            <summary>⚙️ Settings</summary>
+                            <label for="add-facts-payload">Payload:</label>
+                            <textarea
+                                id="add-facts-payload"
+                                placeholder='{"facts": [{"text": "Chest pain", "group": "other"}]}'
+                            >{"facts": [{"text": "Chest pain", "group": "other"}, {"text": "Shortness of breath", "group": "other"}, {"text": "Fatigue", "group": "other"}, {"text": "Dizziness", "group": "other"}, {"text": "Nausea", "group": "other"}]}</textarea>
+                        </details>
+                        <button class="postmessage-btn" id="add-facts-btn">Send</button>
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <div class="demo-title">4. Navigate</div>
+                    <div class="section-row">
+                        <details class="auth-payload-section">
+                            <summary>⚙️ Settings</summary>
+                            <label for="navigate-payload">Payload:</label>
+                            <textarea
+                                id="navigate-payload"
+                                placeholder='{"path": "/session/{interaction_id}"}'
+                            >{"path": "/session/{interaction_id}"}</textarea>
+                        </details>
+                        <button class="postmessage-btn" id="navigate-btn">Send</button>
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <div class="demo-title">Status</div>
+                    <div class="status" id="status">
+                        Status: Loading...
+                    </div>
+                </div>
+
+                <div class="demo-section">
+                    <div class="demo-title">Message Log</div>
+                    <div class="controls">
+                        <button class="postmessage-btn" id="clear-log-btn">Clear Log</button>
+                    </div>
+                    <div class="log" id="log">
+                        <div class="log-entry log-info">Ready to send messages...</div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Panel - Web Component -->
+            <div class="right-panel">
+                <div class="demo-section">
+                    <div class="demo-title">Corti Embedded Component</div>
+                    <div class="component-container">
+                        <corti-embedded id="corti-component"></corti-embedded>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- External JavaScript -->
+    <script src="demo.js"></script>
+
+    <!-- Component Import -->
+    <script type="module">
+        import '../dist/corti-embedded.js';
+    </script>
+</body>
+</html>
