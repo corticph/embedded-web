@@ -12,7 +12,7 @@ window.hideCorti = function hideCorti() {
 window.testAuthentication = function testAuthentication() {
     const authPayloadText = document.getElementById('auth-payload').value;
     const authPayload = JSON.parse(authPayloadText);
-    return component.authenticate(authPayload);
+    return component.auth(authPayload);
 };
 
 window.configureSession = function configureSession() {

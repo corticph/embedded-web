@@ -107,7 +107,7 @@ describe('CortiEmbedded', () => {
     const response = { ok: true } as any;
     (el as any).postMessageHandler = {
       postMessage: async () => response,
-      authenticate: async (p: any) => ({ ...response, action: 'auth', p }),
+      auth: async (p: any) => ({ ...response, action: 'auth', p }),
       sendMessage: async (a: string, p: any) => ({ ...response, action: a, p }),
       configureSession: async (p: any) => ({ ...response, action: 'configureSession', p }),
       addFacts: async (p: any) => ({ ...response, action: 'addFacts', p }),
@@ -117,11 +117,13 @@ describe('CortiEmbedded', () => {
       ready: false,
     };
     expect(await el.postMessage({ type: 'CORTI_EMBEDDED', version: 'v1', action: 'startRecording', payload: {} })).to.equal(response);
-    expect((await el.authenticate({ token: 't' })) as any).to.include({ action: 'auth' });
-    expect((await el.sendMessage('someAction', { a: 1 })) as any).to.include({ action: 'someAction' });
-    expect((await el.configureSession({ s: 1 })) as any).to.include({ action: 'configureSession' });
-    expect((await el.addFacts({ f: 1 })) as any).to.include({ action: 'addFacts' });
-    expect((await el.navigate({ n: 1 })) as any).to.include({ action: 'navigate' });
+    expect(
+      (await el.auth({ access_token: 't', token_type: 'Bearer', mode: 'stateless' })) as any,
+    ).to.include({ action: 'auth' });
+    expect((await el.sendMessage('stopRecording', { a: 1 })) as any).to.include({ action: 'stopRecording' });
+    expect((await el.configureSession({})) as any).to.include({ action: 'configureSession' });
+    expect((await el.addFacts({ facts: [] })) as any).to.include({ action: 'addFacts' });
+    expect((await el.navigate({ path: '/x' })) as any).to.include({ action: 'navigate' });
     expect((await el.createInteraction({ i: 1 } as any)) as any).to.include({ action: 'createInteraction' });
   });
 

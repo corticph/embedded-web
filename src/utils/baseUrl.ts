@@ -21,5 +21,3 @@ export function validateAndNormalizeBaseURL(url: string): string {
   }
   return parsed.origin.replace(/\/+$/, '');
 }
-
-

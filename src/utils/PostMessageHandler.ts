@@ -8,7 +8,6 @@ import {
   AnyEmbeddedEvent,
 } from '../api_types.js';
 
-
 export class PostMessageHandler {
   private pendingRequests = new Map<
     string,
@@ -81,7 +80,7 @@ export class PostMessageHandler {
         const error = {
           message: data.error || 'Request failed',
           code: data.errorCode,
-          details: data.errorDetails
+          details: data.errorDetails,
         };
         reject(error);
       } else {
@@ -112,7 +111,6 @@ export class PostMessageHandler {
    * @returns Promise that resolves when ready
    */
   async waitForReady(timeout = 30000): Promise<void> {
-
     if (this.isReady) {
       return Promise.resolve();
     }
@@ -124,7 +122,6 @@ export class PostMessageHandler {
 
       // Create a one-time listener for the ready event
       const readyListener = (event: MessageEvent) => {
-
         if (
           event.source === this.iframe.contentWindow &&
           event.origin === this.getTrustedOrigin() &&
@@ -203,13 +200,15 @@ export class PostMessageHandler {
    * @param payload - Auth payload
    * @returns Promise that resolves with the auth response
    */
-  async authenticate(payload: any): Promise<EmbeddedResponse> {
-    return this.postMessage({
+  async auth(payload: any): Promise<EmbeddedResponse> {
+    const response = this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
       action: 'auth',
       payload,
     });
+    this.isReady = false;
+    return response;
   }
 
   /**
@@ -304,10 +303,7 @@ export class PostMessageHandler {
    * @param payload - Message payload
    * @returns Promise that resolves with the response
    */
-  async sendMessage(
-    action: string,
-    payload: any,
-  ): Promise<EmbeddedResponse> {
+  async sendMessage(action: string, payload: any): Promise<EmbeddedResponse> {
     return this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',

@@ -18,6 +18,29 @@ A web component that provides an embedded chat interface for Corti AI assistant.
 <corti-embedded id="corti-component" base-url="https://assistant.eu.corti.app"></corti-embedded>
 ```
 
+```js
+const myComponent = document.getElementById('corti-component');
+
+const userResponse = await myComponent.auth({...});
+
+const {payload: interaction} = await myComponent.createInteraction({
+  "assignedUserId": null,
+  "encounter": {
+    "identifier": `encounter-${Date.now()}`,
+    "status": "planned",
+    "type": "first_consultation",
+    "period": {
+      "startedAt": "2025-11-11T16:14:59.923Z"
+    }
+  }
+});
+
+await myComponent.configureSession({"defaultTemplateKey": "soap_note"});
+await myComponent.addFacts({"facts": [{"text": "Chest pain", "group": "other"}]});
+await myComponent.navigate({ path: `/session/${interaction.id}` });
+await myComponent.show()
+```
+
 ### Show/Hide the Component
 
 ```javascript
@@ -34,10 +57,10 @@ component.hide();
 
 - Use these named helpers for common tasks. They provide clearer intent and sensible defaults.
 
-#### authenticate
+#### auth
 
 ```javascript
-const authResponse = await component.authenticate({
+const authResponse = await component.auth({
   // Example: Keycloak-style token + mode
   access_token: 'YOUR_JWT',
   token_type: 'Bearer',

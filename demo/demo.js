@@ -19,7 +19,7 @@ window.hideCorti = function() {
 };
 
 window.testAuthentication = async function() {
-    if (component && component.authenticate) {
+    if (component && component.auth) {
         try {
             // Parse the JSON from the textarea
             const authPayloadText = document.getElementById('auth-payload').value;
@@ -32,7 +32,7 @@ window.testAuthentication = async function() {
             }
 
             window.addLogEntry(`Sending authentication request with payload: ${JSON.stringify(authPayload)}`, 'info');
-            const response = await component.authenticate(authPayload);
+            const response = await component.auth(authPayload);
             window.addLogEntry(`Authentication successful: ${JSON.stringify(response.payload)}`, 'success');
         } catch (error) {
             window.addLogEntry(`Authentication failed: ${error.message}`, 'error');
@@ -201,7 +201,7 @@ window.updateStatus = function() {
 
     if (component) {
         const baseURL = component.getAttribute('baseURL') || 'https://assistant.eu.corti.app';
-        const hasPostMessage = component.postMessage && component.authenticate && component.sendMessage;
+        const hasPostMessage = component.postMessage && component.auth && component.sendMessage;
 
         statusElement.innerHTML = `
             <strong>Current Status:</strong><br>

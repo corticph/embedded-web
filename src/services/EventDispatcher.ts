@@ -35,7 +35,7 @@ export class EventDispatcherClass {
   /**
    * Add an event listener for a custom event
    */
-    public addEventListener<K extends keyof EmbeddedEvents>(
+  public addEventListener<K extends keyof EmbeddedEvents>(
     eventName: K,
     callback: (event: CustomEvent<EmbeddedEvents[K]>) => void,
   ): () => void {

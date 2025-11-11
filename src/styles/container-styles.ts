@@ -20,7 +20,7 @@ export const containerStyles = css`
   }
 
   /* Handle visibility state */
-  :host([visibility="hidden"]) {
+  :host([visibility='hidden']) {
     display: none;
   }
 

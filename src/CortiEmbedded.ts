@@ -3,12 +3,19 @@ import { type Corti } from '@corti/sdk';
 import { property } from 'lit/decorators.js';
 import { baseStyles } from './styles/base.js';
 import { PostMessageHandler } from './utils/PostMessageHandler.js';
-import { AuthPayload, ConfigureSessionPayload, EmbeddedAction, EmbeddedRequest, EmbeddedResponse, AddFactsPayload, NavigatePayload } from './api_types.js';
+import {
+  AuthPayload,
+  ConfigureSessionPayload,
+  EmbeddedAction,
+  EmbeddedRequest,
+  EmbeddedResponse,
+  AddFactsPayload,
+  NavigatePayload,
+} from './api_types.js';
 import { containerStyles } from './styles/container-styles.js';
 import { EventDispatcher } from './services/EventDispatcher.js';
 import { validateAndNormalizeBaseURL } from './utils/baseUrl.js';
 import { buildEmbeddedUrl, isRealEmbeddedLoad } from './utils/embedUrl.js';
-
 
 export class CortiEmbedded extends LitElement {
   static styles = [baseStyles, containerStyles];
@@ -46,7 +53,6 @@ export class CortiEmbedded extends LitElement {
   }
 
   private async setupPostMessageHandler() {
-
     // Prevent multiple setups
     if (this.postMessageHandler) {
       return;
@@ -121,7 +127,9 @@ export class CortiEmbedded extends LitElement {
       }
       const iframe = this.getIframe();
       if (iframe) {
-        const expected = this.normalizedBaseURL ? buildEmbeddedUrl(this.normalizedBaseURL) : '';
+        const expected = this.normalizedBaseURL
+          ? buildEmbeddedUrl(this.normalizedBaseURL)
+          : '';
         if (iframe.getAttribute('src') !== expected) {
           iframe.setAttribute('src', expected);
         }
@@ -135,7 +143,10 @@ export class CortiEmbedded extends LitElement {
    * @param timeout - Optional timeout in milliseconds (default: 10000ms)
    * @returns Promise that resolves with the response
    */
-  async postMessage(message: Omit<EmbeddedRequest, 'requestId'>, timeout = 10000): Promise<EmbeddedResponse> {
+  async postMessage(
+    message: Omit<EmbeddedRequest, 'requestId'>,
+    timeout = 10000,
+  ): Promise<EmbeddedResponse> {
     if (!this.postMessageHandler) {
       throw new Error('PostMessageHandler not ready');
     }
@@ -147,11 +158,11 @@ export class CortiEmbedded extends LitElement {
    * @param payload - Auth payload
    * @returns Promise that resolves with the auth response
    */
-  async authenticate(payload: AuthPayload): Promise<EmbeddedResponse> {
+  async auth(payload: AuthPayload): Promise<EmbeddedResponse> {
     if (!this.postMessageHandler) {
       throw new Error('PostMessageHandler not ready');
     }
-    return this.postMessageHandler.authenticate(payload);
+    return this.postMessageHandler.auth(payload);
   }
 
   /**
@@ -160,7 +171,10 @@ export class CortiEmbedded extends LitElement {
    * @param payload - Message payload
    * @returns Promise that resolves with the response
    */
-  async sendMessage(action: EmbeddedAction, payload: unknown): Promise<EmbeddedResponse> {
+  async sendMessage(
+    action: EmbeddedAction,
+    payload: unknown,
+  ): Promise<EmbeddedResponse> {
     if (!this.postMessageHandler) {
       throw new Error('PostMessageHandler not ready');
     }
@@ -172,7 +186,9 @@ export class CortiEmbedded extends LitElement {
    * @param payload - Session configuration payload
    * @returns Promise that resolves with the configuration response
    */
-  async configureSession(payload: ConfigureSessionPayload): Promise<EmbeddedResponse> {
+  async configureSession(
+    payload: ConfigureSessionPayload,
+  ): Promise<EmbeddedResponse> {
     if (!this.postMessageHandler) {
       throw new Error('PostMessageHandler not ready');
     }
@@ -208,7 +224,9 @@ export class CortiEmbedded extends LitElement {
    * @param payload - Interaction creation payload
    * @returns Promise that resolves with the interaction creation response
    */
-  async createInteraction(payload: Corti.InteractionsEncounterCreateRequest): Promise<EmbeddedResponse> {
+  async createInteraction(
+    payload: Corti.InteractionsEncounterCreateRequest,
+  ): Promise<EmbeddedResponse> {
     if (!this.postMessageHandler) {
       throw new Error('PostMessageHandler not ready');
     }
@@ -229,24 +247,32 @@ export class CortiEmbedded extends LitElement {
       iframeReadyState: iframe?.contentDocument?.readyState,
       postMessageHandlerExists: !!this.postMessageHandler,
       postMessageHandlerReady: this.postMessageHandler?.ready || false,
-      baseURL: this.baseURL
+      baseURL: this.baseURL,
     };
   }
 
   render() {
-    const allowed = this.normalizedBaseURL ? new URL(this.normalizedBaseURL).origin : "'self'";
-    const allow = `microphone=(self "${allowed}") ; camera=(self "${allowed}") ; device-capture=(self "${allowed}")`;
+    // Build a spec-compliant allow attribute value. Quote the origin URLs, but not 'self'.
+    const allowedOrigin = this.normalizedBaseURL
+      ? `"${new URL(this.normalizedBaseURL).origin}"`
+      : "'self'";
+    const allow = `microphone 'self' ${allowedOrigin} ; camera 'self' ${allowedOrigin} ; device-capture 'self' ${allowedOrigin}`;
     return html`
       <iframe
-        src=${this.normalizedBaseURL ? buildEmbeddedUrl(this.normalizedBaseURL) : ''}
-        title="Corti Embedded"
-        sandbox=${"allow-forms allow-modals allow-scripts allow-same-origin" as any}
+        src=${this.normalizedBaseURL
+          ? buildEmbeddedUrl(this.normalizedBaseURL)
+          : ''}
+        title="Corti Embedded UI"
+        sandbox=${'allow-forms allow-modals allow-scripts allow-same-origin' as any}
         allow=${allow}
         @load=${(event: Event) => this.handleIframeLoad(event)}
-        style=${this.visibility === 'hidden' ? 'display: none;' : 'display: block;'}
+        @unload=${() => this.postMessageHandler?.destroy()}
+        style=${this.visibility === 'hidden'
+          ? 'display: none;'
+          : 'display: block;'}
       ></iframe>
     `;
-    }
+  }
 
   show() {
     this.visibility = 'visible';

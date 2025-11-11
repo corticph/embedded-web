@@ -1,34 +1,33 @@
 import { type Corti } from '@corti/sdk';
 
-
-export type APIVersion = "v1";
+export type APIVersion = 'v1';
 
 export type MessageType =
-  | "CORTI_EMBEDDED"
-  | "CORTI_EMBEDDED_RESPONSE"
-  | "CORTI_EMBEDDED_EVENT";
+  | 'CORTI_EMBEDDED'
+  | 'CORTI_EMBEDDED_RESPONSE'
+  | 'CORTI_EMBEDDED_EVENT';
 
-export type AuthMode = "stateless" | "stateful";
+export type AuthMode = 'stateless' | 'stateful';
 
-export type DefaultMode = "virtual" | "in-person";
+export type DefaultMode = 'virtual' | 'in-person';
 
 export type EmbeddedAction =
-  | "auth"
-  | "createInteraction"
-  | "addFacts"
-  | "configureSession"
-  | "navigate"
-  | "startRecording"
-  | "stopRecording";
+  | 'auth'
+  | 'createInteraction'
+  | 'addFacts'
+  | 'configureSession'
+  | 'navigate'
+  | 'startRecording'
+  | 'stopRecording';
 
 export type EmbeddedEvent =
-  | "ready"
-  | "loaded"
-  | "recordingStarted"
-  | "recordingStopped"
-  | "documentGenerated"
-  | "documentUpdated"
-  | "documentSynced";
+  | 'ready'
+  | 'loaded'
+  | 'recordingStarted'
+  | 'recordingStopped'
+  | 'documentGenerated'
+  | 'documentUpdated'
+  | 'documentSynced';
 
 export interface KeycloakTokenResponse {
   access_token: string;
@@ -38,7 +37,7 @@ export interface KeycloakTokenResponse {
   refresh_expires_in?: number | null;
   refresh_token?: string;
   id_token?: string;
-  "not-before-policy"?: number | null;
+  'not-before-policy'?: number | null;
   session_state?: string;
   scope?: string;
   profile?: {
@@ -99,14 +98,14 @@ export interface BaseMessage {
 }
 
 export interface EmbeddedRequest extends BaseMessage {
-  type: "CORTI_EMBEDDED";
+  type: 'CORTI_EMBEDDED';
   action: EmbeddedAction;
   requestId: string;
   payload?: unknown;
 }
 
 export interface EmbeddedResponse extends BaseMessage {
-  type: "CORTI_EMBEDDED_RESPONSE";
+  type: 'CORTI_EMBEDDED_RESPONSE';
   action: EmbeddedAction;
   requestId: string;
   success: boolean;
@@ -115,85 +114,85 @@ export interface EmbeddedResponse extends BaseMessage {
 }
 
 export interface EmbeddedEventMessage extends BaseMessage {
-  type: "CORTI_EMBEDDED_EVENT";
+  type: 'CORTI_EMBEDDED_EVENT';
   event: EmbeddedEvent;
   payload?: unknown;
 }
 
 // Specific Request/Response Types
 export interface AuthRequest extends EmbeddedRequest {
-  action: "auth";
+  action: 'auth';
   payload: AuthPayload;
 }
 
 export interface AuthResponseMessage extends EmbeddedResponse {
-  action: "auth";
+  action: 'auth';
   payload?: AuthResponse;
 }
 
 export interface CreateInteractionRequest extends EmbeddedRequest {
-  action: "createInteraction";
+  action: 'createInteraction';
   payload: Corti.InteractionsEncounterCreateRequest;
 }
 
 export interface CreateInteractionResponseMessage extends EmbeddedResponse {
-  action: "createInteraction";
+  action: 'createInteraction';
   payload: CreateInteractionResponse;
 }
 
 export interface AddFactsRequest extends EmbeddedRequest {
-  action: "addFacts";
+  action: 'addFacts';
   payload: AddFactsPayload;
 }
 
 export interface ConfigureSessionRequest extends EmbeddedRequest {
-  action: "configureSession";
+  action: 'configureSession';
   payload: ConfigureSessionPayload;
 }
 
 export interface NavigateRequest extends EmbeddedRequest {
-  action: "navigate";
+  action: 'navigate';
   payload: NavigatePayload;
 }
 
 export interface StartRecordingRequest extends EmbeddedRequest {
-  action: "startRecording";
+  action: 'startRecording';
 }
 
 export interface StopRecordingRequest extends EmbeddedRequest {
-  action: "stopRecording";
+  action: 'stopRecording';
 }
 
 // Event Types
 export interface ReadyEvent extends EmbeddedEventMessage {
-  event: "ready";
+  event: 'ready';
 }
 
 export interface LoadedEvent extends EmbeddedEventMessage {
-  event: "loaded";
+  event: 'loaded';
   payload: NavigateEventPayload;
 }
 
 export interface RecordingStartedEvent extends EmbeddedEventMessage {
-  event: "recordingStarted";
+  event: 'recordingStarted';
 }
 
 export interface RecordingStoppedEvent extends EmbeddedEventMessage {
-  event: "recordingStopped";
+  event: 'recordingStopped';
 }
 
 export interface DocumentGeneratedEvent extends EmbeddedEventMessage {
-  event: "documentGenerated";
+  event: 'documentGenerated';
   payload: DocumentEventPayload;
 }
 
 export interface DocumentUpdatedEvent extends EmbeddedEventMessage {
-  event: "documentUpdated";
+  event: 'documentUpdated';
   payload: DocumentEventPayload;
 }
 
 export interface DocumentSyncedEvent extends EmbeddedEventMessage {
-  event: "documentSynced";
+  event: 'documentSynced';
   payload: DocumentEventPayload;
 }
 

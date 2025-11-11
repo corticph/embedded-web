@@ -68,7 +68,7 @@ All methods return Promises that can be handled with try/catch:
 
 ```javascript
 try {
-  const response = await component.authenticate({ token: 'invalid' });
+  const response = await component.auth({ token: 'invalid' });
   console.log('Success:', response.payload);
 } catch (error) {
   console.error('Authentication failed:', error.message);

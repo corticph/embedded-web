@@ -2,7 +2,10 @@ export function buildEmbeddedUrl(normalizedBaseURL: string): string {
   return `${normalizedBaseURL}/embedded`;
 }
 
-export function isRealEmbeddedLoad(src: string, normalizedBaseURL: string): boolean {
+export function isRealEmbeddedLoad(
+  src: string,
+  normalizedBaseURL: string,
+): boolean {
   if (!src || src.startsWith('about:')) {
     return false;
   }
@@ -20,5 +23,3 @@ export function isRealEmbeddedLoad(src: string, normalizedBaseURL: string): bool
     return false;
   }
 }
-
-
