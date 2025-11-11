@@ -1,8 +1,5 @@
-// Corti Embedded API Types
-// Types for the communication protocol between parent applications and embedded Corti Assistant
-type V2Fact = any;
-type V2Document = any;
-type CreateInteractionPayload = any;
+import { type Corti } from '@corti/sdk';
+
 
 export type APIVersion = "v1";
 
@@ -71,11 +68,7 @@ export interface CreateInteractionResponse {
 
 // Add Facts Schema
 export interface AddFactsPayload {
-  facts: {
-    text: V2Fact["text"];
-    group: V2Fact["group"];
-    source?: V2Fact["source"];
-  }[];
+  facts: Corti.FactsCreateInput[];
 }
 
 // Configure Session Schema
@@ -96,7 +89,7 @@ export interface NavigateEventPayload {
 }
 
 export interface DocumentEventPayload {
-  document: V2Document;
+  document: Corti.DocumentsGetResponse;
 }
 
 // Base Message Types
@@ -140,7 +133,7 @@ export interface AuthResponseMessage extends EmbeddedResponse {
 
 export interface CreateInteractionRequest extends EmbeddedRequest {
   action: "createInteraction";
-  payload: CreateInteractionPayload;
+  payload: Corti.InteractionsEncounterCreateRequest;
 }
 
 export interface CreateInteractionResponseMessage extends EmbeddedResponse {
@@ -208,7 +201,7 @@ export interface DocumentSyncedEvent extends EmbeddedEventMessage {
 export interface CortiEmbeddedV1API {
   auth(payload: AuthPayload): Promise<AuthResponse>;
   createInteraction(
-    payload: CreateInteractionPayload,
+    payload: Corti.InteractionsEncounterCreateRequest,
   ): Promise<CreateInteractionResponse>;
   addFacts(payload: AddFactsPayload): Promise<void>;
   configureSession(payload: ConfigureSessionPayload): Promise<void>;

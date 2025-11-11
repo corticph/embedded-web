@@ -1,16 +1,19 @@
-import { html, LitElement } from 'lit';
+import { html, LitElement, PropertyValues } from 'lit';
+import { type Corti } from '@corti/sdk';
 import { property } from 'lit/decorators.js';
 import { baseStyles } from './styles/base.js';
 import { PostMessageHandler } from './utils/PostMessageHandler.js';
-import { EmbeddedRequest, EmbeddedResponse } from './api_types.js';
+import { AuthPayload, ConfigureSessionPayload, EmbeddedAction, EmbeddedRequest, EmbeddedResponse, AddFactsPayload, NavigatePayload } from './api_types.js';
 import { containerStyles } from './styles/container-styles.js';
 import { EventDispatcher } from './services/EventDispatcher.js';
+import { validateAndNormalizeBaseURL } from './utils/baseUrl.js';
+import { buildEmbeddedUrl, isRealEmbeddedLoad } from './utils/embedUrl.js';
 
 
 export class CortiEmbedded extends LitElement {
   static styles = [baseStyles, containerStyles];
 
-  @property({ type: String })
+  @property({ type: String, reflect: true })
   visibility = 'hidden';
 
   @property({ type: String })
@@ -18,9 +21,20 @@ export class CortiEmbedded extends LitElement {
 
   private postMessageHandler: PostMessageHandler | null = null;
 
+  private normalizedBaseURL: string | null = null;
+
   connectedCallback() {
     super.connectedCallback();
-    // The PostMessageHandler will be set up when the iframe loads
+    // Validate and normalize the initial baseURL early (fail fast)
+    try {
+      this.normalizedBaseURL = validateAndNormalizeBaseURL(this.baseURL);
+    } catch (error) {
+      EventDispatcher.dispatchEvent('error', {
+        message: (error as Error).message || 'Invalid baseURL',
+        error,
+      });
+      throw error;
+    }
   }
 
   disconnectedCallback() {
@@ -42,7 +56,6 @@ export class CortiEmbedded extends LitElement {
 
     if (iframe && iframe.contentWindow) {
       this.postMessageHandler = new PostMessageHandler(iframe);
-      iframe.setAttribute('src', `${this.baseURL}/embedded`);
     } else {
       EventDispatcher.dispatchEvent('error', {
         message: 'No iframe or contentWindow available',
@@ -50,8 +63,70 @@ export class CortiEmbedded extends LitElement {
     }
   }
 
+  private isRealIframeLoad(iframe: HTMLIFrameElement): boolean {
+    const src = iframe.getAttribute('src') || '';
+    if (!this.normalizedBaseURL) return false;
+    return isRealEmbeddedLoad(src, this.normalizedBaseURL);
+  }
+
+  private async handleIframeLoad(event: Event) {
+    const iframe = event.target as HTMLIFrameElement | null;
+    if (!iframe) {
+      return;
+    }
+    // Only initialize on real URL load, ignore about:blank
+    if (!this.isRealIframeLoad(iframe)) {
+      return;
+    }
+    try {
+      await this.setupPostMessageHandler();
+    } catch (error) {
+      EventDispatcher.dispatchEvent('error', {
+        message: 'Failed to setup PostMessageHandler on iframe load',
+        error,
+      });
+    }
+  }
+
   private getIframe(): HTMLIFrameElement | null {
     return this.shadowRoot?.querySelector('iframe') || null;
+  }
+
+  protected updated(changedProps: PropertyValues) {
+    super.updated(changedProps);
+    if (changedProps.has('baseURL')) {
+      // Validate baseURL and normalize; fail fast on invalid input
+      try {
+        this.normalizedBaseURL = validateAndNormalizeBaseURL(this.baseURL);
+      } catch (error) {
+        // Tear down and clear iframe to avoid keeping an old origin active
+        if (this.postMessageHandler) {
+          this.postMessageHandler.destroy();
+          this.postMessageHandler = null;
+        }
+        const iframe = this.getIframe();
+        if (iframe) {
+          iframe.setAttribute('src', 'about:blank');
+        }
+        EventDispatcher.dispatchEvent('error', {
+          message: (error as Error).message || 'Invalid baseURL',
+          error,
+        });
+        return;
+      }
+      // Tear down existing handler and re-point iframe to new URL
+      if (this.postMessageHandler) {
+        this.postMessageHandler.destroy();
+        this.postMessageHandler = null;
+      }
+      const iframe = this.getIframe();
+      if (iframe) {
+        const expected = this.normalizedBaseURL ? buildEmbeddedUrl(this.normalizedBaseURL) : '';
+        if (iframe.getAttribute('src') !== expected) {
+          iframe.setAttribute('src', expected);
+        }
+      }
+    }
   }
 
   /**
@@ -72,7 +147,7 @@ export class CortiEmbedded extends LitElement {
    * @param payload - Auth payload
    * @returns Promise that resolves with the auth response
    */
-  async authenticate(payload: any): Promise<EmbeddedResponse> {
+  async authenticate(payload: AuthPayload): Promise<EmbeddedResponse> {
     if (!this.postMessageHandler) {
       throw new Error('PostMessageHandler not ready');
     }
@@ -85,7 +160,7 @@ export class CortiEmbedded extends LitElement {
    * @param payload - Message payload
    * @returns Promise that resolves with the response
    */
-  async sendMessage(action: string, payload: any): Promise<EmbeddedResponse> {
+  async sendMessage(action: EmbeddedAction, payload: unknown): Promise<EmbeddedResponse> {
     if (!this.postMessageHandler) {
       throw new Error('PostMessageHandler not ready');
     }
@@ -97,7 +172,7 @@ export class CortiEmbedded extends LitElement {
    * @param payload - Session configuration payload
    * @returns Promise that resolves with the configuration response
    */
-  async configureSession(payload: any): Promise<EmbeddedResponse> {
+  async configureSession(payload: ConfigureSessionPayload): Promise<EmbeddedResponse> {
     if (!this.postMessageHandler) {
       throw new Error('PostMessageHandler not ready');
     }
@@ -109,7 +184,7 @@ export class CortiEmbedded extends LitElement {
    * @param payload - Facts payload
    * @returns Promise that resolves with the add facts response
    */
-  async addFacts(payload: any): Promise<EmbeddedResponse> {
+  async addFacts(payload: AddFactsPayload): Promise<EmbeddedResponse> {
     if (!this.postMessageHandler) {
       throw new Error('PostMessageHandler not ready');
     }
@@ -121,7 +196,7 @@ export class CortiEmbedded extends LitElement {
    * @param payload - Navigation payload
    * @returns Promise that resolves with the navigation response
    */
-  async navigate(payload: any): Promise<EmbeddedResponse> {
+  async navigate(payload: NavigatePayload): Promise<EmbeddedResponse> {
     if (!this.postMessageHandler) {
       throw new Error('PostMessageHandler not ready');
     }
@@ -133,7 +208,7 @@ export class CortiEmbedded extends LitElement {
    * @param payload - Interaction creation payload
    * @returns Promise that resolves with the interaction creation response
    */
-  async createInteraction(payload: any): Promise<EmbeddedResponse> {
+  async createInteraction(payload: Corti.InteractionsEncounterCreateRequest): Promise<EmbeddedResponse> {
     if (!this.postMessageHandler) {
       throw new Error('PostMessageHandler not ready');
     }
@@ -159,22 +234,15 @@ export class CortiEmbedded extends LitElement {
   }
 
   render() {
+    const allowed = this.normalizedBaseURL ? new URL(this.normalizedBaseURL).origin : "'self'";
+    const allow = `microphone=(self "${allowed}") ; camera=(self "${allowed}") ; device-capture=(self "${allowed}")`;
     return html`
       <iframe
-        src=""
+        src=${this.normalizedBaseURL ? buildEmbeddedUrl(this.normalizedBaseURL) : ''}
         title="Corti Embedded"
         sandbox=${"allow-forms allow-modals allow-scripts allow-same-origin" as any}
-        allow="microphone *; camera *; device-capture *"
-        @load=${async () => {
-          try {
-            await this.setupPostMessageHandler();
-          } catch (error) {
-            EventDispatcher.dispatchEvent('error', {
-              message: 'Failed to setup PostMessageHandler on iframe load',
-              error,
-            });
-          }
-        }}
+        allow=${allow}
+        @load=${(event: Event) => this.handleIframeLoad(event)}
         style=${this.visibility === 'hidden' ? 'display: none;' : 'display: block;'}
       ></iframe>
     `;

@@ -20,9 +20,15 @@
   "main": "dist/index.js",
   "module": "dist/index.js",
   "exports": {
-    ".": "./dist/index.js",
-    "./corti-agent.js": "./dist/corti-agent.js"
+    "import": "./dist/index.js",
+    "browser": "./dist/bundle.js",
+    "default": "./dist/bundle.js"
   },
+  "jsdelivr": "./dist/bundle.js",
+  "browser": "./dist/bundle.js",
+  "files": [
+    "dist"
+  ],
   "scripts": {
     "analyze": "cem analyze --litelement",
     "build": "tsc && npm run analyze -- --exclude dist",
@@ -36,6 +42,7 @@
     "test:watch": "tsc && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"wtr --watch\""
   },
   "dependencies": {
+    "@corti/sdk": "^0.5.0",
     "lit": "^3.1.4"
   },
   "devDependencies": {
@@ -47,7 +54,9 @@
     "@typescript-eslint/parser": "^7.16.0",
     "@web/dev-server": "^0.4.6",
     "@web/test-runner": "^0.18.2",
+    "@web/test-runner-playwright": "^0.11.1",
     "concurrently": "^8.2.2",
+    "esbuild": "0.27.0",
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.3.2",

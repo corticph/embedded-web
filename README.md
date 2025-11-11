@@ -30,83 +30,86 @@ component.show();
 component.hide();
 ```
 
-### PostMessage Communication
+### API methods (recommended)
 
-The component provides several methods for communicating with the embedded iframe:
+- Use these named helpers for common tasks. They provide clearer intent and sensible defaults.
 
-#### 1. Generic PostMessage
-
-```javascript
-const response = await component.postMessage({
-  type: 'CORTI_EMBEDDED',
-  version: 'v1',
-  action: 'custom_action',
-  payload: { key: 'value' }
-});
-```
-
-#### 2. Authentication
+#### authenticate
 
 ```javascript
 const authResponse = await component.authenticate({
-  token: 'your-auth-token',
-  userId: 'user-123'
+  // Example: Keycloak-style token + mode
+  access_token: 'YOUR_JWT',
+  token_type: 'Bearer',
+  mode: 'stateful'
 });
 ```
 
-#### 3. Custom Messages
+#### configureSession
 
 ```javascript
-const customResponse = await component.sendMessage('action_name', {
-  data: 'custom data',
-  timestamp: new Date().toISOString()
+await component.configureSession({
+  defaultLanguage: 'en',
+  defaultOutputLanguage: 'en',
+  defaultTemplateKey: 'discharge-summary',
+  defaultMode: 'virtual'
 });
 ```
 
-### Message Format
-
-All messages follow this structure:
-
-```typescript
-interface PostMessageRequest {
-  type: string;        // Always 'CORTI_EMBEDDED'
-  version: string;     // API version (e.g., 'v1')
-  action: string;      // Action to perform
-  requestId: string;   // Auto-generated unique ID
-  payload: any;        // Message data
-}
-```
-
-Responses include the same fields plus:
-
-```typescript
-interface PostMessageResponse {
-  // ... same as request ...
-  success?: boolean;   // Whether the request succeeded
-  error?: string;      // Error message if failed
-}
-```
-
-### Error Handling
-
-All postMessage methods return Promises that can be handled with try/catch:
+#### addFacts
 
 ```javascript
-try {
-  const response = await component.authenticate({ token: 'invalid' });
-  console.log('Success:', response.payload);
-} catch (error) {
-  console.error('Authentication failed:', error.message);
-}
+await component.addFacts({
+  facts: [
+    { text: 'Patient reports chest pain', group: 'subjective' },
+    { text: 'BP 120/80', group: 'vitals' }
+  ]
+});
 ```
 
-### Timeouts
-
-By default, all requests have a 10-second timeout. You can customize this:
+#### navigate
 
 ```javascript
-const response = await component.postMessage(message, 30000); // 30 second timeout
+await component.navigate({ path: '/interactions/123' });
 ```
+
+#### createInteraction
+
+```javascript
+const created = await component.createInteraction({
+  assignedUserId: null,
+  encounter: {
+    identifier: 'enc-123',
+    status: 'in-progress',
+    type: 'consult',
+    period: { startedAt: new Date().toISOString() },
+    title: 'Visit for cough'
+  },
+  patient: {
+    identifier: 'pat-456'
+  }
+});
+```
+
+#### startRecording / stopRecording
+
+```javascript
+await component.startRecording();
+// ... later
+await component.stopRecording();
+```
+
+#### getStatus (debugging)
+
+```javascript
+console.log(component.getStatus());
+```
+
+### Advanced
+
+For low-level postMessage usage, quick `sendMessage`, message format, error handling, and timeout details, see:
+
+- Advanced messaging and low-level API: [docs/advanced-messaging.md](./docs/advanced-messaging.md)
 
 ## Architecture
 
@@ -123,8 +126,9 @@ The component uses a `PostMessageHandler` utility class that:
 See `demo/index.html` for a complete working example that demonstrates:
 
 - Component show/hide functionality
-- Authentication message testing
-- Custom message sending
+- Authentication
+- Named API methods
+- Advanced custom message sending
 - Real-time message logging
 - Status monitoring
 

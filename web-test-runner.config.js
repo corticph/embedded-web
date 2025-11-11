@@ -1,4 +1,4 @@
-// import { playwrightLauncher } from '@web/test-runner-playwright';
+import { playwrightLauncher } from '@web/test-runner-playwright';
 
 const filteredLogs = ['Running in dev mode', 'Lit is in dev mode'];
 
@@ -10,6 +10,9 @@ export default /** @type {import("@web/test-runner").TestRunnerConfig} */ ({
   nodeResolve: {
     exportConditions: ['browser', 'development'],
   },
+
+  /** Use Playwright Chromium (bundled) so no CHROME_PATH is required */
+  browsers: [playwrightLauncher({ product: 'chromium' })],
 
   /** Filter out lit dev mode logs */
   filterBrowserLogs(log) {
