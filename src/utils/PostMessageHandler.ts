@@ -1,3 +1,4 @@
+import { type Corti } from '@corti/sdk';
 import {
   EmbeddedRequest,
   EmbeddedResponse,
@@ -6,23 +7,6 @@ import {
   AddFactsPayload,
   AnyEmbeddedEvent,
 } from '../api_types.js';
-
-// CreateInteractionPayload is not exported from api_types.ts, so we'll define it here
-interface CreateInteractionPayload {
-  assignedUserId: string | null;
-  encounter: {
-    identifier: string;
-    status: string;
-    type: string;
-    period: {
-      startedAt: string;
-    };
-    title: string;
-  };
-  patient: {
-    identifier: string;
-  };
-}
 
 export class PostMessageHandler {
   private pendingRequests = new Map<
@@ -50,18 +34,19 @@ export class PostMessageHandler {
         return;
       }
 
-      const { data } = event;
-      console.log('PostMessageHandler received message:', data);
-
-      // Check for Corti embedded events
-      if (data?.type === 'CORTI_EMBEDDED_EVENT') {
-        console.log('Handling Corti embedded event:', data.event);
-        this.handleEvent(data);
+      // Enforce origin to match the trusted iframe origin
+      const trustedOrigin = this.getTrustedOrigin();
+      if (!trustedOrigin || event.origin !== trustedOrigin) {
         return;
       }
 
-      // Process responses regardless of ready state
-      console.log('PostMessageHandler handling response data:', data);
+      const { data } = event;
+
+      // Check for Corti embedded events
+      if (data?.type === 'CORTI_EMBEDDED_EVENT') {
+        this.handleEvent(data);
+        return;
+      }
 
       // Check if this is a response to a pending request
       if (data.requestId && this.pendingRequests.has(data.requestId)) {
@@ -73,11 +58,8 @@ export class PostMessageHandler {
   }
 
   private handleEvent(eventData: AnyEmbeddedEvent): void {
-    console.log('Handling event:', eventData.event, 'Current isReady:', this.isReady);
-
     // Handle ready-like events
     if (eventData.event === 'ready' || (eventData as any).event === 'loaded') {
-      console.log('Setting isReady to true (event:', eventData.event, ')');
       this.isReady = true;
     }
 
@@ -98,7 +80,7 @@ export class PostMessageHandler {
         const error = {
           message: data.error || 'Request failed',
           code: data.errorCode,
-          details: data.errorDetails
+          details: data.errorDetails,
         };
         reject(error);
       } else {
@@ -129,31 +111,23 @@ export class PostMessageHandler {
    * @returns Promise that resolves when ready
    */
   async waitForReady(timeout = 30000): Promise<void> {
-    console.log('waitForReady called, current isReady:', this.isReady);
-
     if (this.isReady) {
-      console.log('Already ready, returning immediately');
       return Promise.resolve();
     }
 
-    console.log('Waiting for ready event with timeout:', timeout);
-
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
-        console.log('waitForReady timed out');
         reject(new Error('Timeout waiting for iframe to be ready'));
       }, timeout);
 
       // Create a one-time listener for the ready event
       const readyListener = (event: MessageEvent) => {
-        console.log('waitForReady listener received event:', event.data);
-
         if (
           event.source === this.iframe.contentWindow &&
+          event.origin === this.getTrustedOrigin() &&
           event.data?.type === 'CORTI_EMBEDDED_EVENT' &&
           event.data.event === 'ready'
         ) {
-          console.log('waitForReady received ready event, resolving');
           clearTimeout(timeoutId);
           window.removeEventListener('message', readyListener);
           resolve();
@@ -177,6 +151,9 @@ export class PostMessageHandler {
     if (!this.iframe.contentWindow) {
       throw new Error('Iframe not ready');
     }
+
+    // Ensure the iframe has signaled readiness before sending
+    await this.waitForReady();
 
     const { contentWindow } = this.iframe;
     const requestId = PostMessageHandler.generateRequestId();
@@ -208,7 +185,13 @@ export class PostMessageHandler {
         requestId,
       };
 
-      contentWindow.postMessage(fullMessage, '*');
+      const targetOrigin = this.getTrustedOrigin();
+      if (!targetOrigin) {
+        this.pendingRequests.delete(requestId);
+        reject(new Error('Cannot determine trusted origin for postMessage'));
+        return;
+      }
+      contentWindow.postMessage(fullMessage, targetOrigin);
     });
   }
 
@@ -217,13 +200,15 @@ export class PostMessageHandler {
    * @param payload - Auth payload
    * @returns Promise that resolves with the auth response
    */
-  async authenticate(payload: any): Promise<EmbeddedResponse> {
-    return this.postMessage({
+  async auth(payload: any): Promise<EmbeddedResponse> {
+    const response = this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
       action: 'auth',
       payload,
     });
+    this.isReady = false;
+    return response;
   }
 
   /**
@@ -276,7 +261,7 @@ export class PostMessageHandler {
    * @returns Promise that resolves with the interaction creation response
    */
   async createInteraction(
-    payload: CreateInteractionPayload,
+    payload: Corti.InteractionsEncounterCreateRequest,
   ): Promise<EmbeddedResponse> {
     return this.postMessage({
       type: 'CORTI_EMBEDDED',
@@ -318,10 +303,7 @@ export class PostMessageHandler {
    * @param payload - Message payload
    * @returns Promise that resolves with the response
    */
-  async sendMessage(
-    action: string,
-    payload: any,
-  ): Promise<EmbeddedResponse> {
+  async sendMessage(action: string, payload: any): Promise<EmbeddedResponse> {
     return this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
@@ -359,5 +341,22 @@ export class PostMessageHandler {
 
   private static generateRequestId(): string {
     return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+  }
+
+  /**
+   * Derive the trusted origin from the iframe src (constructed from baseURL).
+   * Returns null if it cannot be determined.
+   */
+  private getTrustedOrigin(): string | null {
+    try {
+      // If iframe.src is relative, URL() will resolve against the current location.
+      // Embeds should provide an absolute baseURL; enforcing strict origin here.
+      const src = this.iframe.getAttribute('src') || this.iframe.src;
+      if (!src) return null;
+      const url = new URL(src, window.location.href);
+      return url.origin;
+    } catch {
+      return null;
+    }
   }
 }

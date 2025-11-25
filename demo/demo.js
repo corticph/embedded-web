@@ -1,8 +1,8 @@
 // Demo functionality for Corti Embedded Web Component
+const component = document.getElementById('corti-component');
 
 // Define functions in global scope
 window.showCorti = function() {
-    const component = document.getElementById('corti-component');
     if (component && component.show) {
         component.show();
         window.updateStatus();
@@ -11,7 +11,6 @@ window.showCorti = function() {
 };
 
 window.hideCorti = function() {
-    const component = document.getElementById('corti-component');
     if (component && component.hide) {
         component.hide();
         window.updateStatus();
@@ -20,8 +19,7 @@ window.hideCorti = function() {
 };
 
 window.testAuthentication = async function() {
-    const component = document.getElementById('corti-component');
-    if (component && component.authenticate) {
+    if (component && component.auth) {
         try {
             // Parse the JSON from the textarea
             const authPayloadText = document.getElementById('auth-payload').value;
@@ -34,7 +32,7 @@ window.testAuthentication = async function() {
             }
 
             window.addLogEntry(`Sending authentication request with payload: ${JSON.stringify(authPayload)}`, 'info');
-            const response = await component.authenticate(authPayload);
+            const response = await component.auth(authPayload);
             window.addLogEntry(`Authentication successful: ${JSON.stringify(response.payload)}`, 'success');
         } catch (error) {
             window.addLogEntry(`Authentication failed: ${error.message}`, 'error');
@@ -45,7 +43,6 @@ window.testAuthentication = async function() {
 };
 
 window.sendCustomMessage = async function() {
-    const component = document.getElementById('corti-component');
     if (component && component.sendMessage) {
         try {
             const customPayload = {
@@ -64,7 +61,6 @@ window.sendCustomMessage = async function() {
 };
 
 window.configureSession = async function() {
-    const component = document.getElementById('corti-component');
     if (component && component.configureSession) {
         try {
             // Parse the JSON from the textarea
@@ -89,7 +85,6 @@ window.configureSession = async function() {
 };
 
 window.addFacts = async function() {
-    const component = document.getElementById('corti-component');
     if (component && component.addFacts) {
         try {
             // Parse the JSON from the textarea
@@ -114,7 +109,6 @@ window.addFacts = async function() {
 };
 
 window.navigate = async function() {
-    const component = document.getElementById('corti-component');
     if (component && component.navigate) {
         try {
             // Parse the JSON from the textarea
@@ -139,7 +133,6 @@ window.navigate = async function() {
 };
 
 window.createInteraction = async function() {
-    const component = document.getElementById('corti-component');
     if (component && component.createInteraction) {
         try {
             // Parse the JSON from the textarea
@@ -155,6 +148,32 @@ window.createInteraction = async function() {
             window.addLogEntry(`Creating interaction with payload: ${JSON.stringify(payload)}`, 'info');
             const response = await component.createInteraction(payload);
             window.addLogEntry(`Interaction creation successful: ${JSON.stringify(response.payload)}`, 'success');
+            // Update navigate payload textarea with the returned interaction ID
+            try {
+                const interactionId =
+                    (response && response.payload && (response.payload.id || response.payload.interactionId)) || null;
+                if (interactionId) {
+                    const navTextarea = document.getElementById('navigate-payload');
+                    if (navTextarea) {
+                        try {
+                            const navPayload = JSON.parse(navTextarea.value);
+                            if (navPayload && typeof navPayload === 'object' && typeof navPayload.path === 'string') {
+                                navPayload.path = navPayload.path.replace('{interaction_id}', String(interactionId));
+                                navTextarea.value = JSON.stringify(navPayload, null, 2);
+                            } else {
+                                // Fallback to string replace if unexpected structure
+                                navTextarea.value = String(navTextarea.value).replace('{interaction_id}', String(interactionId));
+                            }
+                        } catch {
+                            // Fallback to string replace if JSON is invalid
+                            navTextarea.value = String(navTextarea.value).replace('{interaction_id}', String(interactionId));
+                        }
+                        window.addLogEntry(`Navigate payload updated with interaction ID: ${interactionId}`, 'success');
+                    }
+                }
+            } catch (updateError) {
+                window.addLogEntry(`Failed to update navigate payload: ${updateError.message}`, 'error');
+            }
         } catch (error) {
             window.addLogEntry(`Interaction creation failed: ${error.message}`, 'error');
         }
@@ -178,12 +197,11 @@ window.addLogEntry = function(message, type = 'info') {
 };
 
 window.updateStatus = function() {
-    const component = document.getElementById('corti-component');
     const statusElement = document.getElementById('status');
 
     if (component) {
         const baseURL = component.getAttribute('baseURL') || 'https://assistant.eu.corti.app';
-        const hasPostMessage = component.postMessage && component.authenticate && component.sendMessage;
+        const hasPostMessage = component.postMessage && component.auth && component.sendMessage;
 
         statusElement.innerHTML = `
             <strong>Current Status:</strong><br>
