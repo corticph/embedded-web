@@ -162,7 +162,6 @@ export interface InteractionCreatedEventPayload {
   interaction: {
     id: string;
     createdAt: string;
-    status?: string;
   };
 }
 
