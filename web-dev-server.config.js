@@ -9,13 +9,12 @@ const hmr = process.argv.includes('--hmr');
 function routeLoggerPlugin() {
   return {
     name: 'route-logger',
-    serverStart(args) {
-      const { address, port } = args;
-      const baseUrl = `http://${address}:${port}`;
+    serverStart() {
+      const baseUrl = `http://localhost:8000`;
 
       console.log('\n📡 Available routes:');
       console.log(`  • ${baseUrl}/demo/`);
-      console.log(`  • ${baseUrl}/demo/index-typescript.html`);
+      console.log(`  • ${baseUrl}/demo/typescript-demo.html`);
       console.log('');
     },
   };

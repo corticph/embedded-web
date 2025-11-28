@@ -1,3 +1,4 @@
+/* eslint-disable no-console */
 import type { Corti } from '@corti/sdk';
 import { html, LitElement, type PropertyValues } from 'lit';
 import { property } from 'lit/decorators.js';
@@ -137,7 +138,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         try {
           listener(data);
         } catch (error) {
-          // eslint-disable-next-line no-console
           console.error(`Error in event listener for ${event}:`, error);
         }
       });
