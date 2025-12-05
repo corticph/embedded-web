@@ -526,7 +526,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   }
 
   render() {
-    // Build a spec-compliant allow attribute value. Quote the origin URLs, but not 'self'.
     const allowedOrigin = this.normalizedBaseURL
       ? new URL(this.normalizedBaseURL).origin
       : "'self'";
