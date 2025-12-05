@@ -3,13 +3,17 @@
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Corti Embedded Web Component Demo</title>
+    <meta
+      http-equiv="Permissions-Policy"
+      content="microphone=*, camera=*, display-capture=*"
+    />
+    <title>Corti Embedded Web Component Demo (TypeScript)</title>
     <link rel="stylesheet" href="styles.css" />
   </head>
   <body>
     <div class="container">
       <header>
-        <h1>Corti Embedded Web Component Demo</h1>
+        <h1>Corti Embedded Web Component Demo (TypeScript)</h1>
       </header>
 
       <div class="main-layout">
@@ -25,6 +29,21 @@
             <div class="controls">
               <button class="show-btn" id="show-btn">Show Corti</button>
               <button class="hide-btn" id="hide-btn">Hide Corti</button>
+              <button class="postmessage-btn" id="get-status-btn">
+                Get Status
+              </button>
+            </div>
+          </div>
+
+          <div class="demo-section">
+            <div class="demo-title">Recording Controls</div>
+            <div class="controls">
+              <button class="postmessage-btn" id="start-recording-btn">
+                Start Recording
+              </button>
+              <button class="postmessage-btn" id="stop-recording-btn">
+                Stop Recording
+              </button>
             </div>
           </div>
 
@@ -36,12 +55,72 @@
                 <label for="auth-payload">Payload (JSON):</label>
                 <textarea
                   id="auth-payload"
-                  placeholder='{"token": "your-auth-token", "userId": "user-123"}'
+                  placeholder='{"access_token": "your-access-token", "token_type": "Bearer", "mode": "stateless"}'
                 >
-{"token": "test-token-123", "userId": "demo-user"}</textarea
+                {
+                  "access_token": "test-token-123",
+                  "token_type": "Bearer",
+                  "expires_in": 3600,
+                  "mode": "stateless",
+                  "profile": {
+                    "name": "Demo User",
+                    "email": "demo@example.com",
+                    "sub": "demo-user-123"
+                  }
+                }</textarea
                 >
               </details>
               <button class="postmessage-btn" id="auth-btn">Send</button>
+            </div>
+          </div>
+
+          <div class="demo-section">
+            <div class="demo-title">Set Credentials</div>
+            <div class="section-row">
+              <details class="auth-payload-section">
+                <summary>⚙️ Settings</summary>
+                <label for="set-credentials-payload">Payload:</label>
+                <textarea
+                  id="set-credentials-payload"
+                  placeholder='{"password": "your-password-here"}'
+                >
+{"password": "demo-password"}</textarea
+                >
+              </details>
+              <button class="postmessage-btn" id="set-credentials-btn">
+                Send
+              </button>
+            </div>
+          </div>
+
+          <div class="demo-section">
+            <div class="demo-title">Configure App</div>
+            <div class="section-row">
+              <details class="auth-payload-section">
+                <summary>⚙️ Settings</summary>
+                <label for="configure-payload">Payload:</label>
+                <textarea
+                  id="configure-payload"
+                  placeholder='{"appearance": {"primaryColor": "#0066cc"}, "ui": {"title": true, "chat": true}}'
+                >
+                {
+                  "appearance": {
+                    "primaryColor": "#0066cc"
+                  },
+                  "features": {
+                    "interactionTitle": true,
+                    "aiChat": true,
+                    "documentFeedback": true,
+                    "navigation": true,
+                    "virtualMode": true
+                  },
+                  "locale": {
+                    "interfaceLanguage": "en"
+                  }
+                }</textarea
+                >
+              </details>
+              <button class="postmessage-btn" id="configure-btn">Send</button>
             </div>
           </div>
 
@@ -53,10 +132,8 @@
                 <label for="create-interaction-payload">Payload:</label>
                 <textarea
                   id="create-interaction-payload"
-                  placeholder='{"encounter": {"identifier": "encounter-123", "status": "planned", "type": "first_consultation"}}'
-                >
-{"encounter": {"identifier": "encounter-123", "status": "planned", "type": "first_consultation"}}</textarea
-                >
+                  placeholder='{"encounter": { "identifier": "encounter-123", "status": "planned", "type": "first_consultation", "period": {"startedAt": "2026-01-01T00:00:00.000Z"}}'
+                ></textarea>
               </details>
               <button class="postmessage-btn" id="create-interaction-btn">
                 Send
@@ -74,7 +151,12 @@
                   id="configure-session-payload"
                   placeholder='{"defaultLanguage": "en", "defaultOutputLanguage": "en", "defaultTemplateKey": "soap_note", "defaultMode": "virtual"}'
                 >
-{"defaultLanguage": "en", "defaultOutputLanguage": "en", "defaultTemplateKey": "soap_note", "defaultMode": "virtual"}</textarea
+                {
+                  "defaultLanguage": "en",
+                  "defaultOutputLanguage": "en",
+                  "defaultTemplateKey": "soap_note",
+                  "defaultMode": "virtual"
+                }</textarea
                 >
               </details>
               <button class="postmessage-btn" id="configure-session-btn">
@@ -91,9 +173,15 @@
                 <label for="add-facts-payload">Payload:</label>
                 <textarea
                   id="add-facts-payload"
-                  placeholder='{"facts": [{"text": "Chest pain", "group": "other"}]}'
+                  placeholder='[{"text": "Chest pain", "group": "other"}]'
                 >
-[{"text": "Chest pain", "group": "other"}, {"text": "Shortness of breath", "group": "other"}, {"text": "Fatigue", "group": "other"}, {"text": "Dizziness", "group": "other"}, {"text": "Nausea", "group": "other"}]</textarea
+                [
+                  {"text": "Chest pain", "group": "other"},
+                  {"text": "Shortness of breath", "group": "other"},
+                  {"text": "Fatigue", "group": "other"},
+                  {"text": "Dizziness", "group": "other"},
+                  {"text": "Nausea", "group": "other"}
+                ]</textarea
                 >
               </details>
               <button class="postmessage-btn" id="add-facts-btn">Send</button>
@@ -108,9 +196,9 @@
                 <label for="navigate-payload">Payload:</label>
                 <textarea
                   id="navigate-payload"
-                  placeholder='"/session/{interaction_id}"'
+                  placeholder='{"path": "/session/{interaction_id}"}'
                 >
-"/session/{interaction_id}"</textarea
+{"path": "/session/{interaction_id}"}</textarea
                 >
               </details>
               <button class="postmessage-btn" id="navigate-btn">Send</button>
@@ -118,7 +206,7 @@
           </div>
         </div>
 
-        <!-- Right Panel - Web Component -->
+        <!-- Web Component -->
         <div class="embedded-section">
           <div class="demo-section">
             <div class="demo-title">Corti Embedded Component</div>
@@ -131,6 +219,7 @@
             </div>
           </div>
         </div>
+
         <div class="right-panel">
           <div class="demo-title">Message Log</div>
           <div class="controls">
@@ -145,12 +234,10 @@
       </div>
     </div>
 
-    <!-- External JavaScript -->
-    <script src="demo.js"></script>
-
+    <script type="module" src="./demo.ts"></script>
     <!-- Component Import -->
     <script type="module">
-      import '../dist/src/index.js';
+      import '../src/index.ts';
     </script>
   </body>
 </html>

@@ -1,12 +1,19 @@
-import { type Corti } from '@corti/sdk';
-import {
-  EmbeddedRequest,
-  EmbeddedResponse,
-  ConfigureSessionPayload,
-  NavigatePayload,
+import type {
   AddFactsPayload,
   AnyEmbeddedEvent,
-} from '../api_types.js';
+  AuthPayload,
+  AuthResponse,
+  ConfigureAppPayload,
+  ConfigureAppResponsePayload,
+  ConfigureSessionPayload,
+  CreateInteractionResponse,
+  EmbeddedRequest,
+  EmbeddedResponse,
+  GetStatusResponse,
+  NavigatePayload,
+  SetCredentialsPayload,
+} from '../internal-types.js';
+import type { InteractionPayload } from '../public-types.js';
 
 export class PostMessageHandler {
   private pendingRequests = new Map<
@@ -66,7 +73,9 @@ export class PostMessageHandler {
     // Notify event listeners
     const listeners = this.eventListeners.get((eventData as any).event);
     if (listeners) {
-      listeners.forEach(callback => callback((eventData as any).payload));
+      listeners.forEach(callback => {
+        callback((eventData as any).payload);
+      });
     }
   }
 
@@ -196,30 +205,32 @@ export class PostMessageHandler {
   }
 
   /**
-   * Helper method to send an auth message
+   * Helper method to send an auth message and return clean user data
    * @param payload - Auth payload
-   * @returns Promise that resolves with the auth response
+   * @returns Promise that resolves with user data
    */
-  async auth(payload: any): Promise<EmbeddedResponse> {
-    const response = this.postMessage({
+  async auth(payload: AuthPayload): Promise<AuthResponse['user']> {
+    const response = await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
       action: 'auth',
       payload,
     });
     this.isReady = false;
-    return response;
+
+    if (response.payload && typeof response.success) {
+      return (response.payload as AuthResponse).user;
+    }
+    throw new Error(response.error);
   }
 
   /**
    * Helper method to configure a session
    * @param payload - Session configuration payload
-   * @returns Promise that resolves with the configuration response
+   * @returns Promise that resolves when configuration is complete
    */
-  async configureSession(
-    payload: ConfigureSessionPayload,
-  ): Promise<EmbeddedResponse> {
-    return this.postMessage({
+  async configureSession(payload: ConfigureSessionPayload): Promise<void> {
+    await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
       action: 'configureSession',
@@ -230,10 +241,10 @@ export class PostMessageHandler {
   /**
    * Helper method to navigate to a specific path
    * @param payload - Navigation payload
-   * @returns Promise that resolves with the navigation response
+   * @returns Promise that resolves when navigation is complete
    */
-  async navigate(payload: NavigatePayload): Promise<EmbeddedResponse> {
-    return this.postMessage({
+  async navigate(payload: NavigatePayload): Promise<void> {
+    await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
       action: 'navigate',
@@ -244,10 +255,10 @@ export class PostMessageHandler {
   /**
    * Helper method to add facts to the session
    * @param payload - Facts payload
-   * @returns Promise that resolves with the add facts response
+   * @returns Promise that resolves when facts are added
    */
-  async addFacts(payload: AddFactsPayload): Promise<EmbeddedResponse> {
-    return this.postMessage({
+  async addFacts(payload: AddFactsPayload): Promise<void> {
+    await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
       action: 'addFacts',
@@ -256,27 +267,32 @@ export class PostMessageHandler {
   }
 
   /**
-   * Helper method to create a new interaction
+   * Helper method to create a new interaction and return clean interaction data
    * @param payload - Interaction creation payload
-   * @returns Promise that resolves with the interaction creation response
+   * @returns Promise that resolves with interaction details
    */
   async createInteraction(
-    payload: Corti.InteractionsEncounterCreateRequest,
-  ): Promise<EmbeddedResponse> {
-    return this.postMessage({
+    payload: InteractionPayload,
+  ): Promise<CreateInteractionResponse> {
+    const response = await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
       action: 'createInteraction',
       payload,
     });
+
+    if (response.payload && typeof response.success) {
+      return response.payload as CreateInteractionResponse;
+    }
+    throw new Error(response.error);
   }
 
   /**
    * Helper method to start recording
-   * @returns Promise that resolves with the start recording response
+   * @returns Promise that resolves when recording starts
    */
-  async startRecording(): Promise<EmbeddedResponse> {
-    return this.postMessage({
+  async startRecording(): Promise<void> {
+    await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
       action: 'startRecording',
@@ -286,10 +302,10 @@ export class PostMessageHandler {
 
   /**
    * Helper method to stop recording
-   * @returns Promise that resolves with the stop recording response
+   * @returns Promise that resolves when recording stops
    */
-  async stopRecording(): Promise<EmbeddedResponse> {
-    return this.postMessage({
+  async stopRecording(): Promise<void> {
+    await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
       action: 'stopRecording',
@@ -298,16 +314,54 @@ export class PostMessageHandler {
   }
 
   /**
-   * Helper method to send a custom message
-   * @param action - Action to perform
-   * @param payload - Message payload
-   * @returns Promise that resolves with the response
+   * Helper method to get current status
+   * @returns Promise that resolves with current status
    */
-  async sendMessage(action: string, payload: any): Promise<EmbeddedResponse> {
-    return this.postMessage({
+  async getStatus(): Promise<GetStatusResponse> {
+    const response = await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
-      action: action as any,
+      action: 'getStatus',
+      payload: {},
+    });
+
+    if (response.payload && typeof response.success) {
+      return response.payload as GetStatusResponse;
+    }
+    throw new Error(response.error);
+  }
+
+  /**
+   * Helper method to configure the component
+   * @param payload - Component configuration payload
+   * @returns Promise that resolves when configuration is applied
+   */
+  async configure(
+    payload: ConfigureAppPayload,
+  ): Promise<ConfigureAppResponsePayload> {
+    const response = await this.postMessage({
+      type: 'CORTI_EMBEDDED',
+      version: 'v1',
+      action: 'configure',
+      payload,
+    });
+
+    if (response.payload && typeof response.success) {
+      return response.payload as ConfigureAppResponsePayload;
+    }
+    throw new Error(response.error);
+  }
+
+  /**
+   * Helper method to set credentials without triggering auth flow
+   * @param payload - Credentials payload
+   * @returns Promise that resolves when credentials are set
+   */
+  async setCredentials(payload: SetCredentialsPayload): Promise<void> {
+    await this.postMessage({
+      type: 'CORTI_EMBEDDED',
+      version: 'v1',
+      action: 'setCredentials',
       payload,
     });
   }
@@ -321,7 +375,7 @@ export class PostMessageHandler {
     if (!this.eventListeners.has(event)) {
       this.eventListeners.set(event, []);
     }
-    this.eventListeners.get(event)!.push(callback);
+    this.eventListeners.get(event)?.push(callback);
   }
 
   /**

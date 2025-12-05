@@ -1,4 +1,5 @@
-import { type Corti } from '@corti/sdk';
+import type { Corti } from '@corti/sdk';
+import type { User } from './public-types.js';
 
 export type APIVersion = 'v1';
 
@@ -18,7 +19,10 @@ export type EmbeddedAction =
   | 'configureSession'
   | 'navigate'
   | 'startRecording'
-  | 'stopRecording';
+  | 'stopRecording'
+  | 'getStatus'
+  | 'configure'
+  | 'setCredentials';
 
 export type EmbeddedEvent =
   | 'ready'
@@ -27,7 +31,10 @@ export type EmbeddedEvent =
   | 'recordingStopped'
   | 'documentGenerated'
   | 'documentUpdated'
-  | 'documentSynced';
+  | 'documentSynced'
+  | 'authChanged'
+  | 'interactionCreated'
+  | 'navigationChanged';
 
 export interface KeycloakTokenResponse {
   access_token: string;
@@ -56,6 +63,7 @@ export interface AuthResponse {
   user: {
     id: string;
     email: string;
+    name?: string;
     [key: string]: unknown;
   };
 }
@@ -63,6 +71,7 @@ export interface AuthResponse {
 export interface CreateInteractionResponse {
   id: string;
   createdAt: string;
+  status?: string;
 }
 
 // Add Facts Schema
@@ -83,12 +92,81 @@ export interface NavigatePayload {
   path: string;
 }
 
+// App configuration schema
+interface AppearanceConfig {
+  primaryColor: string | null;
+}
+
+interface FeaturesConfig {
+  interactionTitle: boolean;
+  aiChat: boolean;
+  documentFeedback: boolean;
+  navigation: boolean;
+  virtualMode: boolean;
+}
+
+interface LocaleConfig {
+  interfaceLanguage: string;
+}
+
+export interface ConfigureAppPayload {
+  appearance?: Partial<AppearanceConfig>;
+  features?: Partial<FeaturesConfig>;
+  locale?: Partial<LocaleConfig>;
+}
+
+export interface ConfigureAppResponsePayload {
+  appearance: AppearanceConfig;
+  features: FeaturesConfig;
+  locale: LocaleConfig;
+}
+
+// Get status schema
+export interface GetStatusResponse {
+  ready: boolean;
+  auth: {
+    authenticated: boolean;
+    user?: User;
+  };
+  currentUrl?: string;
+  interaction?: {
+    encounter: Corti.InteractionsEncounterResponse;
+    documents: Corti.DocumentsListResponse['data'];
+    facts: Corti.FactsListResponse['facts'];
+  };
+}
+
+// Set credentials schema
+export interface SetCredentialsPayload {
+  password: string;
+}
+
 export interface NavigateEventPayload {
   interactionId: string;
 }
 
 export interface DocumentEventPayload {
   document: Corti.DocumentsGetResponse;
+}
+
+export interface AuthChangedEventPayload {
+  user: {
+    id: string;
+    email: string;
+    name?: string;
+    [key: string]: unknown;
+  };
+}
+
+export interface InteractionCreatedEventPayload {
+  interaction: {
+    id: string;
+    createdAt: string;
+  };
+}
+
+export interface NavigationChangedEventPayload {
+  path: string;
 }
 
 // Base Message Types
@@ -111,6 +189,8 @@ export interface EmbeddedResponse extends BaseMessage {
   success: boolean;
   payload?: unknown;
   error?: string;
+  errorCode?: string;
+  errorDetails?: unknown;
 }
 
 export interface EmbeddedEventMessage extends BaseMessage {
@@ -163,6 +243,25 @@ export interface StopRecordingRequest extends EmbeddedRequest {
   action: 'stopRecording';
 }
 
+export interface GetStatusRequest extends EmbeddedRequest {
+  action: 'getStatus';
+}
+
+export interface GetStatusResponseMessage extends EmbeddedResponse {
+  action: 'getStatus';
+  payload: GetStatusResponse;
+}
+
+export interface ConfigureRequest extends EmbeddedRequest {
+  action: 'configure';
+  payload: ConfigureAppPayload;
+}
+
+export interface SetCredentialsRequest extends EmbeddedRequest {
+  action: 'setCredentials';
+  payload: SetCredentialsPayload;
+}
+
 // Event Types
 export interface ReadyEvent extends EmbeddedEventMessage {
   event: 'ready';
@@ -196,28 +295,19 @@ export interface DocumentSyncedEvent extends EmbeddedEventMessage {
   payload: DocumentEventPayload;
 }
 
-// Window API Types
-export interface CortiEmbeddedV1API {
-  auth(payload: AuthPayload): Promise<AuthResponse>;
-  createInteraction(
-    payload: Corti.InteractionsEncounterCreateRequest,
-  ): Promise<CreateInteractionResponse>;
-  addFacts(payload: AddFactsPayload): Promise<void>;
-  configureSession(payload: ConfigureSessionPayload): Promise<void>;
-  navigate(payload: NavigatePayload): Promise<void>;
-  startRecording(): Promise<void>;
-  stopRecording(): Promise<void>;
+export interface AuthChangedEvent extends EmbeddedEventMessage {
+  event: 'authChanged';
+  payload: AuthChangedEventPayload;
 }
 
-export interface CortiEmbeddedWindowAPI {
-  v1: CortiEmbeddedV1API;
+export interface InteractionCreatedEvent extends EmbeddedEventMessage {
+  event: 'interactionCreated';
+  payload: InteractionCreatedEventPayload;
 }
 
-// Extend Window interface
-declare global {
-  interface Window {
-    CortiEmbedded?: CortiEmbeddedWindowAPI;
-  }
+export interface NavigationChangedEvent extends EmbeddedEventMessage {
+  event: 'navigationChanged';
+  payload: NavigationChangedEventPayload;
 }
 
 // Request/Response/Event types
@@ -228,11 +318,15 @@ export type AnyEmbeddedRequest =
   | ConfigureSessionRequest
   | NavigateRequest
   | StartRecordingRequest
-  | StopRecordingRequest;
+  | StopRecordingRequest
+  | GetStatusRequest
+  | ConfigureRequest
+  | SetCredentialsRequest;
 
 export type AnyEmbeddedResponse =
   | AuthResponseMessage
   | CreateInteractionResponseMessage
+  | GetStatusResponseMessage
   | EmbeddedResponse;
 
 export type AnyEmbeddedEvent =
@@ -242,7 +336,10 @@ export type AnyEmbeddedEvent =
   | RecordingStoppedEvent
   | DocumentGeneratedEvent
   | DocumentUpdatedEvent
-  | DocumentSyncedEvent;
+  | DocumentSyncedEvent
+  | AuthChangedEvent
+  | InteractionCreatedEvent
+  | NavigationChangedEvent;
 
 export type AnyEmbeddedMessage =
   | AnyEmbeddedRequest

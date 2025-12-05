@@ -1,23 +1,36 @@
-import { html, LitElement, PropertyValues } from 'lit';
-import { type Corti } from '@corti/sdk';
+/* eslint-disable no-console */
+import type { Corti } from '@corti/sdk';
+import { html, LitElement, type PropertyValues } from 'lit';
 import { property } from 'lit/decorators.js';
-import { baseStyles } from './styles/base.js';
-import { PostMessageHandler } from './utils/PostMessageHandler.js';
-import {
-  AuthPayload,
-  ConfigureSessionPayload,
-  EmbeddedAction,
-  EmbeddedRequest,
-  EmbeddedResponse,
+import type {
   AddFactsPayload,
+  AuthPayload,
+  ConfigureAppPayload,
+  ConfigureSessionPayload,
   NavigatePayload,
-} from './api_types.js';
-import { containerStyles } from './styles/container-styles.js';
+  SetCredentialsPayload,
+} from './internal-types.js';
+import type {
+  AuthCredentials,
+  ComponentStatus,
+  ConfigureAppResponsePayload,
+  CortiEmbeddedAPI,
+  EmbeddedEventData,
+  EventListener,
+  InteractionDetails,
+  InteractionPayload,
+  SessionConfig,
+  User,
+} from './public-types.js';
 import { EventDispatcher } from './services/EventDispatcher.js';
+import { baseStyles } from './styles/base.js';
+import { containerStyles } from './styles/container-styles.js';
 import { validateAndNormalizeBaseURL } from './utils/baseUrl.js';
 import { buildEmbeddedUrl, isRealEmbeddedLoad } from './utils/embedUrl.js';
+import { formatError } from './utils/errorFormatter.js';
+import { PostMessageHandler } from './utils/PostMessageHandler.js';
 
-export class CortiEmbedded extends LitElement {
+export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   static styles = [baseStyles, containerStyles];
 
   @property({ type: String, reflect: true })
@@ -30,15 +43,16 @@ export class CortiEmbedded extends LitElement {
 
   private normalizedBaseURL: string | null = null;
 
+  private eventListeners = new Map<string, Array<EventListener<any>>>();
+
   connectedCallback() {
     super.connectedCallback();
     // Validate and normalize the initial baseURL early (fail fast)
     try {
       this.normalizedBaseURL = validateAndNormalizeBaseURL(this.baseURL);
     } catch (error) {
-      EventDispatcher.dispatchEvent('error', {
+      this.dispatchErrorEvent({
         message: (error as Error).message || 'Invalid baseURL',
-        error,
       });
       throw error;
     }
@@ -50,6 +64,7 @@ export class CortiEmbedded extends LitElement {
       this.postMessageHandler.destroy();
       this.postMessageHandler = null;
     }
+    this.eventListeners.clear();
   }
 
   private async setupPostMessageHandler() {
@@ -60,13 +75,85 @@ export class CortiEmbedded extends LitElement {
 
     const iframe = this.getIframe();
 
-    if (iframe && iframe.contentWindow) {
+    if (iframe?.contentWindow) {
       this.postMessageHandler = new PostMessageHandler(iframe);
+      this.setupEventListeners();
     } else {
-      EventDispatcher.dispatchEvent('error', {
+      this.dispatchErrorEvent({
         message: 'No iframe or contentWindow available',
       });
     }
+  }
+
+  private setupEventListeners() {
+    if (!this.postMessageHandler) return;
+
+    // Map internal events to public events
+    this.postMessageHandler.on('ready', () => {
+      this.dispatchPublicEvent('ready', undefined);
+    });
+
+    this.postMessageHandler.on('authChanged', payload => {
+      this.dispatchPublicEvent('auth-changed', { user: payload.user });
+    });
+
+    this.postMessageHandler.on('interactionCreated', payload => {
+      this.dispatchPublicEvent('interaction-created', {
+        interaction: payload.interaction,
+      });
+    });
+
+    this.postMessageHandler.on('recordingStarted', () => {
+      this.dispatchPublicEvent('recording-started', undefined);
+    });
+
+    this.postMessageHandler.on('recordingStopped', () => {
+      this.dispatchPublicEvent('recording-stopped', undefined);
+    });
+
+    this.postMessageHandler.on('documentGenerated', payload => {
+      this.dispatchPublicEvent('document-generated', {
+        document: payload.document,
+      });
+    });
+
+    this.postMessageHandler.on('documentUpdated', payload => {
+      this.dispatchPublicEvent('document-updated', {
+        document: payload.document,
+      });
+    });
+
+    this.postMessageHandler.on('navigationChanged', payload => {
+      this.dispatchPublicEvent('navigation-changed', { path: payload.path });
+    });
+  }
+
+  private dispatchPublicEvent<K extends keyof EmbeddedEventData>(
+    event: K,
+    data: EmbeddedEventData[K],
+  ) {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      listeners.forEach(listener => {
+        try {
+          listener(data);
+        } catch (error) {
+          console.error(`Error in event listener for ${event}:`, error);
+        }
+      });
+    }
+  }
+
+  private dispatchErrorEvent(error: {
+    message: string;
+    code?: string;
+    details?: unknown;
+  }) {
+    this.dispatchPublicEvent('error', error);
+    EventDispatcher.dispatchEvent('error', {
+      message: error.message,
+      error: error.details,
+    });
   }
 
   private isRealIframeLoad(iframe: HTMLIFrameElement): boolean {
@@ -87,9 +174,8 @@ export class CortiEmbedded extends LitElement {
     try {
       await this.setupPostMessageHandler();
     } catch (error) {
-      EventDispatcher.dispatchEvent('error', {
-        message: 'Failed to setup PostMessageHandler on iframe load',
-        error,
+      this.dispatchErrorEvent({
+        message: `Failed to setup PostMessageHandler on iframe load: ${error}`,
       });
     }
   }
@@ -114,9 +200,8 @@ export class CortiEmbedded extends LitElement {
         if (iframe) {
           iframe.setAttribute('src', 'about:blank');
         }
-        EventDispatcher.dispatchEvent('error', {
+        this.dispatchErrorEvent({
           message: (error as Error).message || 'Invalid baseURL',
-          error,
         });
         return;
       }
@@ -137,109 +222,298 @@ export class CortiEmbedded extends LitElement {
     }
   }
 
+  // Public API Implementation
   /**
-   * Sends a postMessage to the iframe and returns a Promise that resolves with the response
-   * @param message - The message to send
-   * @param timeout - Optional timeout in milliseconds (default: 10000ms)
-   * @returns Promise that resolves with the response
+   * Authenticate with the Corti system
+   * @param credentials Authentication credentials
+   * @returns Promise resolving to user information
    */
-  async postMessage(
-    message: Omit<EmbeddedRequest, 'requestId'>,
-    timeout = 10000,
-  ): Promise<EmbeddedResponse> {
+  async auth(credentials: AuthCredentials): Promise<User> {
     if (!this.postMessageHandler) {
-      throw new Error('PostMessageHandler not ready');
+      throw new Error('Component not ready');
     }
-    return this.postMessageHandler.postMessage(message, timeout);
+
+    try {
+      const payload: AuthPayload = {
+        access_token: credentials.access_token,
+        token_type: credentials.token_type,
+        expires_at: credentials.expires_at,
+        expires_in: credentials.expires_in,
+        refresh_expires_in: credentials.refresh_expires_in,
+        refresh_token: credentials.refresh_token,
+        id_token: credentials.id_token,
+        'not-before-policy': credentials['not-before-policy'],
+        session_state: credentials.session_state,
+        scope: credentials.scope,
+        profile: credentials.profile,
+        mode: credentials.mode,
+      };
+
+      const user = await this.postMessageHandler.auth(payload);
+      return user;
+    } catch (error) {
+      const formattedError = formatError(error, 'Authentication failed');
+      this.dispatchErrorEvent(formattedError);
+      throw new Error(JSON.stringify(formattedError));
+    }
   }
 
   /**
-   * Helper method to send an auth message
-   * @param payload - Auth payload
-   * @returns Promise that resolves with the auth response
-   */
-  async auth(payload: AuthPayload): Promise<EmbeddedResponse> {
-    if (!this.postMessageHandler) {
-      throw new Error('PostMessageHandler not ready');
-    }
-    return this.postMessageHandler.auth(payload);
-  }
-
-  /**
-   * Helper method to send a custom message
-   * @param action - Action to perform
-   * @param payload - Message payload
-   * @returns Promise that resolves with the response
-   */
-  async sendMessage(
-    action: EmbeddedAction,
-    payload: unknown,
-  ): Promise<EmbeddedResponse> {
-    if (!this.postMessageHandler) {
-      throw new Error('PostMessageHandler not ready');
-    }
-    return this.postMessageHandler.sendMessage(action, payload);
-  }
-
-  /**
-   * Helper method to configure a session
-   * @param payload - Session configuration payload
-   * @returns Promise that resolves with the configuration response
-   */
-  async configureSession(
-    payload: ConfigureSessionPayload,
-  ): Promise<EmbeddedResponse> {
-    if (!this.postMessageHandler) {
-      throw new Error('PostMessageHandler not ready');
-    }
-    return this.postMessageHandler.configureSession(payload);
-  }
-
-  /**
-   * Helper method to add facts to the session
-   * @param payload - Facts payload
-   * @returns Promise that resolves with the add facts response
-   */
-  async addFacts(payload: AddFactsPayload): Promise<EmbeddedResponse> {
-    if (!this.postMessageHandler) {
-      throw new Error('PostMessageHandler not ready');
-    }
-    return this.postMessageHandler.addFacts(payload);
-  }
-
-  /**
-   * Helper method to navigate to a specific path
-   * @param payload - Navigation payload
-   * @returns Promise that resolves with the navigation response
-   */
-  async navigate(payload: NavigatePayload): Promise<EmbeddedResponse> {
-    if (!this.postMessageHandler) {
-      throw new Error('PostMessageHandler not ready');
-    }
-    return this.postMessageHandler.navigate(payload);
-  }
-
-  /**
-   * Helper method to create a new interaction
-   * @param payload - Interaction creation payload
-   * @returns Promise that resolves with the interaction creation response
+   * Create a new interaction
+   * @param encounter Encounter request data
+   * @returns Promise resolving to interaction details
    */
   async createInteraction(
-    payload: Corti.InteractionsEncounterCreateRequest,
-  ): Promise<EmbeddedResponse> {
+    encounter: InteractionPayload,
+  ): Promise<InteractionDetails> {
     if (!this.postMessageHandler) {
-      throw new Error('PostMessageHandler not ready');
+      throw new Error('Component not ready');
     }
-    return this.postMessageHandler.createInteraction(payload);
+
+    try {
+      const response =
+        await this.postMessageHandler.createInteraction(encounter);
+      return {
+        id: response.id,
+        createdAt: response.createdAt,
+      };
+    } catch (error) {
+      const formattedError = formatError(error, 'Failed to create interaction');
+      this.dispatchErrorEvent(formattedError);
+      throw new Error(JSON.stringify(formattedError));
+    }
+  }
+
+  /**
+   * Configure the current session
+   * @param config Session configuration
+   * @returns Promise that resolves when configuration is complete
+   */
+  async configureSession(config: SessionConfig): Promise<void> {
+    if (!this.postMessageHandler) {
+      throw new Error('Component not ready');
+    }
+
+    try {
+      const payload: ConfigureSessionPayload = {
+        defaultLanguage: config.defaultLanguage,
+        defaultOutputLanguage: config.defaultOutputLanguage,
+        defaultTemplateKey: config.defaultTemplateKey,
+        defaultMode: config.defaultMode,
+      };
+
+      await this.postMessageHandler.configureSession(payload);
+    } catch (error) {
+      const formattedError = formatError(error, 'Failed to configure session');
+      this.dispatchErrorEvent(formattedError);
+      throw new Error(JSON.stringify(formattedError));
+    }
+  }
+
+  /**
+   * Add facts to the current session
+   * @param facts Array of facts to add
+   * @returns Promise that resolves when facts are added
+   */
+  async addFacts(facts: Corti.FactsCreateInput[]): Promise<void> {
+    if (!this.postMessageHandler) {
+      throw new Error('Component not ready');
+    }
+
+    try {
+      const payload: AddFactsPayload = { facts };
+      await this.postMessageHandler.addFacts(payload);
+    } catch (error) {
+      const formattedError = formatError(error, 'Failed to add facts');
+      this.dispatchErrorEvent(formattedError);
+      throw new Error(JSON.stringify(formattedError));
+    }
+  }
+
+  /**
+   * Navigate to a specific path within the embedded UI
+   * @param path Path to navigate to
+   * @returns Promise that resolves when navigation is complete
+   */
+  async navigate(path: string): Promise<void> {
+    if (!this.postMessageHandler) {
+      throw new Error('Component not ready');
+    }
+
+    try {
+      const payload: NavigatePayload = { path };
+      await this.postMessageHandler.navigate(payload);
+    } catch (error) {
+      const formattedError = formatError(error, 'Failed to navigate');
+      this.dispatchErrorEvent(formattedError);
+      throw new Error(JSON.stringify(formattedError));
+    }
+  }
+
+  /**
+   * Start recording
+   * @returns Promise that resolves when recording starts
+   */
+  async startRecording(): Promise<void> {
+    if (!this.postMessageHandler) {
+      throw new Error('Component not ready');
+    }
+
+    try {
+      await this.postMessageHandler.startRecording();
+    } catch (error) {
+      const formattedError = formatError(error, 'Failed to start recording');
+      this.dispatchErrorEvent(formattedError);
+      throw new Error(JSON.stringify(formattedError));
+    }
+  }
+
+  /**
+   * Stop recording
+   * @returns Promise that resolves when recording stops
+   */
+  async stopRecording(): Promise<void> {
+    if (!this.postMessageHandler) {
+      throw new Error('Component not ready');
+    }
+
+    try {
+      await this.postMessageHandler.stopRecording();
+    } catch (error) {
+      const formattedError = formatError(error, 'Failed to stop recording');
+      this.dispatchErrorEvent(formattedError);
+      throw new Error(JSON.stringify(formattedError));
+    }
+  }
+
+  /**
+   * Get current component status
+   * @returns Promise resolving to current status
+   */
+  async getStatus(): Promise<ComponentStatus> {
+    if (!this.postMessageHandler) {
+      return {
+        ready: false,
+        auth: {
+          authenticated: false,
+          user: undefined,
+        },
+        currentUrl: undefined,
+        interaction: undefined,
+      };
+    }
+
+    try {
+      return await this.postMessageHandler.getStatus();
+    } catch (error) {
+      const formattedError = formatError(error, 'Failed to get status');
+      this.dispatchErrorEvent(formattedError);
+      throw new Error(JSON.stringify(formattedError));
+    }
+  }
+
+  /**
+   * Configure the component
+   * @param config Component configuration
+   * @returns Promise that resolves when configuration is applied
+   */
+  async configure(
+    config: ConfigureAppPayload,
+  ): Promise<ConfigureAppResponsePayload> {
+    if (!this.postMessageHandler) {
+      throw new Error('Component not ready');
+    }
+
+    try {
+      return await this.postMessageHandler.configure(config);
+    } catch (error) {
+      const formattedError = formatError(
+        error,
+        'Failed to configure component',
+      );
+      this.dispatchErrorEvent(formattedError);
+      throw new Error(JSON.stringify(formattedError));
+    }
+  }
+
+  /**
+   * Set authentication credentials without triggering auth flow
+   * @param credentials Authentication credentials to store
+   * @returns Promise that resolves when credentials are set
+   */
+  async setCredentials(credentials: SetCredentialsPayload): Promise<void> {
+    if (!this.postMessageHandler) {
+      throw new Error('Component not ready');
+    }
+
+    try {
+      if (!credentials.password) {
+        throw new Error('Password is required');
+      }
+      await this.postMessageHandler.setCredentials(credentials);
+    } catch (error) {
+      const formattedError = formatError(error, 'Failed to set credentials');
+      this.dispatchErrorEvent(formattedError);
+      throw new Error(JSON.stringify(formattedError));
+    }
+  }
+
+  /**
+   * Show the embedded UI
+   */
+  show(): void {
+    this.visibility = 'visible';
+  }
+
+  /**
+   * Hide the embedded UI
+   */
+  hide(): void {
+    this.visibility = 'hidden';
+  }
+
+  /**
+   * Add an event listener
+   * @param event Event name
+   * @param listener Event listener function
+   */
+  addEventListener<K extends keyof EmbeddedEventData>(
+    event: K,
+    listener: EventListener<EmbeddedEventData[K]>,
+  ): void {
+    if (!this.eventListeners.has(event)) {
+      this.eventListeners.set(event, []);
+    }
+    this.eventListeners.get(event)?.push(listener);
+  }
+
+  /**
+   * Remove an event listener
+   * @param event Event name
+   * @param listener Event listener function to remove
+   */
+  removeEventListener<K extends keyof EmbeddedEventData>(
+    event: K,
+    listener: EventListener<EmbeddedEventData[K]>,
+  ): void {
+    const listeners = this.eventListeners.get(event);
+    if (listeners) {
+      const index = listeners.indexOf(listener);
+      if (index > -1) {
+        listeners.splice(index, 1);
+      }
+    }
   }
 
   /**
    * Check the current status of the iframe and PostMessageHandler
    * Useful for debugging
+   * @deprecated Use getStatus() instead
    */
-  getStatus() {
+  getDebugStatus() {
     const iframe = this.getIframe();
     return {
+      ready: iframe?.contentDocument?.readyState === 'complete',
       iframeExists: !!iframe,
       iframeSrc: iframe?.src,
       iframeContentWindow: !!iframe?.contentWindow,
@@ -252,9 +526,8 @@ export class CortiEmbedded extends LitElement {
   }
 
   render() {
-    // Build a spec-compliant allow attribute value. Quote the origin URLs, but not 'self'.
     const allowedOrigin = this.normalizedBaseURL
-      ? `"${new URL(this.normalizedBaseURL).origin}"`
+      ? new URL(this.normalizedBaseURL).origin
       : "'self'";
     const allow = `microphone 'self' ${allowedOrigin} ; camera 'self' ${allowedOrigin} ; device-capture 'self' ${allowedOrigin}`;
     return html`
@@ -272,13 +545,5 @@ export class CortiEmbedded extends LitElement {
           : 'display: block;'}
       ></iframe>
     `;
-  }
-
-  show() {
-    this.visibility = 'visible';
-  }
-
-  hide() {
-    this.visibility = 'hidden';
   }
 }
