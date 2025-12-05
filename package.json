@@ -32,7 +32,7 @@
   "scripts": {
     "analyze": "cem analyze --litelement",
     "build": "tsc && npm run analyze -- --exclude dist",
-    "build:bundle": "esbuild dist/index.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser",
+    "build:bundle": "esbuild dist/src/index.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser",
     "release": "npm run build && npm run build:bundle && npm publish --access public",
     "start": "npm run build && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"web-dev-server\"",
     "prepublish": "tsc && npm run analyze -- --exclude dist",
