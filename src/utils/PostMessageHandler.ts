@@ -1,3 +1,4 @@
+import { Corti } from '@corti/sdk';
 import type {
   AddFactsPayload,
   AnyEmbeddedEvent,
@@ -13,7 +14,27 @@ import type {
   NavigatePayload,
   SetCredentialsPayload,
 } from '../internal-types.js';
-import type { InteractionPayload } from '../public-types.js';
+import type { EmbeddedEventData, InteractionPayload } from '../public-types.js';
+
+export interface PostMessageHandlerCallbacks {
+  onReady?: () => void;
+  onAuthChanged?: (payload: any) => void;
+  onInteractionCreated?: (payload: any) => void;
+  onRecordingStarted?: () => void;
+  onRecordingStopped?: () => void;
+  onDocumentGenerated?: (payload: {
+    document: Corti.DocumentsGetResponse;
+  }) => void;
+  onDocumentUpdated?: (payload: {
+    document: Corti.DocumentsGetResponse;
+  }) => void;
+  onNavigationChanged?: (payload: any) => void;
+  onError?: (error: {
+    message: string;
+    code?: string;
+    details?: unknown;
+  }) => void;
+}
 
 export class PostMessageHandler {
   private pendingRequests = new Map<
@@ -21,16 +42,20 @@ export class PostMessageHandler {
     { resolve: (value: any) => void; reject: (reason: any) => void }
   >();
 
-  private eventListeners = new Map<string, Array<(payload?: any) => void>>();
-
   private messageListener: ((event: MessageEvent) => void) | null = null;
 
   private iframe: HTMLIFrameElement;
 
   private isReady = false;
 
-  constructor(iframe: HTMLIFrameElement) {
+  private callbacks: PostMessageHandlerCallbacks;
+
+  constructor(
+    iframe: HTMLIFrameElement,
+    callbacks: PostMessageHandlerCallbacks = {},
+  ) {
     this.iframe = iframe;
+    this.callbacks = callbacks;
     this.setupMessageListener();
   }
 
@@ -65,17 +90,48 @@ export class PostMessageHandler {
   }
 
   private handleEvent(eventData: AnyEmbeddedEvent): void {
+    const eventType = (eventData as any).event;
+    const { payload } = eventData;
+
     // Handle ready-like events
-    if (eventData.event === 'ready' || (eventData as any).event === 'loaded') {
+    if (eventType === 'ready' || eventType === 'loaded') {
       this.isReady = true;
     }
 
-    // Notify event listeners
-    const listeners = this.eventListeners.get((eventData as any).event);
-    if (listeners) {
-      listeners.forEach(callback => {
-        callback((eventData as any).payload);
-      });
+    // Handle specific events with callbacks
+    switch (eventType) {
+      case 'ready':
+      case 'loaded':
+        this.callbacks.onReady?.();
+        break;
+      case 'authChanged':
+        this.callbacks.onAuthChanged?.(payload);
+        break;
+      case 'interactionCreated':
+        this.callbacks.onInteractionCreated?.(payload);
+        break;
+      case 'recordingStarted':
+        this.callbacks.onRecordingStarted?.();
+        break;
+      case 'recordingStopped':
+        this.callbacks.onRecordingStopped?.();
+        break;
+      case 'documentGenerated':
+        this.callbacks.onDocumentGenerated?.(
+          payload as EmbeddedEventData['document-generated'],
+        );
+        break;
+      case 'documentUpdated':
+        this.callbacks.onDocumentUpdated?.(
+          payload as EmbeddedEventData['document-updated'],
+        );
+        break;
+      case 'navigationChanged':
+        this.callbacks.onNavigationChanged?.(payload);
+        break;
+      default:
+        console.warn(`Unhandled event type: ${eventType}`);
+        break;
     }
   }
 
@@ -91,6 +147,7 @@ export class PostMessageHandler {
           code: data.errorCode,
           details: data.errorDetails,
         };
+        this.callbacks.onError?.(error);
         reject(error);
       } else {
         resolve(data);
@@ -104,7 +161,13 @@ export class PostMessageHandler {
       this.messageListener = null;
     }
     this.pendingRequests.clear();
-    this.eventListeners.clear();
+  }
+
+  /**
+   * Update callbacks after construction
+   */
+  updateCallbacks(callbacks: PostMessageHandlerCallbacks) {
+    this.callbacks = { ...this.callbacks, ...callbacks };
   }
 
   /**
@@ -364,33 +427,6 @@ export class PostMessageHandler {
       action: 'setCredentials',
       payload,
     });
-  }
-
-  /**
-   * Add an event listener for specific Corti events
-   * @param event - Event name to listen for
-   * @param callback - Callback function
-   */
-  on(event: string, callback: (payload?: any) => void): void {
-    if (!this.eventListeners.has(event)) {
-      this.eventListeners.set(event, []);
-    }
-    this.eventListeners.get(event)?.push(callback);
-  }
-
-  /**
-   * Remove an event listener
-   * @param event - Event name
-   * @param callback - Callback function to remove
-   */
-  off(event: string, callback: (payload?: any) => void): void {
-    const listeners = this.eventListeners.get(event);
-    if (listeners) {
-      const index = listeners.indexOf(callback);
-      if (index > -1) {
-        listeners.splice(index, 1);
-      }
-    }
   }
 
   private static generateRequestId(): string {

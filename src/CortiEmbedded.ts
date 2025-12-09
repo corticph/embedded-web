@@ -16,19 +16,20 @@ import type {
   ConfigureAppResponsePayload,
   CortiEmbeddedAPI,
   EmbeddedEventData,
-  EventListener,
   InteractionDetails,
   InteractionPayload,
   SessionConfig,
   User,
 } from './public-types.js';
-import { EventDispatcher } from './services/EventDispatcher.js';
 import { baseStyles } from './styles/base.js';
 import { containerStyles } from './styles/container-styles.js';
 import { validateAndNormalizeBaseURL } from './utils/baseUrl.js';
 import { buildEmbeddedUrl, isRealEmbeddedLoad } from './utils/embedUrl.js';
 import { formatError } from './utils/errorFormatter.js';
-import { PostMessageHandler } from './utils/PostMessageHandler.js';
+import {
+  PostMessageHandler,
+  PostMessageHandlerCallbacks,
+} from './utils/PostMessageHandler.js';
 
 export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   static styles = [baseStyles, containerStyles];
@@ -42,8 +43,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   private postMessageHandler: PostMessageHandler | null = null;
 
   private normalizedBaseURL: string | null = null;
-
-  private eventListeners = new Map<string, Array<EventListener<any>>>();
 
   connectedCallback() {
     super.connectedCallback();
@@ -64,7 +63,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       this.postMessageHandler.destroy();
       this.postMessageHandler = null;
     }
-    this.eventListeners.clear();
   }
 
   private async setupPostMessageHandler() {
@@ -76,8 +74,45 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     const iframe = this.getIframe();
 
     if (iframe?.contentWindow) {
-      this.postMessageHandler = new PostMessageHandler(iframe);
-      this.setupEventListeners();
+      const callbacks: PostMessageHandlerCallbacks = {
+        onReady: () => {
+          this.dispatchPublicEvent('ready', undefined);
+        },
+        onAuthChanged: payload => {
+          this.dispatchPublicEvent('auth-changed', { user: payload.user });
+        },
+        onInteractionCreated: payload => {
+          this.dispatchPublicEvent('interaction-created', {
+            interaction: payload.interaction,
+          });
+        },
+        onRecordingStarted: () => {
+          this.dispatchPublicEvent('recording-started', undefined);
+        },
+        onRecordingStopped: () => {
+          this.dispatchPublicEvent('recording-stopped', undefined);
+        },
+        onDocumentGenerated: payload => {
+          this.dispatchPublicEvent('document-generated', {
+            document: payload.document,
+          });
+        },
+        onDocumentUpdated: payload => {
+          this.dispatchPublicEvent('document-updated', {
+            document: payload.document,
+          });
+        },
+        onNavigationChanged: payload => {
+          this.dispatchPublicEvent('navigation-changed', {
+            path: payload.path,
+          });
+        },
+        onError: error => {
+          this.dispatchErrorEvent(error);
+        },
+      };
+
+      this.postMessageHandler = new PostMessageHandler(iframe, callbacks);
     } else {
       this.dispatchErrorEvent({
         message: 'No iframe or contentWindow available',
@@ -85,63 +120,11 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
   }
 
-  private setupEventListeners() {
-    if (!this.postMessageHandler) return;
-
-    // Map internal events to public events
-    this.postMessageHandler.on('ready', () => {
-      this.dispatchPublicEvent('ready', undefined);
-    });
-
-    this.postMessageHandler.on('authChanged', payload => {
-      this.dispatchPublicEvent('auth-changed', { user: payload.user });
-    });
-
-    this.postMessageHandler.on('interactionCreated', payload => {
-      this.dispatchPublicEvent('interaction-created', {
-        interaction: payload.interaction,
-      });
-    });
-
-    this.postMessageHandler.on('recordingStarted', () => {
-      this.dispatchPublicEvent('recording-started', undefined);
-    });
-
-    this.postMessageHandler.on('recordingStopped', () => {
-      this.dispatchPublicEvent('recording-stopped', undefined);
-    });
-
-    this.postMessageHandler.on('documentGenerated', payload => {
-      this.dispatchPublicEvent('document-generated', {
-        document: payload.document,
-      });
-    });
-
-    this.postMessageHandler.on('documentUpdated', payload => {
-      this.dispatchPublicEvent('document-updated', {
-        document: payload.document,
-      });
-    });
-
-    this.postMessageHandler.on('navigationChanged', payload => {
-      this.dispatchPublicEvent('navigation-changed', { path: payload.path });
-    });
-  }
-
   private dispatchPublicEvent<K extends keyof EmbeddedEventData>(
     event: K,
     data: EmbeddedEventData[K],
   ) {
-    const listeners = this.eventListeners.get(event);
-    if (listeners) {
-      listeners.forEach(listener => {
-        try {
-          listener(data);
-        } catch (error) {
-          console.error(`Error in event listener for ${event}:`, error);
-        }
-      });
-    }
+    this.dispatchEvent(new CustomEvent(event, { detail: data }));
   }
 
   private dispatchErrorEvent(error: {
@@ -150,10 +133,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     details?: unknown;
   }) {
     this.dispatchPublicEvent('error', error);
-    EventDispatcher.dispatchEvent('error', {
-      message: error.message,
-      error: error.details,
-    });
   }
 
   private isRealIframeLoad(iframe: HTMLIFrameElement): boolean {
@@ -470,39 +449,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    */
   hide(): void {
     this.visibility = 'hidden';
-  }
-
-  /**
-   * Add an event listener
-   * @param event Event name
-   * @param listener Event listener function
-   */
-  addEventListener<K extends keyof EmbeddedEventData>(
-    event: K,
-    listener: EventListener<EmbeddedEventData[K]>,
-  ): void {
-    if (!this.eventListeners.has(event)) {
-      this.eventListeners.set(event, []);
-    }
-    this.eventListeners.get(event)?.push(listener);
-  }
-
-  /**
-   * Remove an event listener
-   * @param event Event name
-   * @param listener Event listener function to remove
-   */
-  removeEventListener<K extends keyof EmbeddedEventData>(
-    event: K,
-    listener: EventListener<EmbeddedEventData[K]>,
-  ): void {
-    const listeners = this.eventListeners.get(event);
-    if (listeners) {
-      const index = listeners.indexOf(listener);
-      if (index > -1) {
-        listeners.splice(index, 1);
-      }
-    }
   }
 
   /**

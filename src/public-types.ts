@@ -253,24 +253,4 @@ export interface CortiEmbeddedAPI {
    * Hide the embedded UI
    */
   hide(): void;
-
-  /**
-   * Add an event listener
-   * @param event Event name
-   * @param listener Event listener function
-   */
-  addEventListener<K extends keyof EmbeddedEventData>(
-    event: K,
-    listener: EventListener<EmbeddedEventData[K]>,
-  ): void;
-
-  /**
-   * Remove an event listener
-   * @param event Event name
-   * @param listener Event listener function to remove
-   */
-  removeEventListener<K extends keyof EmbeddedEventData>(
-    event: K,
-    listener: EventListener<EmbeddedEventData[K]>,
-  ): void;
 }
