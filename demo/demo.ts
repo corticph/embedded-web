@@ -40,8 +40,7 @@ export const updateStatus = (): void => {
   if (!statusElement) return;
 
   if (component) {
-    const baseURL =
-      component.getAttribute('baseURL') || 'https://assistant.eu.corti.app';
+    const baseURL = component.getAttribute('baseURL');
 
     statusElement.innerHTML = `
       <strong>Current Status:</strong><br>
@@ -601,6 +600,15 @@ customElements.whenDefined('corti-embedded').then(() => {
     console.log('Navigation changed event:', customEvent);
     addLogEntry(
       `[EVENT] - Navigation changed to: ${customEvent.detail.path}`,
+      'info',
+    );
+  });
+
+  component.addEventListener('usage', (event: Event) => {
+    const customEvent = event as CustomEvent<EmbeddedEventData['usage']>;
+    console.log('Usage event:', customEvent);
+    addLogEntry(
+      `[EVENT] - Usage: ${customEvent.detail.creditsConsumed} credits`,
       'info',
     );
   });

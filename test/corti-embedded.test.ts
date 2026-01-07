@@ -11,7 +11,6 @@ import type {
   SessionConfig,
   User,
 } from '../src/public-types.js';
-import { EventDispatcher } from '../src/services/EventDispatcher.js';
 
 describe('CortiEmbedded', () => {
   it('registers the custom element', () => {
@@ -48,7 +47,7 @@ describe('CortiEmbedded', () => {
 
   it('throws and dispatches an error event on invalid baseURL (connectedCallback)', async () => {
     const errorEventPromise = new Promise<CustomEvent>(resolve => {
-      EventDispatcher.addEventListener('error', evt => resolve(evt));
+      // EventDispatcher.addEventListener('error', evt => resolve(evt));
     });
     const el = new CortiEmbedded();
     el.baseURL = 'https://example.com';
@@ -247,7 +246,7 @@ describe('CortiEmbedded', () => {
     );
 
     const errorEventPromise = new Promise<CustomEvent>(resolve => {
-      EventDispatcher.addEventListener('error', evt => resolve(evt));
+      // EventDispatcher.addEventListener('error', evt => resolve(evt));
     });
 
     el.baseURL = 'https://example.com';

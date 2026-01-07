@@ -1,8 +1,7 @@
-/* eslint-disable import/no-extraneous-dependencies */
-import React from 'react';
 import { createComponent } from '@lit/react';
-import type { CortiEmbeddedAPI, EmbeddedEventData } from '../public-types.js';
+import * as React from 'react';
 import { CortiEmbedded } from '../CortiEmbedded.js';
+import type { CortiEmbeddedAPI, EmbeddedEventData } from '../public-types.js';
 
 const BaseCortiEmbeddedElement = createComponent({
   tagName: 'corti-embedded',
@@ -18,12 +17,13 @@ const BaseCortiEmbeddedElement = createComponent({
     onDocumentUpdated: 'document-updated',
     onNavigationChanged: 'navigation-changed',
     onError: 'error',
+    onUsage: 'usage',
   },
 });
 
 // Props interface
 export interface CortiEmbeddedReactProps {
-  baseURL?: string;
+  baseURL: string;
   visibility?: 'visible' | 'hidden';
 
   // Event handlers
@@ -53,6 +53,7 @@ export interface CortiEmbeddedReactProps {
     event: CustomEvent<EmbeddedEventData['navigation-changed']>,
   ) => void;
   onError?: (event: CustomEvent<EmbeddedEventData['error']>) => void;
+  onUsage?: (event: CustomEvent<EmbeddedEventData['usage']>) => void;
 
   // Additional props
   className?: string;

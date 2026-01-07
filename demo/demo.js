@@ -242,8 +242,7 @@ window.updateStatus = () => {
   const statusElement = document.getElementById('status');
 
   if (component) {
-    const baseURL =
-      component.getAttribute('baseURL') || 'https://assistant.eu.corti.app';
+    const baseURL = component.getAttribute('baseURL');
 
     statusElement.innerHTML = `
             <strong>Current Status:</strong><br>

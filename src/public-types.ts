@@ -161,6 +161,12 @@ export interface EmbeddedEventData {
     // TODO: Implement navigation change event in CA
     path: string;
   };
+  /**
+   * Emitted when usage data is returned following a request that consumed credits
+   */
+  usage: {
+    creditsConsumed: number;
+  };
   error: {
     message: string;
     code?: string; // TODO: ensure that code is a valid error code and we have a mapping to error messages

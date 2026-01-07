@@ -28,7 +28,7 @@ import { buildEmbeddedUrl, isRealEmbeddedLoad } from './utils/embedUrl.js';
 import { formatError } from './utils/errorFormatter.js';
 import {
   PostMessageHandler,
-  PostMessageHandlerCallbacks,
+  type PostMessageHandlerCallbacks,
 } from './utils/PostMessageHandler.js';
 
 export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
@@ -37,8 +37,8 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   @property({ type: String, reflect: true })
   visibility = 'hidden';
 
-  @property({ type: String })
-  baseURL = 'https://assistant.eu.corti.app';
+  @property({ type: String, reflect: true })
+  baseURL!: string;
 
   private postMessageHandler: PostMessageHandler | null = null;
 
@@ -46,6 +46,15 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
   connectedCallback() {
     super.connectedCallback();
+
+    // Ensure baseURL is provided
+    if (!this.baseURL) {
+      this.dispatchErrorEvent({
+        message: 'baseURL is required',
+      });
+      throw new Error('baseURL is required');
+    }
+
     // Validate and normalize the initial baseURL early (fail fast)
     try {
       this.normalizedBaseURL = validateAndNormalizeBaseURL(this.baseURL);
@@ -105,6 +114,11 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         onNavigationChanged: payload => {
           this.dispatchPublicEvent('navigation-changed', {
             path: payload.path,
+          });
+        },
+        onUsage: payload => {
+          this.dispatchPublicEvent('usage', {
+            creditsConsumed: payload.creditsConsumed,
           });
         },
         onError: error => {
@@ -196,6 +210,10 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
           : '';
         if (iframe.getAttribute('src') !== expected) {
           iframe.setAttribute('src', expected);
+          iframe.setAttribute(
+            'allow',
+            `microphone ${expected}; camera ${expected}; device-capture ${expected}; display-capture ${expected}`,
+          );
         }
       }
     }
@@ -472,18 +490,17 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   }
 
   render() {
-    const allowedOrigin = this.normalizedBaseURL
-      ? new URL(this.normalizedBaseURL).origin
-      : "'self'";
-    const allow = `microphone 'self' ${allowedOrigin} ; camera 'self' ${allowedOrigin} ; device-capture 'self' ${allowedOrigin}`;
+    // Don't render if baseURL is not provided
+    if (!this.baseURL) {
+      return html`<div>baseURL is required</div>`;
+    }
+
     return html`
       <iframe
-        src=${this.normalizedBaseURL
-          ? buildEmbeddedUrl(this.normalizedBaseURL)
-          : ''}
+        src=${buildEmbeddedUrl(validateAndNormalizeBaseURL(this.baseURL))}
         title="Corti Embedded UI"
         sandbox=${'allow-forms allow-modals allow-scripts allow-same-origin' as any}
-        allow=${allow}
+        allow="microphone *; camera *; device-capture *; display-capture *"
         @load=${(event: Event) => this.handleIframeLoad(event)}
         @unload=${() => this.postMessageHandler?.destroy()}
         style=${this.visibility === 'hidden'

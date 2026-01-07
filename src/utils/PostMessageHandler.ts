@@ -1,4 +1,4 @@
-import { Corti } from '@corti/sdk';
+import type { Corti } from '@corti/sdk';
 import type {
   AddFactsPayload,
   AnyEmbeddedEvent,
@@ -29,6 +29,7 @@ export interface PostMessageHandlerCallbacks {
     document: Corti.DocumentsGetResponse;
   }) => void;
   onNavigationChanged?: (payload: any) => void;
+  onUsage?: (payload: EmbeddedEventData['usage']) => void;
   onError?: (error: {
     message: string;
     code?: string;
@@ -128,6 +129,9 @@ export class PostMessageHandler {
         break;
       case 'navigationChanged':
         this.callbacks.onNavigationChanged?.(payload);
+        break;
+      case 'usage':
+        this.callbacks.onUsage?.(payload as EmbeddedEventData['usage']);
         break;
       default:
         console.warn(`Unhandled event type: ${eventType}`);
