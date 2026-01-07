@@ -475,8 +475,8 @@ function CortiEmbeddedDemo() {
             </button>
           </div>
           <div className="log">
-            {log.map((entry, index) => (
-              <div key={index} className={`log-entry log-${entry.type}`}>
+            {log.map(entry => (
+              <div key={entry.time} className={`log-entry log-${entry.type}`}>
                 [{entry.time}] {entry.message}
               </div>
             ))}

@@ -28,8 +28,8 @@
       "default": "./dist/web-bundle.js"
     },
     "./react": {
-      "import": "./dist/index.js",
-      "default": "./dist/index.js"
+      "import": "./dist/bundle.js",
+      "default": "./dist/bundle.js"
     }
   },
   "jsdelivr": "./dist/web-bundle.js",
@@ -40,8 +40,8 @@
   "scripts": {
     "analyze": "cem analyze --litelement",
     "build": "tsc && npm run analyze -- --exclude dist",
-    "build:bundle": "esbuild dist/index.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser --external:react",
-    "build:web-bundle": "esbuild dist/web-index.js --bundle --outfile=dist/web-bundle.js --format=esm --platform=browser",
+    "build:bundle": "esbuild dist/index.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser --external:react --define:process.env.NODE_ENV='\"production\"' --minify",
+    "build:web-bundle": "esbuild dist/web-index.js --bundle --outfile=dist/web-bundle.js --format=esm --platform=browser --define:process.env.NODE_ENV='\"production\"' --minify",
     "build:demo": "esbuild demo/react-demo.tsx --bundle --outfile=demo/react-demo-bundle.js --format=esm --platform=browser --jsx=automatic --loader:.tsx=tsx",
     "release": "npm run build && npm run build:bundle && npm run build:web-bundle && npm publish --access public",
     "start": "npm run build && npm run build:demo && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"esbuild demo/react-demo.tsx --bundle --outfile=demo/react-demo-bundle.js --format=esm --platform=browser --jsx=automatic --loader:.tsx=tsx --watch\" \"web-dev-server\"",
