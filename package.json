@@ -23,11 +23,13 @@
   "module": "dist/web-bundle.js",
   "exports": {
     ".": {
+      "types": "./dist/web-bundle.d.ts",
       "import": "./dist/web-bundle.js",
       "browser": "./dist/web-bundle.js",
       "default": "./dist/web-bundle.js"
     },
     "./react": {
+      "types": "./dist/react/index.d.ts",
       "import": "./dist/bundle.js",
       "default": "./dist/bundle.js"
     }
