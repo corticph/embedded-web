@@ -259,6 +259,7 @@ import {
 - `onRecordingStarted` / `onRecordingStopped`: Recording status changes
 - `onDocumentGenerated` / `onDocumentUpdated`: Document events
 - `onNavigationChanged`: Navigation within the embedded UI changed
+- `onUsage`: Usage data (credits used)
 - `onError`: An error occurred
 
 ### Event Data Access

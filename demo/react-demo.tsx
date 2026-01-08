@@ -22,7 +22,7 @@ function CortiEmbeddedDemo() {
   ]);
   const [status, setStatus] = useState({
     isReady: false,
-    baseURL: 'https://assistant.staging-eu.corti.app',
+    baseURL: 'https://assistant.eu.corti.app',
   });
 
   // Form states
