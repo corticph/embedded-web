@@ -28,7 +28,7 @@ npm install react @types/react
 ```html
 <corti-embedded
   id="corti-component"
-  base-url="https://assistant.eu.corti.app"
+  base-url="https://assistant.eu.corti.app" <!-- REQUIRED -->
 ></corti-embedded>
 ```
 
@@ -85,7 +85,7 @@ function App() {
       const user = await cortiRef.current.auth({
         access_token: 'your-token',
         token_type: 'Bearer',
-        // ... other credentials
+        // ... rest of the token response
       });
       console.log('Authenticated:', user);
     } catch (error) {
@@ -99,11 +99,12 @@ function App() {
 
       <CortiEmbeddedReact
         ref={cortiRef}
-        baseURL="https://assistant.eu.corti.app"
+        baseURL="https://assistant.eu.corti.app" // REQUIRED
         visibility="visible"
         onReady={handleReady}
-        onAuthChanged={handleAuthChanged}
         style={{ width: '100%', height: '500px' }}
+        // or use className
+        className="w-full h-full"
       />
     </div>
   );
@@ -294,5 +295,3 @@ For detailed React usage examples, see [docs/react-usage.md](./docs/react-usage.
 - **React export**: Web component + React component (`@corti/embedded-web/react`)
 - **No dependencies**: Web component bundle has zero external dependencies
 - **Peer dependencies**: React components require React as peer dependency only
-
-This structure ensures maximum compatibility while keeping the core web component lightweight and framework-agnostic.

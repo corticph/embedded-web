@@ -15,6 +15,7 @@ import React, { useRef } from 'react';
 import {
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
+  type EmbeddedEventData,
 } from '@corti/embedded-web/react';
 
 function MyApp() {
@@ -24,17 +25,14 @@ function MyApp() {
     console.log('Corti embedded component is ready!');
   };
 
-  const handleAuthChanged = (event: Event) => {
-    const customEvent = event as CustomEvent<{ user: any }>;
-    console.log('User authenticated:', customEvent.detail.user);
+  const handleAuthChanged = (
+    event: CustomEvent<EmbeddedEventData['auth-changed']>,
+  ) => {
+    console.log('User authenticated:', event.detail.user);
   };
 
-  const handleError = (event: Event) => {
-    const customEvent = event as CustomEvent<{
-      message: string;
-      code?: string;
-    }>;
-    console.error('Corti error:', customEvent.detail.message);
+  const handleError = (event: CustomEvent<EmbeddedEventData['error']>) => {
+    console.error('Corti error:', event.detail.message);
   };
 
   return (
