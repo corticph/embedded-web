@@ -61,6 +61,8 @@ export interface CortiEmbeddedReactProps {
 }
 
 export type CortiEmbeddedReactRef = CortiEmbedded & CortiEmbeddedAPI;
+// Export public types
+export * from '../public-types.js';
 
 export const CortiEmbeddedReact = React.forwardRef<
   CortiEmbeddedReactRef,

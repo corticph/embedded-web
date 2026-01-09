@@ -52,7 +52,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       this.dispatchErrorEvent({
         message: 'baseURL is required',
       });
-      throw new Error('baseURL is required');
+      return;
     }
 
     // Validate and normalize the initial baseURL early (fail fast)
