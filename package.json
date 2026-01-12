@@ -14,35 +14,49 @@
     "corti",
     "embedded",
     "web",
-    "sdk"
+    "sdk",
+    "react",
+    "react-component"
   ],
   "type": "module",
-  "main": "dist/index.js",
-  "module": "dist/index.js",
+  "main": "dist/web-bundle.js",
+  "module": "dist/web-bundle.js",
   "exports": {
-    "import": "./dist/index.js",
-    "browser": "./dist/bundle.js",
-    "default": "./dist/bundle.js"
+    ".": {
+      "types": "./dist/web-bundle.d.ts",
+      "import": "./dist/web-bundle.js",
+      "browser": "./dist/web-bundle.js",
+      "default": "./dist/web-bundle.js"
+    },
+    "./react": {
+      "types": "./dist/react/index.d.ts",
+      "import": "./dist/bundle.js",
+      "default": "./dist/bundle.js"
+    }
   },
-  "jsdelivr": "./dist/bundle.js",
-  "browser": "./dist/bundle.js",
+  "jsdelivr": "./dist/web-bundle.js",
+  "browser": "./dist/web-bundle.js",
   "files": [
     "dist"
   ],
   "scripts": {
     "analyze": "cem analyze --litelement",
     "build": "tsc && npm run analyze -- --exclude dist",
-    "build:bundle": "esbuild dist/src/index.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser",
-    "release": "npm run build && npm run build:bundle && npm publish --access public",
-    "start": "npm run build && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"web-dev-server\"",
+    "build:bundle": "esbuild dist/index.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser --external:react --define:process.env.NODE_ENV='\"production\"' --minify",
+    "build:web-bundle": "esbuild dist/web-index.js --bundle --outfile=dist/web-bundle.js --format=esm --platform=browser --define:process.env.NODE_ENV='\"production\"' --minify",
+    "build:demo": "esbuild demo/react-demo.tsx --bundle --outfile=demo/react-demo-bundle.js --format=esm --platform=browser --jsx=automatic --loader:.tsx=tsx",
+    "release": "npm run build && npm run build:bundle && npm run build:web-bundle && npm publish --access public",
+    "start": "npm run build && npm run build:demo && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"esbuild demo/react-demo.tsx --bundle --outfile=demo/react-demo-bundle.js --format=esm --platform=browser --jsx=automatic --loader:.tsx=tsx --watch\" \"web-dev-server\"",
+    "start:simple": "npm run build && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"web-dev-server\"",
     "prepublish": "tsc && npm run analyze -- --exclude dist",
-    "lint": "eslint --ext .ts,.tsx src --ignore-path .gitignore && prettier \"src/**/*.ts\" --check --ignore-path .gitignore",
-    "format": "eslint --ext .ts,.tsx src --fix --ignore-path .gitignore && prettier \"src/**/*.ts\" --write --ignore-path .gitignore",
+    "lint": "eslint --ext .ts,.tsx src --ignore-path .gitignore && prettier \"src/**/*.{ts,tsx}\" --check --ignore-path .gitignore",
+    "format": "eslint --ext .ts,.tsx src --fix --ignore-path .gitignore && prettier \"src/**/*.{ts,tsx}\" --write --ignore-path .gitignore",
     "test": "tsc -p tsconfig.test.json && wtr --coverage",
     "test:watch": "concurrently -k -r \"tsc -p tsconfig.test.json --watch --preserveWatchOutput\" \"wtr --watch\""
   },
   "dependencies": {
     "@corti/sdk": "^0.5.0",
+    "@lit/react": "^1.0.8",
     "lit": "^3.1.4"
   },
   "devDependencies": {
@@ -50,6 +64,7 @@
     "@open-wc/eslint-config": "^12.0.3",
     "@open-wc/testing": "^4.0.0",
     "@types/mocha": "^10.0.7",
+    "@types/react": "^19.2.7",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",
     "@web/dev-server": "^0.4.6",
@@ -61,8 +76,13 @@
     "eslint": "^8.57.0",
     "eslint-config-prettier": "^9.1.0",
     "prettier": "^3.3.2",
+    "react": "^19.2.1",
+    "react-dom": "^19.2.3",
     "tslib": "^2.6.3",
     "typescript": "^5.5.3"
+  },
+  "peerDependencies": {
+    "react": "^18.0.0 || ^19.0.0"
   },
   "customElements": "custom-elements.json",
   "eslintConfig": {

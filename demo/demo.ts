@@ -40,8 +40,7 @@ export const updateStatus = (): void => {
   if (!statusElement) return;
 
   if (component) {
-    const baseURL =
-      component.getAttribute('baseURL') || 'https://assistant.eu.corti.app';
+    const baseURL = component.getAttribute('baseURL');
 
     statusElement.innerHTML = `
       <strong>Current Status:</strong><br>
@@ -531,27 +530,25 @@ customElements.whenDefined('corti-embedded').then(() => {
     addLogEntry(`[EVENT] - Component error: ${event.message}`, 'error');
   });
 
-  component.addEventListener(
-    'auth-changed',
-    (event: EmbeddedEventData['auth-changed']) => {
-      console.log('Auth changed event:', event);
-      addLogEntry(
-        `[EVENT] - User authenticated: ${event.user.email}`,
-        'success',
-      );
-    },
-  );
+  component.addEventListener('auth-changed', (event: Event) => {
+    const customEvent = event as CustomEvent<EmbeddedEventData['auth-changed']>;
+    console.log('Auth changed event:', customEvent);
+    addLogEntry(
+      `[EVENT] - User authenticated: ${customEvent.detail.user.email}`,
+      'success',
+    );
+  });
 
-  component.addEventListener(
-    'interaction-created',
-    (event: EmbeddedEventData['interaction-created']) => {
-      console.log('Interaction created event:', event);
-      addLogEntry(
-        `[EVENT] - Interaction created: ${event.interaction.id}`,
-        'success',
-      );
-    },
-  );
+  component.addEventListener('interaction-created', (event: Event) => {
+    const customEvent = event as CustomEvent<
+      EmbeddedEventData['interaction-created']
+    >;
+    console.log('Interaction created event:', customEvent);
+    addLogEntry(
+      `[EVENT] - Interaction created: ${customEvent.detail.interaction.id}`,
+      'success',
+    );
+  });
 
   component.addEventListener('recording-started', () => {
     console.log('Recording started event');
@@ -563,38 +560,56 @@ customElements.whenDefined('corti-embedded').then(() => {
     addLogEntry('[EVENT] - Recording stopped (event)', 'info');
   });
 
-  component.addEventListener(
-    'document-generated',
-    (event: EmbeddedEventData['document-generated']) => {
-      console.log('Document generated event:', event);
-      addLogEntry(
-        `[EVENT] - Document generated: ${event.document.id}`,
-        'success',
-      );
-    },
-  );
+  component.addEventListener('document-generated', (event: Event) => {
+    const customEvent = event as CustomEvent<
+      EmbeddedEventData['document-generated']
+    >;
+    console.log('Document generated event:', customEvent);
+    addLogEntry(
+      `[EVENT] - Document generated: ${customEvent.detail.document.id}`,
+      'success',
+    );
+  });
 
-  component.addEventListener(
-    'document-updated',
-    (event: EmbeddedEventData['document-updated']) => {
-      console.log('Document updated event:', event);
-      addLogEntry(`[EVENT] - Document updated: ${event.document.id}`, 'info');
-    },
-  );
+  component.addEventListener('document-updated', (event: Event) => {
+    const customEvent = event as CustomEvent<
+      EmbeddedEventData['document-updated']
+    >;
+    console.log('Document updated event:', customEvent);
+    addLogEntry(
+      `[EVENT] - Document updated: ${customEvent.detail.document.id}`,
+      'info',
+    );
+  });
 
-  component.addEventListener(
-    'document-synced',
-    (event: EmbeddedEventData['document-synced']) => {
-      console.log('Document synced event:', event);
-      addLogEntry(`[EVENT] - Document synced: ${event.document.id}`, 'success');
-    },
-  );
+  component.addEventListener('document-synced', (event: Event) => {
+    const customEvent = event as CustomEvent<
+      EmbeddedEventData['document-synced']
+    >;
+    console.log('Document synced event:', customEvent);
+    addLogEntry(
+      `[EVENT] - Document synced: ${customEvent.detail.document.id}`,
+      'success',
+    );
+  });
 
-  component.addEventListener(
-    'navigation-changed',
-    (event: EmbeddedEventData['navigation-changed']) => {
-      console.log('Navigation changed event:', event);
-      addLogEntry(`[EVENT] - Navigation changed to: ${event.path}`, 'info');
-    },
-  );
+  component.addEventListener('navigation-changed', (event: Event) => {
+    const customEvent = event as CustomEvent<
+      EmbeddedEventData['navigation-changed']
+    >;
+    console.log('Navigation changed event:', customEvent);
+    addLogEntry(
+      `[EVENT] - Navigation changed to: ${customEvent.detail.path}`,
+      'info',
+    );
+  });
+
+  component.addEventListener('usage', (event: Event) => {
+    const customEvent = event as CustomEvent<EmbeddedEventData['usage']>;
+    console.log('Usage event:', customEvent);
+    addLogEntry(
+      `[EVENT] - Usage: ${customEvent.detail.creditsConsumed} credits`,
+      'info',
+    );
+  });
 });

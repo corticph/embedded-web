@@ -15,6 +15,7 @@ function routeLoggerPlugin() {
       console.log('\n📡 Available routes:');
       console.log(`  • ${baseUrl}/demo/`);
       console.log(`  • ${baseUrl}/demo/typescript-demo.html`);
+      console.log(`  • ${baseUrl}/demo/react-demo.html`);
       console.log('');
     },
   };
@@ -29,9 +30,10 @@ export default /** @type {import('@web/dev-server').DevServerConfig} */ ({
   plugins: [
     routeLoggerPlugin(),
 
-    /** Compile TypeScript on-the-fly for development */
+    /** Compile TypeScript/TSX on-the-fly for development */
     esbuildPlugin({
       ts: true,
+      tsx: true,
       target: 'auto',
       tsconfig: './tsconfig.json',
     }),

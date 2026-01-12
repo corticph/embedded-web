@@ -161,6 +161,12 @@ export interface EmbeddedEventData {
     // TODO: Implement navigation change event in CA
     path: string;
   };
+  /**
+   * Emitted when usage data is returned following a request that consumed credits
+   */
+  usage: {
+    creditsConsumed: number;
+  };
   error: {
     message: string;
     code?: string; // TODO: ensure that code is a valid error code and we have a mapping to error messages
@@ -253,24 +259,4 @@ export interface CortiEmbeddedAPI {
    * Hide the embedded UI
    */
   hide(): void;
-
-  /**
-   * Add an event listener
-   * @param event Event name
-   * @param listener Event listener function
-   */
-  addEventListener<K extends keyof EmbeddedEventData>(
-    event: K,
-    listener: EventListener<EmbeddedEventData[K]>,
-  ): void;
-
-  /**
-   * Remove an event listener
-   * @param event Event name
-   * @param listener Event listener function to remove
-   */
-  removeEventListener<K extends keyof EmbeddedEventData>(
-    event: K,
-    listener: EventListener<EmbeddedEventData[K]>,
-  ): void;
 }
