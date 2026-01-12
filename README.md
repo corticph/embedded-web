@@ -50,8 +50,8 @@ const interaction = await myComponent.createInteraction({
 });
 
 await myComponent.configureSession({"defaultTemplateKey": "soap_note"});
-await myComponent.addFacts({"facts": [{"text": "Chest pain", "group": "other"}]});
-await myComponent.navigate({ path: `/session/${interaction.id}` });
+await myComponent.addFacts([{"text": "Chest pain", "group": "other"}]);
+await myComponent.navigate('/interactions/123');
 await myComponent.show()
 ```
 
@@ -154,18 +154,16 @@ await component.configureSession({
 #### addFacts
 
 ```javascript
-await component.addFacts({
-  facts: [
+await component.addFacts([
     { text: 'Patient reports chest pain', group: 'subjective' },
     { text: 'BP 120/80', group: 'vitals' },
   ],
-});
 ```
 
 #### navigate
 
 ```javascript
-await component.navigate({ path: '/interactions/123' });
+await component.navigate('/interactions/123');
 ```
 
 #### createInteraction

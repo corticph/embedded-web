@@ -10,7 +10,6 @@ export type {
   ConfigureAppResponsePayload,
   CortiEmbeddedAPI,
   EmbeddedEventData,
-  EventListener,
   Fact,
   InteractionDetails,
   SessionConfig,

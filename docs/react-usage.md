@@ -156,9 +156,9 @@ const handleAuthChanged = (event: Event) => {
 
 // Use in component
 <CortiEmbeddedReact
-  onInteractionCreated={handleInteractionCreated}
+  onInteractionCreated={handleInteractionCreated} // NOT IMPLEMENTED YET
   onDocumentGenerated={handleDocumentGenerated}
-  onAuthChanged={handleAuthChanged}
+  onAuthChanged={handleAuthChanged} // NOT IMPLEMENTED YET
   // ... other props
 />;
 ```
@@ -166,13 +166,13 @@ const handleAuthChanged = (event: Event) => {
 ## Available Events
 
 - `onReady`: Component is ready to receive API calls
-- `onAuthChanged`: User authentication status changed
-- `onInteractionCreated`: New interaction was created
+- `onAuthChanged`: User authentication status changed // Limited access - NOT IMPLEMENTED
+- `onInteractionCreated`: New interaction was created // Limited access - NOT IMPLEMENTED
 - `onRecordingStarted`: Recording started
 - `onRecordingStopped`: Recording stopped
 - `onDocumentGenerated`: Document was generated
 - `onDocumentUpdated`: Document was updated
-- `onNavigationChanged`: Navigation within the embedded UI changed
+- `onNavigationChanged`: Navigation within the embedded UI changed // Limited access - NOT IMPLEMENTED
 - `onError`: An error occurred
 
 ## API Methods
