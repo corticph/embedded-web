@@ -73,9 +73,10 @@ function App() {
     cortiRef.current?.show();
   };
 
-  const handleAuthChanged = (event: Event) => {
-    const customEvent = event as CustomEvent<EmbeddedEventData['auth-changed']>;
-    console.log('User authenticated:', customEvent.detail.user);
+  const handleAuthChanged = (
+    event: CustomEvent<EmbeddedEventData['auth-changed']>,
+  ) => {
+    console.log('User authenticated:', event.detail.user);
   };
 
   const handleAuth = async () => {
@@ -135,6 +136,7 @@ const authResponse = await component.auth({
   access_token: 'YOUR_JWT',
   token_type: 'Bearer',
   mode: 'stateful',
+  ...
 });
 ```
 
@@ -205,31 +207,7 @@ The component uses a `PostMessageHandler` utility class that:
 - Manages message listeners and cleanup
 - Tracks pending requests with unique IDs
 - Handles response correlation
-- Provides timeout management
 - Ensures proper cleanup on component destruction
-
-## Demo
-
-See `demo/index.html` for a complete working example that demonstrates:
-
-- Component show/hide functionality
-- Authentication
-- Named API methods
-- Advanced custom message sending
-- Real-time message logging
-- Status monitoring
-
-## Building
-
-```bash
-npm install
-npm run build
-```
-
-The built component will be available in the `dist/` directory:
-
-- `dist/web-bundle.js` - Default web component bundle (no React)
-- `dist/bundle.js` - Full bundle including React components (requires React)
 
 ## React Component Features
 
