@@ -101,36 +101,37 @@ export class PostMessageHandler {
 
     // Handle specific events with callbacks
     switch (eventType) {
-      case 'ready':
-      case 'loaded':
+      case 'embedded.ready':
         this.callbacks.onReady?.();
         break;
       case 'authChanged':
         this.callbacks.onAuthChanged?.(payload);
         break;
-      case 'interactionCreated':
+      case 'embedded.interactionCreated':
         this.callbacks.onInteractionCreated?.(payload);
         break;
-      case 'recordingStarted':
+      case 'recording.started':
         this.callbacks.onRecordingStarted?.();
         break;
-      case 'recordingStopped':
+      case 'recording.stopped':
         this.callbacks.onRecordingStopped?.();
         break;
-      case 'documentGenerated':
+      case 'document.generated':
         this.callbacks.onDocumentGenerated?.(
           payload as EmbeddedEventData['document-generated'],
         );
         break;
-      case 'documentUpdated':
+      case 'document.updated':
         this.callbacks.onDocumentUpdated?.(
           payload as EmbeddedEventData['document-updated'],
         );
         break;
-      case 'navigationChanged':
-        this.callbacks.onNavigationChanged?.(payload);
+      case 'embedded.navigated':
+        this.callbacks.onNavigationChanged?.(
+          payload as EmbeddedEventData['navigation-changed'],
+        );
         break;
-      case 'usage':
+      case 'account.creditsConsumed':
         this.callbacks.onUsage?.(payload as EmbeddedEventData['usage']);
         break;
       default:

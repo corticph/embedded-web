@@ -3,24 +3,6 @@ import * as React from 'react';
 import { CortiEmbedded } from '../CortiEmbedded.js';
 import type { CortiEmbeddedAPI, EmbeddedEventData } from '../public-types.js';
 
-const BaseCortiEmbeddedElement = createComponent({
-  tagName: 'corti-embedded',
-  elementClass: CortiEmbedded,
-  react: React,
-  events: {
-    onReady: 'ready',
-    onAuthChanged: 'auth-changed',
-    onInteractionCreated: 'interaction-created',
-    onRecordingStarted: 'recording-started',
-    onRecordingStopped: 'recording-stopped',
-    onDocumentGenerated: 'document-generated',
-    onDocumentUpdated: 'document-updated',
-    onNavigationChanged: 'navigation-changed',
-    onError: 'error',
-    onUsage: 'usage',
-  },
-});
-
 // Props interface
 export interface CortiEmbeddedReactProps {
   baseURL: string;
@@ -32,7 +14,6 @@ export interface CortiEmbeddedReactProps {
   onAuthChanged?: (
     event: CustomEvent<EmbeddedEventData['auth-changed']>,
   ) => void;
-  /** LIMITED ACCESS - not implemented */
   onInteractionCreated?: (
     event: CustomEvent<EmbeddedEventData['interaction-created']>,
   ) => void;
@@ -48,7 +29,6 @@ export interface CortiEmbeddedReactProps {
   onDocumentUpdated?: (
     event: CustomEvent<EmbeddedEventData['document-updated']>,
   ) => void;
-  /** LIMITED ACCESS - not implemented */
   onNavigationChanged?: (
     event: CustomEvent<EmbeddedEventData['navigation-changed']>,
   ) => void;
@@ -61,17 +41,29 @@ export interface CortiEmbeddedReactProps {
 }
 
 export type CortiEmbeddedReactRef = CortiEmbedded & CortiEmbeddedAPI;
+
 // Export public types
 export * from '../public-types.js';
 
-export const CortiEmbeddedReact = React.forwardRef<
-  CortiEmbeddedReactRef,
-  CortiEmbeddedReactProps
->((props, ref) =>
-  React.createElement(BaseCortiEmbeddedElement as any, {
-    ref,
-    ...props,
-  }),
-);
+// Create the component directly without additional forwardRef wrapping
+export const CortiEmbeddedReact = createComponent({
+  tagName: 'corti-embedded',
+  elementClass: CortiEmbedded,
+  react: React,
+  events: {
+    onReady: 'ready',
+    onAuthChanged: 'auth-changed',
+    onInteractionCreated: 'interaction-created',
+    onRecordingStarted: 'recording-started',
+    onRecordingStopped: 'recording-stopped',
+    onDocumentGenerated: 'document-generated',
+    onDocumentUpdated: 'document-updated',
+    onNavigationChanged: 'navigation-changed',
+    onError: 'error',
+    onUsage: 'usage',
+  },
+}) as React.ForwardRefExoticComponent<
+  CortiEmbeddedReactProps & React.RefAttributes<CortiEmbeddedReactRef>
+>;
 
 CortiEmbeddedReact.displayName = 'CortiEmbeddedReact';

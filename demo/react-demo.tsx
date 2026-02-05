@@ -241,7 +241,6 @@ function CortiEmbeddedDemo() {
     try {
       addLogEntry(`Navigating with payload: ${navigatePayload}`, 'info');
       await componentRef.current.navigate(navigatePayload);
-      addLogEntry('Navigation successful', 'success');
     } catch (error) {
       addLogEntry(
         `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -263,10 +262,6 @@ function CortiEmbeddedDemo() {
         'info',
       );
       const response = await componentRef.current.createInteraction(payload);
-      addLogEntry(
-        `Interaction creation successful: ${JSON.stringify(response)}`,
-        'success',
-      );
 
       // Update navigate payload with interaction ID
       if (response.id) {
@@ -451,6 +446,15 @@ function CortiEmbeddedDemo() {
                 ref={componentRef}
                 baseURL={status.baseURL}
                 onReady={handleReady}
+                onInteractionCreated={response =>
+                  addLogEntry(
+                    `Interaction creation successful: ${JSON.stringify(response.detail.interaction)}`,
+                    'success',
+                  )
+                }
+                onNavigationChanged={() =>
+                  addLogEntry('Navigation successful', 'success')
+                }
                 onRecordingStarted={handleRecordingStarted}
                 onRecordingStopped={handleRecordingStopped}
                 onDocumentGenerated={handleDocumentGenerated}
