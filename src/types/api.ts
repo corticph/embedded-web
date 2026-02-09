@@ -1,8 +1,9 @@
 // Public API types for SDK consumers
 
-import type { Corti } from "@corti/sdk";
-
-import type { ConfigureAppPayload, ConfigureAppResponsePayload } from "./config.js";
+import type {
+  ConfigureAppPayload,
+  ConfigureAppResponsePayload,
+} from './config.js';
 import type {
   AuthChangedEventPayload,
   DocumentEventPayload,
@@ -10,13 +11,21 @@ import type {
   InteractionCreatedEventPayload,
   NavigationChangedEventPayload,
   UsageEventPayload,
-} from "./events.js";
-import type { AuthPayload, CreateInteractionPayload, Fact } from "./payloads.js";
-import type { DefaultMode } from "./protocol.js";
+} from './events.js';
+import type {
+  AuthPayload,
+  CreateInteractionPayload,
+  Fact,
+} from './payloads.js';
+import type { DefaultMode } from './protocol.js';
+import type { GetStatusResponsePayload } from './embedded-api.js';
 
-export type { ConfigureAppPayload, ConfigureAppResponsePayload } from "./config.js";
+export type {
+  ConfigureAppPayload,
+  ConfigureAppResponsePayload,
+} from './config.js';
 // Re-export common types for public API
-export type { UserInfo } from "./payloads.js";
+export type { UserInfo } from './payloads.js';
 
 /**
  * Authentication credentials for Assistant
@@ -50,35 +59,18 @@ export interface SessionConfig {
 }
 
 /**
- * Status information about the embedded component
- */
-export interface ComponentStatus {
-  ready: boolean;
-  auth: {
-    authenticated: boolean;
-    user?: User;
-  };
-  currentUrl?: string;
-  interaction?: {
-    encounter: Corti.InteractionsEncounterResponse;
-    documents: Corti.DocumentsListResponse["data"];
-    facts: Corti.FactsListResponse["facts"];
-  };
-}
-
-/**
  * Event data types for component events
  */
 export interface EmbeddedEventData {
   ready: undefined;
-  "auth-changed": AuthChangedEventPayload;
-  "interaction-created": InteractionCreatedEventPayload;
-  "recording-started": undefined;
-  "recording-stopped": undefined;
-  "document-generated": DocumentEventPayload;
-  "document-updated": DocumentEventPayload;
-  "document-synced": DocumentEventPayload;
-  "navigation-changed": NavigationChangedEventPayload;
+  'auth-changed': AuthChangedEventPayload;
+  'interaction-created': InteractionCreatedEventPayload;
+  'recording-started': undefined;
+  'recording-stopped': undefined;
+  'document-generated': DocumentEventPayload;
+  'document-updated': DocumentEventPayload;
+  'document-synced': DocumentEventPayload;
+  'navigation-changed': NavigationChangedEventPayload;
   usage: UsageEventPayload;
   error: ErrorEventPayload;
 }
@@ -104,7 +96,9 @@ export interface CortiEmbeddedAPI {
    * @param encounter Encounter request data
    * @returns Promise resolving to interaction details
    */
-  createInteraction(encounter: CreateInteractionPayload): Promise<InteractionDetails>;
+  createInteraction(
+    encounter: CreateInteractionPayload,
+  ): Promise<InteractionDetails>;
 
   /**
    * Configure the current session
@@ -143,7 +137,7 @@ export interface CortiEmbeddedAPI {
    * Get current component status
    * @returns Promise resolving to current status
    */
-  getStatus(): Promise<ComponentStatus>;
+  getStatus(): Promise<GetStatusResponsePayload>;
 
   /**
    * Configure the application

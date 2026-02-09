@@ -1,20 +1,21 @@
 import type { Corti } from '@corti/sdk';
 import type {
   AddFactsPayload,
-  AnyEmbeddedEvent,
+  AnyEvent,
   AuthPayload,
   AuthResponse,
   ConfigureAppPayload,
   ConfigureAppResponsePayload,
   ConfigureSessionPayload,
+  CreateInteractionPayload,
   CreateInteractionResponse,
   EmbeddedRequest,
   EmbeddedResponse,
-  GetStatusResponse,
+  EmbeddedEventData,
+  GetStatusResponsePayload,
   NavigatePayload,
   SetCredentialsPayload,
-} from '../internal-types.js';
-import type { EmbeddedEventData, InteractionPayload } from '../public-types.js';
+} from '../types';
 
 export interface PostMessageHandlerCallbacks {
   onReady?: () => void;
@@ -90,7 +91,7 @@ export class PostMessageHandler {
     window.addEventListener('message', this.messageListener);
   }
 
-  private handleEvent(eventData: AnyEmbeddedEvent): void {
+  private handleEvent(eventData: AnyEvent): void {
     const eventType = (eventData as any).event;
     const { payload } = eventData;
 
@@ -340,7 +341,7 @@ export class PostMessageHandler {
    * @returns Promise that resolves with interaction details
    */
   async createInteraction(
-    payload: InteractionPayload,
+    payload: CreateInteractionPayload,
   ): Promise<CreateInteractionResponse> {
     const response = await this.postMessage({
       type: 'CORTI_EMBEDDED',
@@ -385,7 +386,7 @@ export class PostMessageHandler {
    * Helper method to get current status
    * @returns Promise that resolves with current status
    */
-  async getStatus(): Promise<GetStatusResponse> {
+  async getStatus(): Promise<GetStatusResponsePayload> {
     const response = await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
@@ -394,7 +395,7 @@ export class PostMessageHandler {
     });
 
     if (response.payload && typeof response.success) {
-      return response.payload as GetStatusResponse;
+      return response.payload as GetStatusResponsePayload;
     }
     throw new Error(response.error);
   }

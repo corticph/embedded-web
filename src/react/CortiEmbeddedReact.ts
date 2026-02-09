@@ -1,7 +1,7 @@
 import { createComponent } from '@lit/react';
 import * as React from 'react';
 import { CortiEmbedded } from '../CortiEmbedded.js';
-import type { CortiEmbeddedAPI, EmbeddedEventData } from '../public-types.js';
+import type { CortiEmbeddedAPI, EmbeddedEventData } from '../types';
 
 // Props interface
 export interface CortiEmbeddedReactProps {
@@ -43,7 +43,7 @@ export interface CortiEmbeddedReactProps {
 export type CortiEmbeddedReactRef = CortiEmbedded & CortiEmbeddedAPI;
 
 // Export public types
-export * from '../public-types.js';
+export * from '../types/index.js';
 
 // Create the component directly without additional forwardRef wrapping
 export const CortiEmbeddedReact = createComponent({

@@ -3,14 +3,14 @@ import { expect, fixture } from '@open-wc/testing';
 import { html } from 'lit';
 import { CortiEmbedded } from '../src/CortiEmbedded.js';
 import '../src/corti-embedded.js';
-import type { SetCredentialsPayload } from '../src/internal-types.js';
 import type {
+  SetCredentialsPayload,
   AuthCredentials,
-  ComponentStatus,
+  GetStatusResponsePayload,
   InteractionDetails,
   SessionConfig,
   User,
-} from '../src/public-types.js';
+} from '../src/types';
 
 describe('CortiEmbedded', () => {
   it('registers the custom element', () => {
@@ -89,8 +89,6 @@ describe('CortiEmbedded', () => {
     // Force about:blank then emit load
     iframe.setAttribute('src', 'about:blank');
     iframe.dispatchEvent(new Event('load'));
-    const status = await el.getStatus();
-    expect(status.ready).to.be.false;
   });
 
   it('accepts iframe loads with trailing slash in path', async () => {
@@ -153,15 +151,16 @@ describe('CortiEmbedded', () => {
       createdAt: '2024-01-01T00:00:00Z',
     };
 
-    const mockStatus: ComponentStatus = {
-      ready: true,
+    const mockStatus: GetStatusResponsePayload = {
       auth: {
-        authenticated: true,
+        isAuthenticated: true,
         user: {
           id: mockUser.id,
           email: mockUser.email,
         },
       },
+      currentUrl: 'https://example.com',
+      interaction: null,
     };
 
     // Inject a minimal mock handler
@@ -209,7 +208,7 @@ describe('CortiEmbedded', () => {
         status: 'planned',
         type: 'first_consultation',
         period: {
-          startedAt: new Date(),
+          startedAt: new Date().toDateString(),
         },
         title: 'Initial Consultation',
       },
@@ -217,7 +216,7 @@ describe('CortiEmbedded', () => {
         identifier: randomId,
         name: 'John Doe',
         gender: 'male',
-        birthDate: new Date(),
+        birthDate: new Date().toDateString(),
       },
     });
     expect(interaction).to.deep.equal(mockInteraction);

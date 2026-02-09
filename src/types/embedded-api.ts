@@ -1,5 +1,8 @@
-import type { ConfigureAppPayload, ConfigureAppResponsePayload } from "./config.js";
-import type { EmbeddedInterviewDetails } from "./generated/interview-details.ts";
+import type {
+  ConfigureAppPayload,
+  ConfigureAppResponsePayload,
+} from './config.js';
+import type { EmbeddedInterviewDetails } from './generated/interview-details.ts';
 import type {
   AddFactsPayload,
   AuthResponse,
@@ -10,8 +13,11 @@ import type {
   NavigatePayload,
   SetCredentialsPayload,
   UserInfo,
-} from "./payloads.js";
+} from './payloads.js';
 
+/**
+ * Status information about the embedded component
+ */
 export interface GetStatusResponsePayload {
   auth: {
     isAuthenticated: boolean;
@@ -24,7 +30,9 @@ export interface GetStatusResponsePayload {
 // Window API Types
 export interface CortiEmbeddedV1API {
   auth(payload: KeycloakTokenResponse): Promise<AuthResponse>;
-  createInteraction(payload: CreateInteractionPayload): Promise<CreateInteractionResponse>;
+  createInteraction(
+    payload: CreateInteractionPayload,
+  ): Promise<CreateInteractionResponse>;
   addFacts(payload: AddFactsPayload): Promise<void>;
   configureSession(payload: ConfigureSessionPayload): Promise<void>;
   configure(payload: ConfigureAppPayload): Promise<ConfigureAppResponsePayload>;
