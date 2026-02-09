@@ -1,4 +1,3 @@
-import type { Corti } from '@corti/sdk';
 import type {
   AddFactsPayload,
   AnyEvent,
@@ -15,6 +14,7 @@ import type {
   GetStatusResponsePayload,
   NavigatePayload,
   SetCredentialsPayload,
+  DocumentEventPayload,
 } from '../types';
 
 export interface PostMessageHandlerCallbacks {
@@ -23,12 +23,9 @@ export interface PostMessageHandlerCallbacks {
   onInteractionCreated?: (payload: any) => void;
   onRecordingStarted?: () => void;
   onRecordingStopped?: () => void;
-  onDocumentGenerated?: (payload: {
-    document: Corti.DocumentsGetResponse;
-  }) => void;
-  onDocumentUpdated?: (payload: {
-    document: Corti.DocumentsGetResponse;
-  }) => void;
+  onDocumentGenerated?: (payload: DocumentEventPayload) => void;
+  onDocumentUpdated?: (payload: DocumentEventPayload) => void;
+  onDocumentSynced?: (payload: DocumentEventPayload) => void;
   onNavigationChanged?: (payload: any) => void;
   onUsage?: (payload: EmbeddedEventData['usage']) => void;
   onError?: (error: {
@@ -125,6 +122,11 @@ export class PostMessageHandler {
       case 'document.updated':
         this.callbacks.onDocumentUpdated?.(
           payload as EmbeddedEventData['document-updated'],
+        );
+        break;
+      case 'document.synced':
+        this.callbacks.onDocumentSynced?.(
+          payload as EmbeddedEventData['document-synced'],
         );
         break;
       case 'embedded.navigated':
@@ -287,7 +289,7 @@ export class PostMessageHandler {
     });
     this.isReady = false;
 
-    if (response.payload && typeof response.success) {
+    if (response.payload && response.success) {
       return (response.payload as AuthResponse).user;
     }
     throw new Error(response.error);
@@ -350,7 +352,7 @@ export class PostMessageHandler {
       payload,
     });
 
-    if (response.payload && typeof response.success) {
+    if (response.payload && response.success) {
       return response.payload as CreateInteractionResponse;
     }
     throw new Error(response.error);
@@ -394,7 +396,7 @@ export class PostMessageHandler {
       payload: {},
     });
 
-    if (response.payload && typeof response.success) {
+    if (response.payload && response.success) {
       return response.payload as GetStatusResponsePayload;
     }
     throw new Error(response.error);
@@ -415,7 +417,7 @@ export class PostMessageHandler {
       payload,
     });
 
-    if (response.payload && typeof response.success) {
+    if (response.payload && response.success) {
       return response.payload as ConfigureAppResponsePayload;
     }
     throw new Error(response.error);

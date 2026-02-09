@@ -109,6 +109,11 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
             document: payload.document,
           });
         },
+        onDocumentSynced: payload => {
+          this.dispatchPublicEvent('document-synced', {
+            document: payload.document,
+          });
+        },
         onNavigationChanged: payload => {
           this.dispatchPublicEvent('navigation-changed', {
             path: payload.path,

@@ -29,6 +29,9 @@ export interface CortiEmbeddedReactProps {
   onDocumentUpdated?: (
     event: CustomEvent<EmbeddedEventData['document-updated']>,
   ) => void;
+  onDocumentSynced?: (
+    event: CustomEvent<EmbeddedEventData['document-synced']>,
+  ) => void;
   onNavigationChanged?: (
     event: CustomEvent<EmbeddedEventData['navigation-changed']>,
   ) => void;
@@ -58,6 +61,7 @@ export const CortiEmbeddedReact = createComponent({
     onRecordingStopped: 'recording-stopped',
     onDocumentGenerated: 'document-generated',
     onDocumentUpdated: 'document-updated',
+    onDocumentSynced: 'document-synced',
     onNavigationChanged: 'navigation-changed',
     onError: 'error',
     onUsage: 'usage',
