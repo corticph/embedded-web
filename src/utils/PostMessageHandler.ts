@@ -1,20 +1,21 @@
-import type { Corti } from '@corti/sdk';
 import type {
   AddFactsPayload,
-  AnyEmbeddedEvent,
+  AnyEvent,
   AuthPayload,
   AuthResponse,
   ConfigureAppPayload,
   ConfigureAppResponsePayload,
   ConfigureSessionPayload,
+  CreateInteractionPayload,
   CreateInteractionResponse,
   EmbeddedRequest,
   EmbeddedResponse,
-  GetStatusResponse,
+  EmbeddedEventData,
+  GetStatusResponsePayload,
   NavigatePayload,
   SetCredentialsPayload,
-} from '../internal-types.js';
-import type { EmbeddedEventData, InteractionPayload } from '../public-types.js';
+  DocumentEventPayload,
+} from '../types';
 
 export interface PostMessageHandlerCallbacks {
   onReady?: () => void;
@@ -22,12 +23,9 @@ export interface PostMessageHandlerCallbacks {
   onInteractionCreated?: (payload: any) => void;
   onRecordingStarted?: () => void;
   onRecordingStopped?: () => void;
-  onDocumentGenerated?: (payload: {
-    document: Corti.DocumentsGetResponse;
-  }) => void;
-  onDocumentUpdated?: (payload: {
-    document: Corti.DocumentsGetResponse;
-  }) => void;
+  onDocumentGenerated?: (payload: DocumentEventPayload) => void;
+  onDocumentUpdated?: (payload: DocumentEventPayload) => void;
+  onDocumentSynced?: (payload: DocumentEventPayload) => void;
   onNavigationChanged?: (payload: any) => void;
   onUsage?: (payload: EmbeddedEventData['usage']) => void;
   onError?: (error: {
@@ -90,7 +88,7 @@ export class PostMessageHandler {
     window.addEventListener('message', this.messageListener);
   }
 
-  private handleEvent(eventData: AnyEmbeddedEvent): void {
+  private handleEvent(eventData: AnyEvent): void {
     const eventType = (eventData as any).event;
     const { payload } = eventData;
 
@@ -101,36 +99,42 @@ export class PostMessageHandler {
 
     // Handle specific events with callbacks
     switch (eventType) {
-      case 'ready':
-      case 'loaded':
+      case 'embedded.ready':
         this.callbacks.onReady?.();
         break;
       case 'authChanged':
         this.callbacks.onAuthChanged?.(payload);
         break;
-      case 'interactionCreated':
+      case 'embedded.interactionCreated':
         this.callbacks.onInteractionCreated?.(payload);
         break;
-      case 'recordingStarted':
+      case 'recording.started':
         this.callbacks.onRecordingStarted?.();
         break;
-      case 'recordingStopped':
+      case 'recording.stopped':
         this.callbacks.onRecordingStopped?.();
         break;
-      case 'documentGenerated':
+      case 'document.generated':
         this.callbacks.onDocumentGenerated?.(
           payload as EmbeddedEventData['document-generated'],
         );
         break;
-      case 'documentUpdated':
+      case 'document.updated':
         this.callbacks.onDocumentUpdated?.(
           payload as EmbeddedEventData['document-updated'],
         );
         break;
-      case 'navigationChanged':
-        this.callbacks.onNavigationChanged?.(payload);
+      case 'document.synced':
+        this.callbacks.onDocumentSynced?.(
+          payload as EmbeddedEventData['document-synced'],
+        );
         break;
-      case 'usage':
+      case 'embedded.navigated':
+        this.callbacks.onNavigationChanged?.(
+          payload as EmbeddedEventData['navigation-changed'],
+        );
+        break;
+      case 'account.creditsConsumed':
         this.callbacks.onUsage?.(payload as EmbeddedEventData['usage']);
         break;
       default:
@@ -285,7 +289,7 @@ export class PostMessageHandler {
     });
     this.isReady = false;
 
-    if (response.payload && typeof response.success) {
+    if (response.payload && response.success) {
       return (response.payload as AuthResponse).user;
     }
     throw new Error(response.error);
@@ -339,7 +343,7 @@ export class PostMessageHandler {
    * @returns Promise that resolves with interaction details
    */
   async createInteraction(
-    payload: InteractionPayload,
+    payload: CreateInteractionPayload,
   ): Promise<CreateInteractionResponse> {
     const response = await this.postMessage({
       type: 'CORTI_EMBEDDED',
@@ -348,7 +352,7 @@ export class PostMessageHandler {
       payload,
     });
 
-    if (response.payload && typeof response.success) {
+    if (response.payload && response.success) {
       return response.payload as CreateInteractionResponse;
     }
     throw new Error(response.error);
@@ -384,7 +388,7 @@ export class PostMessageHandler {
    * Helper method to get current status
    * @returns Promise that resolves with current status
    */
-  async getStatus(): Promise<GetStatusResponse> {
+  async getStatus(): Promise<GetStatusResponsePayload> {
     const response = await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
@@ -392,8 +396,8 @@ export class PostMessageHandler {
       payload: {},
     });
 
-    if (response.payload && typeof response.success) {
-      return response.payload as GetStatusResponse;
+    if (response.payload && response.success) {
+      return response.payload as GetStatusResponsePayload;
     }
     throw new Error(response.error);
   }
@@ -413,7 +417,7 @@ export class PostMessageHandler {
       payload,
     });
 
-    if (response.payload && typeof response.success) {
+    if (response.payload && response.success) {
       return response.payload as ConfigureAppResponsePayload;
     }
     throw new Error(response.error);

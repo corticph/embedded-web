@@ -25,9 +25,12 @@ import type {
 } from "./payloads.js";
 import type { DefaultMode } from "./protocol.js";
 
-export type { ConfigureAppPayload, ConfigureAppResponsePayload } from "./config.js";
+export type {
+  ConfigureAppPayload,
+  ConfigureAppResponsePayload,
+} from './config.js';
 // Re-export common types for public API
-export type { UserInfo } from "./payloads.js";
+export type { UserInfo } from './payloads.js';
 
 /**
  * Authentication credentials for Assistant
@@ -77,14 +80,14 @@ export interface GetStatusResponsePayload {
  */
 export interface EmbeddedEventData {
   ready: undefined;
-  "auth-changed": AuthChangedEventPayload;
-  "interaction-created": InteractionCreatedEventPayload;
-  "recording-started": undefined;
-  "recording-stopped": undefined;
-  "document-generated": DocumentEventPayload;
-  "document-updated": DocumentEventPayload;
-  "document-synced": DocumentEventPayload;
-  "navigation-changed": NavigationChangedEventPayload;
+  'auth-changed': AuthChangedEventPayload;
+  'interaction-created': InteractionCreatedEventPayload;
+  'recording-started': undefined;
+  'recording-stopped': undefined;
+  'document-generated': DocumentEventPayload;
+  'document-updated': DocumentEventPayload;
+  'document-synced': DocumentEventPayload;
+  'navigation-changed': NavigationChangedEventPayload;
   usage: UsageEventPayload;
   error: ErrorEventPayload;
 }
@@ -134,7 +137,9 @@ export interface CortiEmbeddedAPI {
    * @param encounter Encounter request data
    * @returns Promise resolving to interaction details
    */
-  createInteraction(encounter: CreateInteractionPayload): Promise<InteractionDetails>;
+  createInteraction(
+    encounter: CreateInteractionPayload,
+  ): Promise<InteractionDetails>;
 
   /**
    * Configure the current session

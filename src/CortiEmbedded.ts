@@ -9,18 +9,16 @@ import type {
   ConfigureSessionPayload,
   NavigatePayload,
   SetCredentialsPayload,
-} from './internal-types.js';
-import type {
   AuthCredentials,
-  ComponentStatus,
   ConfigureAppResponsePayload,
   CortiEmbeddedAPI,
   EmbeddedEventData,
   InteractionDetails,
-  InteractionPayload,
+  CreateInteractionPayload,
   SessionConfig,
   User,
-} from './public-types.js';
+  GetStatusResponsePayload,
+} from './types';
 import { baseStyles } from './styles/base.js';
 import { containerStyles } from './styles/container-styles.js';
 import { validateAndNormalizeBaseURL } from './utils/baseUrl.js';
@@ -108,6 +106,11 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         },
         onDocumentUpdated: payload => {
           this.dispatchPublicEvent('document-updated', {
+            document: payload.document,
+          });
+        },
+        onDocumentSynced: payload => {
+          this.dispatchPublicEvent('document-synced', {
             document: payload.document,
           });
         },
@@ -261,7 +264,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    * @returns Promise resolving to interaction details
    */
   async createInteraction(
-    encounter: InteractionPayload,
+    encounter: CreateInteractionPayload,
   ): Promise<InteractionDetails> {
     if (!this.postMessageHandler) {
       throw new Error('Component not ready');
@@ -387,16 +390,15 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    * Get current component status
    * @returns Promise resolving to current status
    */
-  async getStatus(): Promise<ComponentStatus> {
+  async getStatus(): Promise<GetStatusResponsePayload> {
     if (!this.postMessageHandler) {
       return {
-        ready: false,
         auth: {
-          authenticated: false,
+          isAuthenticated: false,
           user: undefined,
         },
-        currentUrl: undefined,
-        interaction: undefined,
+        currentUrl: '',
+        interaction: null,
       };
     }
 

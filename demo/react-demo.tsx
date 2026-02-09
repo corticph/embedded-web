@@ -1,8 +1,9 @@
 import { useCallback, useRef, useState } from 'react';
-// eslint-disable-next-line import/no-extraneous-dependencies
+// @ts-ignore - we don't want additional packges installed for the demo
 import { createRoot } from 'react-dom/client';
 import {
   type AuthCredentials,
+  type ConfigureAppPayload,
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
   type Fact,
@@ -31,6 +32,19 @@ function CortiEmbeddedDemo() {
       {
         token: 'test-token-123',
         userId: 'demo-user',
+      },
+      null,
+      2,
+    ),
+  );
+
+  const [configureAppPayload, setConfigureAppPayload] = useState<string>(
+    JSON.stringify(
+      {
+        features: {
+          aiChat: false,
+          syncDocumentAction: true,
+        },
       },
       null,
       2,
@@ -134,6 +148,13 @@ function CortiEmbeddedDemo() {
     [addLogEntry],
   );
 
+  const handleDocumentSynced = useCallback(
+    (event: CustomEvent) => {
+      addLogEntry(`Document synced: ${JSON.stringify(event.detail)}`, 'info');
+    },
+    [addLogEntry],
+  );
+
   const handleError = useCallback(
     (event: CustomEvent) => {
       addLogEntry(`Error: ${JSON.stringify(event.detail)}`, 'error');
@@ -183,6 +204,28 @@ function CortiEmbeddedDemo() {
     } catch (error) {
       addLogEntry(
         `Authentication failed: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      );
+    }
+  };
+
+  const handleConfigureApp = async () => {
+    if (!componentRef.current?.configure) {
+      addLogEntry('Component not ready for configureApp', 'error');
+      return;
+    }
+
+    try {
+      const payload = JSON.parse(configureAppPayload) as ConfigureAppPayload;
+      addLogEntry(
+        `Configuring app with payload: ${JSON.stringify(payload)}`,
+        'info',
+      );
+      await componentRef.current.configure(payload);
+      addLogEntry('App configuration successful', 'success');
+    } catch (error) {
+      addLogEntry(
+        `App configuration failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
     }
@@ -241,7 +284,6 @@ function CortiEmbeddedDemo() {
     try {
       addLogEntry(`Navigating with payload: ${navigatePayload}`, 'info');
       await componentRef.current.navigate(navigatePayload);
-      addLogEntry('Navigation successful', 'success');
     } catch (error) {
       addLogEntry(
         `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -263,10 +305,6 @@ function CortiEmbeddedDemo() {
         'info',
       );
       const response = await componentRef.current.createInteraction(payload);
-      addLogEntry(
-        `Interaction creation successful: ${JSON.stringify(response)}`,
-        'success',
-      );
 
       // Update navigate payload with interaction ID
       if (response.id) {
@@ -343,6 +381,29 @@ function CortiEmbeddedDemo() {
                 type="button"
                 className="postmessage-btn"
                 onClick={handleAuth}
+              >
+                Send
+              </button>
+            </div>
+          </div>
+
+          <div className="demo-section">
+            <div className="demo-title">Configure App</div>
+            <div className="section-row">
+              <details className="auth-payload-section">
+                <summary>⚙️ Settings</summary>
+                <label htmlFor="configure-app-payload">Payload (JSON):</label>
+                <textarea
+                  id="configure-app-payload"
+                  value={configureAppPayload}
+                  onChange={e => setConfigureAppPayload(e.target.value)}
+                  placeholder='{"features": {"aiChat": false}}'
+                />
+              </details>
+              <button
+                type="button"
+                className="postmessage-btn"
+                onClick={handleConfigureApp}
               >
                 Send
               </button>
@@ -451,10 +512,20 @@ function CortiEmbeddedDemo() {
                 ref={componentRef}
                 baseURL={status.baseURL}
                 onReady={handleReady}
+                onInteractionCreated={response =>
+                  addLogEntry(
+                    `Interaction creation successful: ${JSON.stringify(response.detail.interaction)}`,
+                    'success',
+                  )
+                }
+                onNavigationChanged={() =>
+                  addLogEntry('Navigation successful', 'success')
+                }
                 onRecordingStarted={handleRecordingStarted}
                 onRecordingStopped={handleRecordingStopped}
                 onDocumentGenerated={handleDocumentGenerated}
                 onDocumentUpdated={handleDocumentUpdated}
+                onDocumentSynced={handleDocumentSynced}
                 onError={handleError}
                 onUsage={handleUsage}
               />

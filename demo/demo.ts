@@ -1,15 +1,15 @@
 import type {
   AuthCredentials,
-  ComponentStatus,
+  GetStatusResponsePayload,
   ConfigureAppPayload,
   ConfigureAppResponsePayload,
   CortiEmbeddedAPI,
   EmbeddedEventData,
   Fact,
   InteractionDetails,
-  InteractionPayload,
+  CreateInteractionPayload,
   SessionConfig,
-} from '../src/public-types.js';
+} from '../src/types';
 
 // Get the component with proper typing
 const component = document.getElementById('corti-component') as HTMLElement &
@@ -220,7 +220,7 @@ export const createInteraction = async (): Promise<void> => {
         'create-interaction-payload',
       ) as HTMLTextAreaElement;
       const payloadText = payloadElement.value;
-      let payload: InteractionPayload;
+      let payload: CreateInteractionPayload;
 
       try {
         payload = JSON.parse(payloadText);
@@ -336,7 +336,7 @@ export const getStatus = async (): Promise<void> => {
   if (component?.getStatus) {
     try {
       addLogEntry('Getting component status...', 'info');
-      const status: ComponentStatus = await component.getStatus();
+      const status: GetStatusResponsePayload = await component.getStatus();
       addLogEntry(
         `Component status: ${JSON.stringify(status, null, 2)}`,
         'success',
