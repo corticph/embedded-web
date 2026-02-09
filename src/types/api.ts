@@ -1,7 +1,5 @@
 // Public API types for SDK consumers
 
-import type { Corti } from "@corti/sdk";
-
 import type { ConfigureAppPayload, ConfigureAppResponsePayload } from "./config.js";
 import type {
   AuthChangedEventPayload,
@@ -11,7 +9,20 @@ import type {
   NavigationChangedEventPayload,
   UsageEventPayload,
 } from "./events.js";
-import type { AuthPayload, CreateInteractionPayload, Fact } from "./payloads.js";
+import type { EmbeddedInterviewDetails } from "./generated/interview-details.js";
+import type {
+  AddFactsPayload,
+  AuthPayload,
+  AuthResponse,
+  ConfigureSessionPayload,
+  CreateInteractionPayload,
+  CreateInteractionResponse,
+  Fact,
+  KeycloakTokenResponse,
+  NavigatePayload,
+  SetCredentialsPayload,
+  UserInfo,
+} from "./payloads.js";
 import type { DefaultMode } from "./protocol.js";
 
 export type { ConfigureAppPayload, ConfigureAppResponsePayload } from "./config.js";
@@ -52,18 +63,13 @@ export interface SessionConfig {
 /**
  * Status information about the embedded component
  */
-export interface ComponentStatus {
-  ready: boolean;
+export interface GetStatusResponsePayload {
   auth: {
-    authenticated: boolean;
-    user?: User;
+    isAuthenticated: boolean;
+    user?: UserInfo;
   };
-  currentUrl?: string;
-  interaction?: {
-    encounter: Corti.InteractionsEncounterResponse;
-    documents: Corti.DocumentsListResponse["data"];
-    facts: Corti.FactsListResponse["facts"];
-  };
+  currentUrl: string;
+  interaction: EmbeddedInterviewDetails | null;
 }
 
 /**
@@ -81,6 +87,30 @@ export interface EmbeddedEventData {
   "navigation-changed": NavigationChangedEventPayload;
   usage: UsageEventPayload;
   error: ErrorEventPayload;
+}
+
+// Window API Types
+export interface CortiEmbeddedV1API {
+  auth(payload: KeycloakTokenResponse): Promise<AuthResponse>;
+  createInteraction(payload: CreateInteractionPayload): Promise<CreateInteractionResponse>;
+  addFacts(payload: AddFactsPayload): Promise<void>;
+  configureSession(payload: ConfigureSessionPayload): Promise<void>;
+  configure(payload: ConfigureAppPayload): Promise<ConfigureAppResponsePayload>;
+  navigate(payload: NavigatePayload): Promise<void>;
+  startRecording(): Promise<void>;
+  stopRecording(): Promise<void>;
+  setCredentials(payload: SetCredentialsPayload): Promise<void>;
+  getStatus(): Promise<GetStatusResponsePayload>;
+}
+export interface CortiEmbeddedWindowAPI {
+  v1: CortiEmbeddedV1API;
+}
+
+// Extend Window interface
+declare global {
+  interface Window {
+    CortiEmbedded?: CortiEmbeddedWindowAPI;
+  }
 }
 
 /**
@@ -143,7 +173,7 @@ export interface CortiEmbeddedAPI {
    * Get current component status
    * @returns Promise resolving to current status
    */
-  getStatus(): Promise<ComponentStatus>;
+  getStatus(): Promise<GetStatusResponsePayload>;
 
   /**
    * Configure the application
