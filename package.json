@@ -45,7 +45,7 @@
     "build:bundle": "esbuild dist/index.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser --external:react --define:process.env.NODE_ENV='\"production\"' --minify",
     "build:web-bundle": "esbuild dist/web-index.js --bundle --outfile=dist/web-bundle.js --format=esm --platform=browser --define:process.env.NODE_ENV='\"production\"' --minify",
     "build:demo": "esbuild demo/react-demo.tsx --bundle --outfile=demo/react-demo-bundle.js --format=esm --platform=browser --jsx=automatic --loader:.tsx=tsx",
-    "release": "npm run build && npm run build:bundle && npm run build:web-bundle && npm publish --access public",
+    "prerelease": "npm run build && npm run build:bundle && npm run build:web-bundle",
     "start": "npm run build && npm run build:demo && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"esbuild demo/react-demo.tsx --bundle --outfile=demo/react-demo-bundle.js --format=esm --platform=browser --jsx=automatic --loader:.tsx=tsx --watch\" \"web-dev-server\"",
     "start:simple": "npm run build && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"web-dev-server\"",
     "prepublish": "tsc && npm run analyze -- --exclude dist",
