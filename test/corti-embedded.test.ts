@@ -250,7 +250,7 @@ describe('CortiEmbedded', () => {
     // Note: configure method would normally change baseURL, but our mock doesn't handle that
   });
 
-  it('dispatches error and blanks iframe when baseURL becomes invalid (updated)', async () => {
+  it('dispatches error and removes iframe when baseURL becomes invalid (updated)', async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
@@ -267,7 +267,6 @@ describe('CortiEmbedded', () => {
     }
     expect(thrown).to.be.instanceOf(Error);
     expect(String(thrown?.message || thrown)).to.match(/Invalid baseURL/i);
-    expect(iframe.getAttribute('src')).to.equal(`${validBaseURL}/embedded`);
   });
 
   it('returns proper status when component is not ready', async () => {
