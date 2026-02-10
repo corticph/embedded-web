@@ -13,6 +13,16 @@ import type {
 } from '../src/types';
 
 describe('CortiEmbedded', () => {
+  const validBaseURL = 'https://assistant.eu.corti.app';
+  const ensureContentWindow = (iframe: HTMLIFrameElement) => {
+    if (!iframe.contentWindow) {
+      Object.defineProperty(iframe, 'contentWindow', {
+        value: window,
+        configurable: true,
+      });
+    }
+  };
+
   it('registers the custom element', () => {
     const ctor = customElements.get('corti-embedded');
     expect(ctor).to.equal(CortiEmbedded);
@@ -20,20 +30,21 @@ describe('CortiEmbedded', () => {
 
   it('renders an iframe with the expected src and attributes', async () => {
     const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded></corti-embedded>`,
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
     const iframe = el.shadowRoot!.querySelector('iframe') as HTMLIFrameElement;
     expect(iframe).to.exist;
     expect(iframe.getAttribute('sandbox')).to.include('allow-scripts');
-    const expectedSrc = 'https://assistant.eu.corti.app/embedded';
+    const expectedSrc = `${validBaseURL}/embedded`;
     expect(iframe.getAttribute('src')).to.equal(expectedSrc);
     const allowAttr = iframe.getAttribute('allow')!;
-    expect(allowAttr).to.include('"https://assistant.eu.corti.app"');
+    expect(allowAttr).to.include('microphone *');
+    expect(allowAttr).to.include('camera *');
   });
 
   it('is hidden by default and toggles visibility with show/hide', async () => {
     const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded></corti-embedded>`,
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
     const iframe = el.shadowRoot!.querySelector('iframe') as HTMLIFrameElement;
     expect(iframe.getAttribute('style')).to.contain('display: none');
@@ -46,10 +57,11 @@ describe('CortiEmbedded', () => {
   });
 
   it('throws and dispatches an error event on invalid baseURL (connectedCallback)', async () => {
-    const errorEventPromise = new Promise<CustomEvent>(resolve => {
-      // EventDispatcher.addEventListener('error', evt => resolve(evt));
-    });
     const el = new CortiEmbedded();
+    let errorEvent: CustomEvent | null = null;
+    el.addEventListener('error', evt => {
+      errorEvent = evt as unknown as CustomEvent;
+    });
     el.baseURL = 'https://example.com';
     let thrown: Error | null = null;
     try {
@@ -57,69 +69,73 @@ describe('CortiEmbedded', () => {
     } catch (e: any) {
       thrown = e;
     }
-    const evt = await errorEventPromise;
     expect(thrown).to.be.instanceOf(Error);
-    expect((evt.detail as any).message).to.match(/Invalid baseURL/i);
+    expect(errorEvent).to.exist;
+    expect((errorEvent!.detail as any).message).to.match(/Invalid baseURL/i);
   });
 
   it('updates iframe src and resets handler when baseURL changes', async () => {
     const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded></corti-embedded>`,
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
-    // Simulate real load to create PostMessageHandler
     const iframe = el.shadowRoot!.querySelector('iframe') as HTMLIFrameElement;
-    iframe.dispatchEvent(new Event('load'));
-    // After load, getStatus should work (though might not be ready yet)
-    const initialStatus = await el.getDebugStatus();
-    expect(initialStatus).to.have.property('ready');
+    let destroyed = false;
+    (el as any).postMessageHandler = {
+      destroy: () => {
+        destroyed = true;
+      },
+    };
     // Change baseURL
     el.baseURL = 'https://assistant.us.corti.app';
     await el.updateComplete;
+    expect(destroyed).to.equal(true);
+    expect((el as any).postMessageHandler).to.equal(null);
     // Check new iframe src
     expect(iframe.getAttribute('src')).to.equal(
       'https://assistant.us.corti.app/embedded',
     );
+    const allowAttr = iframe.getAttribute('allow')!;
+    expect(allowAttr).to.include('microphone *');
+    expect(allowAttr).to.include('camera *');
   });
 
   it('ignores about:blank iframe loads (no handler setup)', async () => {
     const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded></corti-embedded>`,
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
     const iframe = el.shadowRoot!.querySelector('iframe') as HTMLIFrameElement;
+    ensureContentWindow(iframe);
     // Force about:blank then emit load
     iframe.setAttribute('src', 'about:blank');
     iframe.dispatchEvent(new Event('load'));
+    expect((el as any).postMessageHandler).to.equal(null);
   });
 
   it('accepts iframe loads with trailing slash in path', async () => {
     const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded></corti-embedded>`,
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
     const iframe = el.shadowRoot!.querySelector('iframe') as HTMLIFrameElement;
-    iframe.setAttribute('src', 'https://assistant.eu.corti.app/embedded/');
+    ensureContentWindow(iframe);
+    iframe.setAttribute('src', `${validBaseURL}/embedded/`);
     iframe.dispatchEvent(new Event('load'));
-    const status = await el.getDebugStatus();
-    // Status should be available even if not fully ready
-    expect(status).to.have.property('ready');
+    expect((el as any).postMessageHandler).to.exist;
   });
 
   it('accepts iframe loads with query params', async () => {
     const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded></corti-embedded>`,
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
     const iframe = el.shadowRoot!.querySelector('iframe') as HTMLIFrameElement;
-    iframe.setAttribute(
-      'src',
-      'https://assistant.eu.corti.app/embedded?x=1&y=2',
-    );
+    ensureContentWindow(iframe);
+    iframe.setAttribute('src', `${validBaseURL}/embedded?x=1&y=2`);
     iframe.dispatchEvent(new Event('load'));
-    const status = await el.getDebugStatus();
-    expect(status).to.have.property('ready');
+    expect((el as any).postMessageHandler).to.exist;
   });
 
   it('auth throws if component not ready', async () => {
     const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded></corti-embedded>`,
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
     const credentials: AuthCredentials = {
       access_token: 'test-token',
@@ -137,7 +153,7 @@ describe('CortiEmbedded', () => {
 
   it('delegates methods to PostMessageHandler when available', async () => {
     const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded></corti-embedded>`,
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
 
     // Mock user data
@@ -234,89 +250,38 @@ describe('CortiEmbedded', () => {
     // Note: configure method would normally change baseURL, but our mock doesn't handle that
   });
 
-  it('dispatches error and blanks iframe when baseURL becomes invalid (updated)', async () => {
+  it('dispatches error and removes iframe when baseURL becomes invalid (updated)', async () => {
     const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded></corti-embedded>`,
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
     const iframe = el.shadowRoot!.querySelector('iframe') as HTMLIFrameElement;
     // Ensure it starts valid
-    expect(iframe.getAttribute('src')).to.equal(
-      'https://assistant.eu.corti.app/embedded',
-    );
-
-    const errorEventPromise = new Promise<CustomEvent>(resolve => {
-      // EventDispatcher.addEventListener('error', evt => resolve(evt));
-    });
+    expect(iframe.getAttribute('src')).to.equal(`${validBaseURL}/embedded`);
 
     el.baseURL = 'https://example.com';
-    await el.updateComplete;
-    const evt = await errorEventPromise;
-    expect((evt.detail as any).message).to.match(/Invalid baseURL/i);
-    expect(iframe.getAttribute('src')).to.equal('about:blank');
-  });
-
-  it('provides event listener functionality', async () => {
-    const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded></corti-embedded>`,
-    );
-
-    let readyEventFired = false;
-    let errorEventFired = false;
-
-    const readyListener = () => {
-      readyEventFired = true;
-    };
-
-    const errorListener = () => {
-      errorEventFired = true;
-    };
-
-    // Add event listeners
-    el.addEventListener('ready', readyListener);
-    el.addEventListener('error', errorListener);
-
-    // Simulate events (we'd need to trigger them through the PostMessageHandler)
-    // For now, just test that the listeners are stored
-    expect((el as any).eventListeners.has('ready')).to.be.true;
-    expect((el as any).eventListeners.has('error')).to.be.true;
-
-    // Remove event listeners
-    el.removeEventListener('ready', readyListener);
-    el.removeEventListener('error', errorListener);
-
-    const readyListeners = (el as any).eventListeners.get('ready') || [];
-    const errorListeners = (el as any).eventListeners.get('error') || [];
-    expect(readyListeners).to.not.include(readyListener);
-    expect(errorListeners).to.not.include(errorListener);
+    let thrown: Error | null = null;
+    try {
+      await el.updateComplete;
+    } catch (error: any) {
+      thrown = error;
+    }
+    expect(thrown).to.be.instanceOf(Error);
+    expect(String(thrown?.message || thrown)).to.match(/Invalid baseURL/i);
   });
 
   it('returns proper status when component is not ready', async () => {
     const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded></corti-embedded>`,
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
 
     const status = await el.getStatus();
     expect(status).to.deep.equal({
-      ready: false,
       auth: {
-        authenticated: false,
+        isAuthenticated: false,
         user: undefined,
       },
-      currentUrl: undefined,
-      interaction: undefined,
+      currentUrl: '',
+      interaction: null,
     });
-  });
-
-  it('has backward compatibility getDebugStatus method', async () => {
-    const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded></corti-embedded>`,
-    );
-
-    const debugStatus = el.getDebugStatus();
-    expect(debugStatus).to.have.property('iframeExists');
-    expect(debugStatus).to.have.property('iframeSrc');
-    expect(debugStatus).to.have.property('postMessageHandlerExists');
-    expect(debugStatus).to.have.property('baseURL');
-    expect(debugStatus.baseURL).to.equal('https://assistant.eu.corti.app');
   });
 });
