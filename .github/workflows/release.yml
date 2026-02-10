@@ -108,23 +108,12 @@ jobs:
           npm version --no-git-tag-version "$TAG_VERSION"
 
       - name: Publish to npm
-        env:
-          NODE_AUTH_TOKEN: ${{ secrets.NPM_TOKEN }}
-        run: |
-          if [ -z "$NODE_AUTH_TOKEN" ]; then
-            echo "⚠️  NPM_TOKEN secret is not set. Skipping publish."
-            echo "ℹ️  Package was built successfully. To enable automatic publishing:"
-            echo "    1. Go to: Settings → Secrets and variables → Actions"
-            echo "    2. Add a secret named 'NPM_TOKEN' with your NPM automation token"
-            exit 0
-          fi
-
-          if [[ ${GITHUB_REF} == *alpha* ]]; then
-            npm publish --tag alpha
+        run: if [[ ${GITHUB_REF} == *alpha* ]]; then
+          npm publish --tag alpha
           elif [[ ${GITHUB_REF} == *beta* ]]; then
-            npm publish --tag beta
+          npm publish --tag beta
           elif [[ ${GITHUB_REF} == *rc* ]]; then
-            npm publish --tag rc
+          npm publish --tag rc
           else
-            npm publish
+          npm publish
           fi
