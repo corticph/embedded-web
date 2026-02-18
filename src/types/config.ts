@@ -30,10 +30,3 @@ export interface ConfigureAppPayload {
   locale?: Partial<LocaleConfig>;
   network?: Partial<NetworkConfig>;
 }
-
-export interface ConfigureAppResponsePayload {
-  appearance: AppearanceConfig;
-  features: FeaturesConfig;
-  locale: LocaleConfig;
-  network: NetworkConfig;
-}
