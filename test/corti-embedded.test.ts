@@ -6,7 +6,7 @@ import '../src/corti-embedded.js';
 import type {
   SetCredentialsPayload,
   AuthCredentials,
-  GetStatusResponsePayload,
+  GetStatusResponse,
   InteractionDetails,
   SessionConfig,
   User,
@@ -167,7 +167,7 @@ describe('CortiEmbedded', () => {
       createdAt: '2024-01-01T00:00:00Z',
     };
 
-    const mockStatus: GetStatusResponsePayload = {
+    const mockStatus: GetStatusResponse = {
       auth: {
         isAuthenticated: true,
         user: {

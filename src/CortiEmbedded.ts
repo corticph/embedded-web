@@ -10,14 +10,15 @@ import type {
   NavigatePayload,
   SetCredentialsPayload,
   AuthCredentials,
-  ConfigureAppResponsePayload,
+  ConfigureAppResponse,
   CortiEmbeddedAPI,
   EmbeddedEventData,
   InteractionDetails,
   CreateInteractionPayload,
   SessionConfig,
   User,
-  GetStatusResponsePayload,
+  GetStatusResponse,
+  GetTemplatesResponse,
 } from './types';
 import { baseStyles } from './styles/base.js';
 import { containerStyles } from './styles/container-styles.js';
@@ -390,7 +391,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    * Get current component status
    * @returns Promise resolving to current status
    */
-  async getStatus(): Promise<GetStatusResponsePayload> {
+  async getStatus(): Promise<GetStatusResponse> {
     if (!this.postMessageHandler) {
       return {
         auth: {
@@ -416,9 +417,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    * @param config Component configuration
    * @returns Promise that resolves when configuration is applied
    */
-  async configure(
-    config: ConfigureAppPayload,
-  ): Promise<ConfigureAppResponsePayload> {
+  async configure(config: ConfigureAppPayload): Promise<ConfigureAppResponse> {
     if (!this.postMessageHandler) {
       throw new Error('Component not ready');
     }
@@ -469,6 +468,24 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    */
   hide(): void {
     this.visibility = 'hidden';
+  }
+
+  /**
+   * Get templates
+   */
+  async getTemplates(): Promise<GetTemplatesResponse> {
+    if (!this.postMessageHandler) {
+      throw new Error('Component not ready');
+    }
+
+    try {
+      const response = await this.postMessageHandler.getTemplates();
+      return response;
+    } catch (error) {
+      const formattedError = formatError(error, 'Failed to get templates');
+      this.dispatchErrorEvent(formattedError);
+      throw new Error(JSON.stringify(formattedError));
+    }
   }
 
   /**
