@@ -26,6 +26,56 @@ describe('PostMessageHandler', () => {
     iframe.remove();
   });
 
+  it('forwards passthrough events through onEvent', async () => {
+    const forwarded: Array<{
+      name: string;
+      payload: unknown;
+    }> = [];
+    const { handler, iframe, origin } = makeRealHandler();
+    handler.updateCallbacks({
+      onEvent: event => {
+        forwarded.push(event);
+      },
+    });
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: {
+          type: 'CORTI_EMBEDDED_EVENT',
+          event: 'embedded.navigated',
+          payload: { path: '/summary' },
+        },
+        origin,
+        source: iframe.contentWindow as any,
+      }),
+    );
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: {
+          type: 'CORTI_EMBEDDED_EVENT',
+          event: 'custom.event',
+          payload: { a: 1 },
+        },
+        origin,
+        source: iframe.contentWindow as any,
+      }),
+    );
+
+    expect(forwarded).to.have.length(2);
+    expect(forwarded[0]).to.deep.equal({
+      name: 'embedded.navigated',
+      payload: { path: '/summary' },
+    });
+    expect(forwarded[1]).to.deep.equal({
+      name: 'custom.event',
+      payload: { a: 1 },
+    });
+
+    handler.destroy();
+    iframe.remove();
+  });
+
   it('postMessage resolves on matching response from trusted origin', async () => {
     const { handler } = makeRealHandler();
     // Ensure waitForReady resolves quickly

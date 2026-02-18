@@ -133,6 +133,29 @@ describe('CortiEmbedded', () => {
     expect((el as any).postMessageHandler).to.exist;
   });
 
+  it('dispatches raw event and embedded-event payload via dispatchEmbeddedEvent', async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    let rawDetail: unknown;
+    let embeddedDetail: unknown;
+
+    el.addEventListener('embedded.navigated', (event: Event) => {
+      rawDetail = (event as CustomEvent).detail;
+    });
+    el.addEventListener('embedded-event', (event: Event) => {
+      embeddedDetail = (event as CustomEvent).detail;
+    });
+
+    (el as any).dispatchEmbeddedEvent('embedded.navigated', { path: '/test' });
+
+    expect(rawDetail).to.deep.equal({ path: '/test' });
+    expect(embeddedDetail).to.deep.equal({
+      name: 'embedded.navigated',
+      payload: { path: '/test' },
+    });
+  });
+
   it('auth throws if component not ready', async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,

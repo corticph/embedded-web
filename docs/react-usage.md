@@ -1,11 +1,11 @@
 # React Component Usage
 
-This document shows how to use the `CortiEmbeddedReact` component in your React application.
+This document shows how to use the `CortiEmbeddedReact` component with the current React API.
 
 ## Installation
 
 ```bash
-npm install @corti/embedded-web react
+npm install @corti/embedded-web
 ```
 
 ## Basic Usage
@@ -15,203 +15,128 @@ import React, { useRef } from 'react';
 import {
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
-  type EmbeddedEventData,
+  type CortiEmbeddedEventDetail,
 } from '@corti/embedded-web/react';
 
-function MyApp() {
+function App() {
   const cortiRef = useRef<CortiEmbeddedReactRef>(null);
 
-  const handleReady = () => {
-    console.log('Corti embedded component is ready!');
-  };
-
-  const handleAuthChanged = (
-    event: CustomEvent<EmbeddedEventData['auth-changed']>,
-  ) => {
-    console.log('User authenticated:', event.detail.user);
-  };
-
-  const handleError = (event: CustomEvent<EmbeddedEventData['error']>) => {
-    console.error('Corti error:', event.detail.message);
+  const handleEvent = (event: CustomEvent<CortiEmbeddedEventDetail>) => {
+    console.log(event.detail.name, event.detail.payload);
   };
 
   return (
-    <div style={{ width: '100%', height: '600px' }}>
-      <CortiEmbeddedReact
-        ref={cortiRef}
-        baseURL="https://assistant.eu.corti.app"
-        visibility="visible"
-        onReady={handleReady}
-        onAuthChanged={handleAuthChanged}
-        onError={handleError}
-        style={{ width: '100%', height: '100%' }}
-      />
-    </div>
+    <CortiEmbeddedReact
+      ref={cortiRef}
+      baseURL="https://assistant.eu.corti.app"
+      visibility="visible"
+      onReady={() => console.log('Corti embedded is ready')}
+      onEvent={handleEvent}
+      onError={event => console.error('Embedded error:', event.detail)}
+      style={{ width: '100%', height: '600px' }}
+    />
   );
 }
 ```
 
-## Using API Methods
+## Event Listener Setup
 
-The React component exposes all the same API methods as the web component through a ref:
+Use `onEvent` as the canonical event listener.
+
+- Event shape: `{ name: string; payload: unknown }`
+- This receives all embedded events
+- Event names and payload contracts are documented publicly at:
+  - https://docs.corti.ai/assistant/events
+
+## Calling API Methods
+
+You can call API methods directly from module exports without using `ref.current`.
 
 ```tsx
-import React, { useRef, useCallback } from 'react';
+import {
+  auth,
+  createInteraction,
+  configureSession,
+  addFacts,
+  navigate,
+  startRecording,
+  stopRecording,
+  getStatus,
+  configure,
+  setCredentials,
+  show,
+  hide,
+} from '@corti/embedded-web/react';
+
+await auth({ access_token: '...', token_type: 'Bearer', mode: 'stateful' });
+const created = await createInteraction({
+  encounter: {
+    identifier: `encounter-${Date.now()}`,
+    status: 'planned',
+    type: 'first_consultation',
+    period: { startedAt: new Date().toISOString() },
+  },
+});
+await configureSession({ defaultTemplateKey: 'soap_note' });
+await addFacts([{ text: 'Chest pain', group: 'other' }]);
+await navigate(`/session/${created.id}`);
+await startRecording();
+await stopRecording();
+const status = await getStatus();
+await configure({ features: { aiChat: false } });
+await setCredentials({ password: '...' });
+show();
+hide();
+```
+
+Note: module-level API methods require at least one mounted `<CortiEmbeddedReact />` instance in the document.
+
+## Reactive Status Hook
+
+Use `useCortiEmbeddedStatus(ref)` to keep latest status in React state.
+
+The hook returns:
+
+- `status`: latest value from `getStatus()` (or `null` before first fetch)
+- `isLoading`: `true` while a status fetch is in progress
+- `error`: last fetch error (if any)
+- `lastEvent`: latest received embedded event (`{ name, payload }`) used for refresh decisions
+- `refresh()`: manual trigger for an immediate status fetch
+
+How it works:
+
+- It fetches status when mounted (if enabled).
+- It listens to `embedded-event` from the mounted component and automatically refreshes status on incoming events.
+- Internal filtering avoids refresh recursion from status request/response events.
+
+Suggested usage:
+
+- Mount one `CortiEmbeddedReact` instance and pass the same ref to the hook.
+- Use `status` for rendering UI state, and `refresh()` for user-triggered sync actions - only if necessary.
+- Keep event-specific logic in `onEvent` while letting the hook handle status synchronization.
+
+```tsx
+import React, { useRef } from 'react';
 import {
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
+  useCortiEmbeddedStatus,
 } from '@corti/embedded-web/react';
 
-function AdvancedExample() {
-  const cortiRef = useRef<CortiEmbeddedReactRef>(null);
-
-  const handleAuth = useCallback(async () => {
-    if (!cortiRef.current) return;
-
-    try {
-      const user = await cortiRef.current.auth({
-        access_token: 'your-access-token',
-        token_type: 'Bearer',
-        // ... other credential fields
-      });
-      console.log('Authenticated user:', user);
-    } catch (error) {
-      console.error('Authentication failed:', error);
-    }
-  }, []);
-
-  const handleCreateInteraction = useCallback(async () => {
-    if (!cortiRef.current) return;
-
-    try {
-      const interaction = await cortiRef.current.createInteraction({
-        assignedUserId: 'user-123',
-        encounter: {
-          ...
-        }
-        // ... other interaction data
-      });
-      console.log('Created interaction:', interaction);
-    } catch (error) {
-      console.error('Failed to create interaction:', error);
-    }
-  }, []);
-
-  const handleStartRecording = useCallback(async () => {
-    if (!cortiRef.current) return;
-
-    try {
-      await cortiRef.current.startRecording();
-      console.log('Recording started');
-    } catch (error) {
-      console.error('Failed to start recording:', error);
-    }
-  }, []);
+function StatusExample() {
+  const ref = useRef<CortiEmbeddedReactRef>(null);
+  const { status, isLoading, error, lastEvent, refresh } =
+    useCortiEmbeddedStatus(ref);
 
   return (
     <div>
-      <div style={{ marginBottom: '10px' }}>
-        <button onClick={handleAuth}>Authenticate</button>
-        <button onClick={handleCreateInteraction}>Create Interaction</button>
-        <button onClick={handleStartRecording}>Start Recording</button>
-      </div>
-
-      <CortiEmbeddedReact
-        ref={cortiRef}
-        baseURL="https://assistant.eu.corti.app"
-        visibility="visible"
-        style={{ width: '100%', height: '500px', border: '1px solid #ccc' }}
-      />
+      <button onClick={() => void refresh()}>Refresh Status</button>
+      <div>Loading: {String(isLoading)}</div>
+      <div>Last Event: {lastEvent?.name ?? 'none'}</div>
+      <pre>{JSON.stringify(status, null, 2)}</pre>
+      {error ? <pre>{String(error)}</pre> : null}
+      <CortiEmbeddedReact ref={ref} baseURL="https://assistant.eu.corti.app" />
     </div>
   );
 }
 ```
-
-## Event Handling
-
-All events are passed as native DOM events. For events that carry data, you need to cast them to `CustomEvent` and access the `detail` property.
-
-```tsx
-import type {
-  EmbeddedEventData,
-  CortiEmbeddedReactProps,
-} from '@corti/embedded-web/react';
-
-// Method 1: Use the typed event handlers interface
-const handleInteractionCreated: CortiEmbeddedReactProps['onInteractionCreated'] =
-  event => {
-    console.log('New interaction:', event.detail.interaction);
-  };
-
-const handleDocumentGenerated: CortiEmbeddedReactProps['onDocumentGenerated'] =
-  event => {
-    console.log('Document generated:', event.detail.document);
-  };
-
-// Method 2: Cast events manually
-const handleAuthChanged = (event: Event) => {
-  const customEvent = event as CustomEvent<EmbeddedEventData['auth-changed']>;
-  console.log('User authenticated:', customEvent.detail.user);
-};
-
-// Use in component
-<CortiEmbeddedReact
-  onInteractionCreated={handleInteractionCreated} // NOT IMPLEMENTED YET
-  onDocumentGenerated={handleDocumentGenerated}
-  onAuthChanged={handleAuthChanged} // NOT IMPLEMENTED YET
-  // ... other props
-/>;
-```
-
-## Available Events
-
-- `onReady`: Component is ready to receive API calls
-- `onAuthChanged`: User authentication status changed // Limited access - NOT IMPLEMENTED
-- `onInteractionCreated`: New interaction was created // Limited access - NOT IMPLEMENTED
-- `onRecordingStarted`: Recording started
-- `onRecordingStopped`: Recording stopped
-- `onDocumentGenerated`: Document was generated
-- `onDocumentUpdated`: Document was updated
-- `onNavigationChanged`: Navigation within the embedded UI changed // Limited access - NOT IMPLEMENTED
-- `onError`: An error occurred
-
-## API Methods
-
-All API methods return Promises and can be called through the component ref:
-
-- `auth(credentials)`: Authenticate with Corti
-- `createInteraction(payload)`: Create a new interaction
-- `configureSession(config)`: Configure the session
-- `addFacts(facts)`: Add facts to the session
-- `navigate(path)`: Navigate within the embedded UI
-- `startRecording()`: Start recording
-- `stopRecording()`: Stop recording
-- `getStatus()`: Get current component status
-- `configure(config)`: Configure the component
-- `setCredentials(credentials)`: Set credentials without triggering auth
-- `show()`: Show the embedded UI
-- `hide()`: Hide the embedded UI
-
-## TypeScript Support
-
-The component is fully typed. Import the types you need:
-
-```tsx
-import {
-  CortiEmbeddedReact,
-  type CortiEmbeddedReactRef,
-  type CortiEmbeddedReactProps,
-  type CortiEmbeddedEventHandlers,
-  type EmbeddedEventData,
-} from '@corti/embedded-web/react';
-```
-
-## Differences from Web Component
-
-The React component provides the same functionality as the web component but with:
-
-- React-style props instead of attributes
-- Ref-based API access instead of direct method calls
-- Standard React event handling patterns
-- Full TypeScript integration
-- React lifecycle compatibility
