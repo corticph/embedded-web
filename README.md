@@ -60,16 +60,15 @@ await myComponent.show()
 ```tsx
 import React, { useRef } from 'react';
 import {
-  auth,
-  configureSession,
-  createInteraction,
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
+  useCortiEmbeddedApi,
   useCortiEmbeddedStatus,
 } from '@corti/embedded-web/react';
 
 function App() {
   const cortiRef = useRef<CortiEmbeddedReactRef>(null);
+  const api = useCortiEmbeddedApi(cortiRef);
   const { status } = useCortiEmbeddedStatus(cortiRef);
 
   const handleReady = () => {
@@ -85,15 +84,15 @@ function App() {
 
   const handleAuth = async () => {
     try {
-      const user = await auth({
+      const user = await api.auth({
         access_token: 'your-token',
         token_type: 'Bearer',
         // ... rest of the token response
       });
       console.log('Authenticated:', user);
 
-      await configureSession({ defaultTemplateKey: 'soap_note' });
-      await createInteraction({
+      await api.configureSession({ defaultTemplateKey: 'soap_note' });
+      await api.createInteraction({
         encounter: {
           identifier: `encounter-${Date.now()}`,
           status: 'planned',
@@ -225,10 +224,10 @@ The component uses a `PostMessageHandler` utility class that:
 
 The React component (`CortiEmbeddedReact`) is available as an additional export and provides:
 
-- **Module-level API methods**: Call `auth`, `navigate`, `createInteraction`, etc. directly from the module
+- **Hook-based API access**: `useCortiEmbeddedApi(ref)` exposes instance-bound methods (`auth`, `navigate`, `createInteraction`, etc.)
 - **Generic event stream**: `onEvent` receives all embedded events as `{ name, payload }`
 - **Status hook**: `useCortiEmbeddedStatus(ref)` keeps latest status/reactive state
-- **Optional ref access**: Ref can still be used for direct element control when needed
+- **Multi-instance safety**: API methods are scoped to the ref you pass
 - **React Props**: Standard React props like `className`, `style`, etc.
 
 ### React Component Import
@@ -238,7 +237,7 @@ import {
   CortiEmbeddedReact,
   CortiEmbedded, // Web component also available
   type CortiEmbeddedReactRef,
-  auth,
+  useCortiEmbeddedApi,
   useCortiEmbeddedStatus,
 } from '@corti/embedded-web/react';
 ```
@@ -263,14 +262,33 @@ import {
 
 ### API Methods (React)
 
-Import and call methods directly:
+Use the API hook with the same component ref:
 
 ```tsx
-import { auth, createInteraction, navigate } from '@corti/embedded-web/react';
+import React, { useRef } from 'react';
+import {
+  CortiEmbeddedReact,
+  type CortiEmbeddedReactRef,
+  useCortiEmbeddedApi,
+} from '@corti/embedded-web/react';
 
-await auth({ access_token: '...', token_type: 'Bearer', mode: 'stateful' });
-const created = await createInteraction({ encounter: { ... } });
-await navigate(`/session/${created.id}`);
+function Example() {
+  const ref = useRef<CortiEmbeddedReactRef>(null);
+  const api = useCortiEmbeddedApi(ref);
+
+  const run = async () => {
+    await api.auth({ access_token: '...', token_type: 'Bearer', mode: 'stateful' });
+    const created = await api.createInteraction({ encounter: { ... } });
+    await api.navigate(`/session/${created.id}`);
+  };
+
+  return (
+    <>
+      <button onClick={() => void run()}>Run</button>
+      <CortiEmbeddedReact ref={ref} baseURL="https://assistant.eu.corti.app" />
+    </>
+  );
+}
 ```
 
 For detailed React usage examples, see [docs/react-usage.md](./docs/react-usage.md).

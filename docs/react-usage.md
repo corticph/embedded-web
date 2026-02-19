@@ -50,46 +50,57 @@ Use `onEvent` as the canonical event listener.
 
 ## Calling API Methods
 
-You can call API methods directly from module exports without using `ref.current`.
+Use `useCortiEmbeddedApi(ref)` to get stable API methods bound to your component instance.
 
 ```tsx
+import React, { useRef } from 'react';
 import {
-  auth,
-  createInteraction,
-  configureSession,
-  addFacts,
-  navigate,
-  startRecording,
-  stopRecording,
-  getStatus,
-  configure,
-  setCredentials,
-  show,
-  hide,
+  CortiEmbeddedReact,
+  type CortiEmbeddedReactRef,
+  useCortiEmbeddedApi,
 } from '@corti/embedded-web/react';
 
-await auth({ access_token: '...', token_type: 'Bearer', mode: 'stateful' });
-const created = await createInteraction({
-  encounter: {
-    identifier: `encounter-${Date.now()}`,
-    status: 'planned',
-    type: 'first_consultation',
-    period: { startedAt: new Date().toISOString() },
-  },
-});
-await configureSession({ defaultTemplateKey: 'soap_note' });
-await addFacts([{ text: 'Chest pain', group: 'other' }]);
-await navigate(`/session/${created.id}`);
-await startRecording();
-await stopRecording();
-const status = await getStatus();
-await configure({ features: { aiChat: false } });
-await setCredentials({ password: '...' });
-show();
-hide();
+function ApiExample() {
+  const ref = useRef<CortiEmbeddedReactRef>(null);
+  const api = useCortiEmbeddedApi(ref);
+
+  const run = async () => {
+    await api.auth({
+      access_token: '...',
+      token_type: 'Bearer',
+      mode: 'stateful',
+    });
+    const created = await api.createInteraction({
+      encounter: {
+        identifier: `encounter-${Date.now()}`,
+        status: 'planned',
+        type: 'first_consultation',
+        period: { startedAt: new Date().toISOString() },
+      },
+    });
+    await api.configureSession({ defaultTemplateKey: 'soap_note' });
+    await api.addFacts([{ text: 'Chest pain', group: 'other' }]);
+    await api.navigate(`/session/${created.id}`);
+    await api.startRecording();
+    await api.stopRecording();
+    const status = await api.getStatus();
+    await api.configure({ features: { aiChat: false } });
+    await api.setCredentials({ password: '...' });
+    api.show();
+    api.hide();
+    console.log(status);
+  };
+
+  return (
+    <>
+      <button onClick={() => void run()}>Run API Flow</button>
+      <CortiEmbeddedReact ref={ref} baseURL="https://assistant.eu.corti.app" />
+    </>
+  );
+}
 ```
 
-Note: module-level API methods require at least one mounted `<CortiEmbeddedReact />` instance in the document.
+This avoids singleton DOM lookup and works correctly with multiple embedded instances.
 
 ## Reactive Status Hook
 

@@ -1,26 +1,20 @@
 import { useCallback, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
-  addFacts,
-  auth,
-  configure,
-  configureSession,
-  createInteraction,
-  hide,
   type AuthCredentials,
   type CortiEmbeddedEventDetail,
   type ConfigureAppPayload,
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
   type Fact,
-  navigate,
   type SessionConfig,
-  show,
+  useCortiEmbeddedApi,
   useCortiEmbeddedStatus,
 } from '../dist/index.js';
 
 function CortiEmbeddedDemo() {
   const componentRef = useRef<CortiEmbeddedReactRef>(null);
+  const api = useCortiEmbeddedApi(componentRef);
   const [log, setLog] = useState<
     Array<{ time: string; message: string; type: string }>
   >([
@@ -167,7 +161,7 @@ function CortiEmbeddedDemo() {
   // Action handlers
   const handleShow = () => {
     try {
-      show();
+      api.show();
       addLogEntry('Corti component shown', 'info');
     } catch (error) {
       addLogEntry(
@@ -179,7 +173,7 @@ function CortiEmbeddedDemo() {
 
   const handleHide = () => {
     try {
-      hide();
+      api.hide();
       addLogEntry('Corti component hidden', 'info');
     } catch (error) {
       addLogEntry(
@@ -196,7 +190,7 @@ function CortiEmbeddedDemo() {
         `Sending authentication request with payload: ${JSON.stringify(payload)}`,
         'info',
       );
-      const response = await auth(payload);
+      const response = await api.auth(payload);
       addLogEntry(
         `Authentication successful: ${JSON.stringify(response)}`,
         'success',
@@ -216,7 +210,7 @@ function CortiEmbeddedDemo() {
         `Configuring app with payload: ${JSON.stringify(payload)}`,
         'info',
       );
-      await configure(payload);
+      await api.configure(payload);
       addLogEntry('App configuration successful', 'success');
     } catch (error) {
       addLogEntry(
@@ -233,7 +227,7 @@ function CortiEmbeddedDemo() {
         `Configuring session with payload: ${JSON.stringify(payload)}`,
         'info',
       );
-      await configureSession(payload);
+      await api.configureSession(payload);
       addLogEntry('Session configuration successful', 'success');
     } catch (error) {
       addLogEntry(
@@ -250,7 +244,7 @@ function CortiEmbeddedDemo() {
         `Adding facts with payload: ${JSON.stringify(payload)}`,
         'info',
       );
-      await addFacts(payload);
+      await api.addFacts(payload);
       addLogEntry('Add facts successful', 'success');
     } catch (error) {
       addLogEntry(
@@ -263,7 +257,7 @@ function CortiEmbeddedDemo() {
   const handleNavigate = async () => {
     try {
       addLogEntry(`Navigating with payload: ${navigatePayload}`, 'info');
-      await navigate(navigatePayload);
+      await api.navigate(navigatePayload);
     } catch (error) {
       addLogEntry(
         `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -279,7 +273,7 @@ function CortiEmbeddedDemo() {
         `Creating interaction with payload: ${JSON.stringify(payload)}`,
         'info',
       );
-      const response = await createInteraction(payload);
+      const response = await api.createInteraction(payload);
 
       // Update navigate payload with interaction ID
       if (response.id) {
@@ -292,6 +286,21 @@ function CortiEmbeddedDemo() {
     } catch (error) {
       addLogEntry(
         `Interaction creation failed: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      );
+    }
+  };
+
+  const handleGetTemplates = async () => {
+    try {
+      const response = await api.getTemplates();
+      addLogEntry(
+        `Templates retrieved successfully: ${JSON.stringify(response)}`,
+        'success',
+      );
+    } catch (error) {
+      addLogEntry(
+        `Template retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
     }
@@ -367,6 +376,13 @@ function CortiEmbeddedDemo() {
               </button>
               <button type="button" className="hide-btn" onClick={handleHide}>
                 Hide Corti
+              </button>
+              <button
+                type="button"
+                className="get-templates-btn"
+                onClick={handleGetTemplates}
+              >
+                Get Templates
               </button>
             </div>
           </div>

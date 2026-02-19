@@ -106,49 +106,19 @@ export function useCortiEmbeddedStatus(
   }, [enabled, ref]);
 
   React.useEffect(() => {
-    if (!enabled) {
-      return undefined;
-    }
+    if (!enabled || !ref.current) return undefined;
 
-    let cleanup: (() => void) | null = null;
-    let frameId: number | null = null;
-    let disposed = false;
-
-    const attach = () => {
-      if (disposed) return;
-      const target = ref.current;
-      if (!target) {
-        frameId = window.requestAnimationFrame(attach);
-        return;
-      }
-
-      const handleEvent = (event: Event) => {
-        const { detail } = event as CustomEvent<CortiEmbeddedEventDetail>;
-        setLastEvent(detail);
-        if (!shouldRefreshOnEventRef.current(detail)) {
-          return;
-        }
-        if (isRefreshingRef.current) {
-          return;
-        }
-        refresh();
-      };
-
-      target.addEventListener('embedded-event', handleEvent);
-      cleanup = () => {
-        target.removeEventListener('embedded-event', handleEvent);
-      };
+    const target = ref.current;
+    const handleEvent = (event: Event) => {
+      const { detail } = event as CustomEvent<CortiEmbeddedEventDetail>;
+      setLastEvent(detail);
+      if (!shouldRefreshOnEventRef.current(detail)) return;
+      if (isRefreshingRef.current) return;
+      refresh();
     };
 
-    attach();
-
-    return () => {
-      disposed = true;
-      if (frameId !== null) {
-        window.cancelAnimationFrame(frameId);
-      }
-      cleanup?.();
-    };
+    target.addEventListener('embedded-event', handleEvent);
+    return () => target.removeEventListener('embedded-event', handleEvent);
   }, [enabled, ref, refresh]);
 
   return {
@@ -160,89 +130,86 @@ export function useCortiEmbeddedStatus(
   };
 }
 
-function getCortiEmbeddedInstanceOrThrow(): CortiEmbeddedReactRef {
-  if (typeof document === 'undefined') {
-    throw new Error(
-      'No active corti-embedded instance found in this environment.',
-    );
-  }
-  const instance = document.querySelector(
-    'corti-embedded',
-  ) as CortiEmbeddedReactRef | null;
+export interface UseCortiEmbeddedApiResult {
+  auth: (
+    ...args: Parameters<CortiEmbeddedReactRef['auth']>
+  ) => ReturnType<CortiEmbeddedReactRef['auth']>;
+  createInteraction: (
+    ...args: Parameters<CortiEmbeddedReactRef['createInteraction']>
+  ) => ReturnType<CortiEmbeddedReactRef['createInteraction']>;
+  configureSession: (
+    ...args: Parameters<CortiEmbeddedReactRef['configureSession']>
+  ) => ReturnType<CortiEmbeddedReactRef['configureSession']>;
+  addFacts: (
+    ...args: Parameters<CortiEmbeddedReactRef['addFacts']>
+  ) => ReturnType<CortiEmbeddedReactRef['addFacts']>;
+  navigate: (
+    ...args: Parameters<CortiEmbeddedReactRef['navigate']>
+  ) => ReturnType<CortiEmbeddedReactRef['navigate']>;
+  startRecording: (
+    ...args: Parameters<CortiEmbeddedReactRef['startRecording']>
+  ) => ReturnType<CortiEmbeddedReactRef['startRecording']>;
+  stopRecording: (
+    ...args: Parameters<CortiEmbeddedReactRef['stopRecording']>
+  ) => ReturnType<CortiEmbeddedReactRef['stopRecording']>;
+  getStatus: (
+    ...args: Parameters<CortiEmbeddedReactRef['getStatus']>
+  ) => ReturnType<CortiEmbeddedReactRef['getStatus']>;
+  configure: (
+    ...args: Parameters<CortiEmbeddedReactRef['configure']>
+  ) => ReturnType<CortiEmbeddedReactRef['configure']>;
+  getTemplates: (
+    ...args: Parameters<CortiEmbeddedReactRef['getTemplates']>
+  ) => ReturnType<CortiEmbeddedReactRef['getTemplates']>;
+  setCredentials: (
+    ...args: Parameters<CortiEmbeddedReactRef['setCredentials']>
+  ) => ReturnType<CortiEmbeddedReactRef['setCredentials']>;
+  show: (
+    ...args: Parameters<CortiEmbeddedReactRef['show']>
+  ) => ReturnType<CortiEmbeddedReactRef['show']>;
+  hide: (
+    ...args: Parameters<CortiEmbeddedReactRef['hide']>
+  ) => ReturnType<CortiEmbeddedReactRef['hide']>;
+}
+
+function getCortiEmbeddedInstanceFromRefOrThrow(
+  ref: React.RefObject<CortiEmbeddedReactRef | null>,
+): CortiEmbeddedReactRef {
+  const instance = ref.current;
   if (!instance) {
     throw new Error(
-      'No active corti-embedded instance found. Mount <CortiEmbeddedReact /> first.',
+      'No active corti-embedded instance found for this ref. Mount <CortiEmbeddedReact ref={...} /> first.',
     );
   }
   return instance;
 }
 
-export async function auth(
-  ...args: Parameters<CortiEmbeddedReactRef['auth']>
-): ReturnType<CortiEmbeddedReactRef['auth']> {
-  return getCortiEmbeddedInstanceOrThrow().auth(...args);
-}
+export function useCortiEmbeddedApi(
+  ref: React.RefObject<CortiEmbeddedReactRef | null>,
+): UseCortiEmbeddedApiResult {
+  const getInstance = React.useCallback(
+    () => getCortiEmbeddedInstanceFromRefOrThrow(ref),
+    [ref],
+  );
 
-export async function createInteraction(
-  ...args: Parameters<CortiEmbeddedReactRef['createInteraction']>
-): ReturnType<CortiEmbeddedReactRef['createInteraction']> {
-  return getCortiEmbeddedInstanceOrThrow().createInteraction(...args);
-}
-
-export async function configureSession(
-  ...args: Parameters<CortiEmbeddedReactRef['configureSession']>
-): ReturnType<CortiEmbeddedReactRef['configureSession']> {
-  return getCortiEmbeddedInstanceOrThrow().configureSession(...args);
-}
-
-export async function addFacts(
-  ...args: Parameters<CortiEmbeddedReactRef['addFacts']>
-): ReturnType<CortiEmbeddedReactRef['addFacts']> {
-  return getCortiEmbeddedInstanceOrThrow().addFacts(...args);
-}
-
-export async function navigate(
-  ...args: Parameters<CortiEmbeddedReactRef['navigate']>
-): ReturnType<CortiEmbeddedReactRef['navigate']> {
-  return getCortiEmbeddedInstanceOrThrow().navigate(...args);
-}
-
-export async function startRecording(
-  ...args: Parameters<CortiEmbeddedReactRef['startRecording']>
-): ReturnType<CortiEmbeddedReactRef['startRecording']> {
-  return getCortiEmbeddedInstanceOrThrow().startRecording(...args);
-}
-
-export async function stopRecording(
-  ...args: Parameters<CortiEmbeddedReactRef['stopRecording']>
-): ReturnType<CortiEmbeddedReactRef['stopRecording']> {
-  return getCortiEmbeddedInstanceOrThrow().stopRecording(...args);
-}
-
-export async function getStatus(
-  ...args: Parameters<CortiEmbeddedReactRef['getStatus']>
-): ReturnType<CortiEmbeddedReactRef['getStatus']> {
-  return getCortiEmbeddedInstanceOrThrow().getStatus(...args);
-}
-
-export async function configure(
-  ...args: Parameters<CortiEmbeddedReactRef['configure']>
-): ReturnType<CortiEmbeddedReactRef['configure']> {
-  return getCortiEmbeddedInstanceOrThrow().configure(...args);
-}
-
-export async function setCredentials(
-  ...args: Parameters<CortiEmbeddedReactRef['setCredentials']>
-): ReturnType<CortiEmbeddedReactRef['setCredentials']> {
-  return getCortiEmbeddedInstanceOrThrow().setCredentials(...args);
-}
-
-export function show(...args: Parameters<CortiEmbeddedReactRef['show']>) {
-  return getCortiEmbeddedInstanceOrThrow().show(...args);
-}
-
-export function hide(...args: Parameters<CortiEmbeddedReactRef['hide']>) {
-  return getCortiEmbeddedInstanceOrThrow().hide(...args);
+  return React.useMemo(
+    () => ({
+      auth: (...args) => getInstance().auth(...args),
+      createInteraction: (...args) => getInstance().createInteraction(...args),
+      configureSession: (...args) => getInstance().configureSession(...args),
+      addFacts: (...args) => getInstance().addFacts(...args),
+      navigate: (...args) => getInstance().navigate(...args),
+      startRecording: (...args) => getInstance().startRecording(...args),
+      stopRecording: (...args) => getInstance().stopRecording(...args),
+      getStatus: (...args) => getInstance().getStatus(...args),
+      configure: (...args) => getInstance().configure(...args),
+      getTemplates: (...args) => getInstance().getTemplates(...args),
+      setCredentials: (...args) => getInstance().setCredentials(...args),
+      show: (...args) => getInstance().show(...args),
+      hide: (...args) => getInstance().hide(...args),
+    }),
+    [getInstance],
+  );
 }
 
 CortiEmbeddedReact.displayName = 'CortiEmbeddedReact';
