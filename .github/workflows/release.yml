@@ -98,12 +98,13 @@ jobs:
           npm version --no-git-tag-version "$TAG_VERSION"
 
       - name: Publish to npm
-        run: if [[ ${GITHUB_REF} == *alpha* ]]; then
-          npm publish --tag alpha
+        run: |
+          if [[ ${GITHUB_REF} == *alpha* ]]; then
+            npm publish --tag alpha
           elif [[ ${GITHUB_REF} == *beta* ]]; then
-          npm publish --tag beta
+            npm publish --tag beta
           elif [[ ${GITHUB_REF} == *rc* ]]; then
-          npm publish --tag rc
+            npm publish --tag rc
           else
-          npm publish
+            npm publish
           fi

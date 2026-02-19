@@ -4,15 +4,16 @@ import type {
   AuthPayload,
   AuthResponse,
   ConfigureAppPayload,
-  ConfigureAppResponsePayload,
+  ConfigureAppResponse,
   ConfigureSessionPayload,
   CreateInteractionPayload,
   CreateInteractionResponse,
   EmbeddedRequest,
   EmbeddedResponse,
-  GetStatusResponsePayload,
+  GetStatusResponse,
   NavigatePayload,
   SetCredentialsPayload,
+  GetTemplatesResponse,
 } from '../types';
 
 export interface PostMessageHandlerCallbacks {
@@ -343,7 +344,7 @@ export class PostMessageHandler {
    * Helper method to get current status
    * @returns Promise that resolves with current status
    */
-  async getStatus(): Promise<GetStatusResponsePayload> {
+  async getStatus(): Promise<GetStatusResponse> {
     const response = await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
@@ -352,7 +353,7 @@ export class PostMessageHandler {
     });
 
     if (response.payload && response.success) {
-      return response.payload as GetStatusResponsePayload;
+      return response.payload as GetStatusResponse;
     }
     throw new Error(response.error);
   }
@@ -362,9 +363,7 @@ export class PostMessageHandler {
    * @param payload - Component configuration payload
    * @returns Promise that resolves when configuration is applied
    */
-  async configure(
-    payload: ConfigureAppPayload,
-  ): Promise<ConfigureAppResponsePayload> {
+  async configure(payload: ConfigureAppPayload): Promise<ConfigureAppResponse> {
     const response = await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
@@ -373,7 +372,7 @@ export class PostMessageHandler {
     });
 
     if (response.payload && response.success) {
-      return response.payload as ConfigureAppResponsePayload;
+      return response.payload as ConfigureAppResponse;
     }
     throw new Error(response.error);
   }
@@ -390,6 +389,23 @@ export class PostMessageHandler {
       action: 'setCredentials',
       payload,
     });
+  }
+
+  /**
+   * Helper method to get templates
+   * @returns Promise that resolves with a list of templates
+   */
+  async getTemplates(): Promise<GetTemplatesResponse> {
+    const response = await this.postMessage({
+      type: 'CORTI_EMBEDDED',
+      version: 'v1',
+      action: 'getTemplates',
+    });
+
+    if (response.payload && response.success) {
+      return response.payload as GetTemplatesResponse;
+    }
+    throw new Error(response.error);
   }
 
   private static generateRequestId(): string {

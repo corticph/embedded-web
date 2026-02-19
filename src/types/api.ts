@@ -1,6 +1,6 @@
 // Public API types for SDK consumers
 
-import type { ConfigureAppPayload, ConfigureAppResponsePayload } from "./config.js";
+import type { ConfigureAppPayload } from './config.js';
 import type {
   AuthChangedEventPayload,
   DocumentEventPayload,
@@ -8,26 +8,29 @@ import type {
   InteractionCreatedEventPayload,
   NavigationChangedEventPayload,
   UsageEventPayload,
-} from "./events.js";
-import type { EmbeddedInterviewDetails } from "./generated/interview-details.js";
+} from './events.js';
 import type {
   AddFactsPayload,
   AuthPayload,
-  AuthResponse,
   ConfigureSessionPayload,
   CreateInteractionPayload,
-  CreateInteractionResponse,
   Fact,
   KeycloakTokenResponse,
   NavigatePayload,
   SetCredentialsPayload,
-  UserInfo,
-} from "./payloads.js";
-import type { DefaultMode } from "./protocol.js";
+} from './payloads.js';
+import type { DefaultMode } from './protocol.js';
+import type {
+  AuthResponse,
+  ConfigureAppResponse,
+  CreateInteractionResponse,
+  GetStatusResponse,
+  GetTemplatesResponse,
+} from './responses.js';
 
-export type { ConfigureAppPayload, ConfigureAppResponsePayload } from "./config.js";
+export type { ConfigureAppPayload } from './config.js';
 // Re-export common types for public API
-export type { UserInfo } from "./payloads.js";
+export type { UserInfo } from './responses.js';
 
 /**
  * Authentication credentials for Assistant
@@ -61,30 +64,18 @@ export interface SessionConfig {
 }
 
 /**
- * Status information about the embedded component
- */
-export interface GetStatusResponsePayload {
-  auth: {
-    isAuthenticated: boolean;
-    user?: UserInfo;
-  };
-  currentUrl: string;
-  interaction: EmbeddedInterviewDetails | null;
-}
-
-/**
  * Event data types for component events
  */
 export interface EmbeddedEventData {
   ready: undefined;
-  "auth-changed": AuthChangedEventPayload;
-  "interaction-created": InteractionCreatedEventPayload;
-  "recording-started": undefined;
-  "recording-stopped": undefined;
-  "document-generated": DocumentEventPayload;
-  "document-updated": DocumentEventPayload;
-  "document-synced": DocumentEventPayload;
-  "navigation-changed": NavigationChangedEventPayload;
+  'auth-changed': AuthChangedEventPayload;
+  'interaction-created': InteractionCreatedEventPayload;
+  'recording-started': undefined;
+  'recording-stopped': undefined;
+  'document-generated': DocumentEventPayload;
+  'document-updated': DocumentEventPayload;
+  'document-synced': DocumentEventPayload;
+  'navigation-changed': NavigationChangedEventPayload;
   usage: UsageEventPayload;
   error: ErrorEventPayload;
 }
@@ -92,15 +83,18 @@ export interface EmbeddedEventData {
 // Window API Types
 export interface CortiEmbeddedV1API {
   auth(payload: KeycloakTokenResponse): Promise<AuthResponse>;
-  createInteraction(payload: CreateInteractionPayload): Promise<CreateInteractionResponse>;
+  createInteraction(
+    payload: CreateInteractionPayload,
+  ): Promise<CreateInteractionResponse>;
   addFacts(payload: AddFactsPayload): Promise<void>;
   configureSession(payload: ConfigureSessionPayload): Promise<void>;
-  configure(payload: ConfigureAppPayload): Promise<ConfigureAppResponsePayload>;
+  configure(payload: ConfigureAppPayload): Promise<ConfigureAppResponse>;
   navigate(payload: NavigatePayload): Promise<void>;
   startRecording(): Promise<void>;
   stopRecording(): Promise<void>;
   setCredentials(payload: SetCredentialsPayload): Promise<void>;
-  getStatus(): Promise<GetStatusResponsePayload>;
+  getStatus(): Promise<GetStatusResponse>;
+  getTemplates(): Promise<GetTemplatesResponse>;
 }
 export interface CortiEmbeddedWindowAPI {
   v1: CortiEmbeddedV1API;
@@ -134,7 +128,9 @@ export interface CortiEmbeddedAPI {
    * @param encounter Encounter request data
    * @returns Promise resolving to interaction details
    */
-  createInteraction(encounter: CreateInteractionPayload): Promise<InteractionDetails>;
+  createInteraction(
+    encounter: CreateInteractionPayload,
+  ): Promise<InteractionDetails>;
 
   /**
    * Configure the current session
@@ -173,14 +169,20 @@ export interface CortiEmbeddedAPI {
    * Get current component status
    * @returns Promise resolving to current status
    */
-  getStatus(): Promise<GetStatusResponsePayload>;
+  getStatus(): Promise<GetStatusResponse>;
+
+  /**
+   * Get all templates available to the current user
+   * @returns Promise resolving to list of templates
+   */
+  getTemplates(): Promise<GetTemplatesResponse>;
 
   /**
    * Configure the application
    * @param config Application configuration
    * @returns Promise that resolves when configuration is applied
    */
-  configure(config: ConfigureAppPayload): Promise<ConfigureAppResponsePayload>;
+  configure(config: ConfigureAppPayload): Promise<ConfigureAppResponse>;
 
   /**
    * Set authentication credentials without triggering auth flow

@@ -1,7 +1,7 @@
 // Event payload types for embedded component events
 import type { Corti } from "@corti/sdk";
 
-import type { UserInfo } from "./payloads.js";
+import type { UserInfo } from "./responses.js";
 
 export interface NavigateEventPayload {
   interactionId: string;

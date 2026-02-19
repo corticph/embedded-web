@@ -27,26 +27,6 @@ export interface AuthPayload extends KeycloakTokenResponse {
   mode: AuthMode;
 }
 
-// User info structure
-export interface UserInfo {
-  id: string;
-  email: string;
-  name?: string;
-  [key: string]: unknown;
-}
-
-// Auth response
-export interface AuthResponse {
-  user: UserInfo;
-}
-
-// Create interaction response
-export interface CreateInteractionResponse {
-  id: string;
-  createdAt: string;
-  status?: string;
-}
-
 // Fact structure
 export interface Fact {
   text: Corti.FactsCreateInput["text"];

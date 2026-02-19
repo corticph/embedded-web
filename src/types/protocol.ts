@@ -17,6 +17,7 @@ export type EmbeddedAction =
   | "startRecording"
   | "stopRecording"
   | "getStatus"
+  | "getTemplates"
   | "configure"
   | "setCredentials";
 
@@ -106,6 +107,10 @@ export interface GetStatusRequest extends EmbeddedRequest {
   action: "getStatus";
 }
 
+export interface GetTemplatesRequest extends EmbeddedRequest {
+  action: "getTemplates";
+}
+
 export interface ConfigureRequest extends EmbeddedRequest {
   action: "configure";
 }
@@ -165,6 +170,7 @@ export type AnyEmbeddedRequest =
   | CreateInteractionRequest
   | AddFactsRequest
   | ConfigureSessionRequest
+  | GetTemplatesRequest
   | NavigateRequest
   | StartRecordingRequest
   | StopRecordingRequest

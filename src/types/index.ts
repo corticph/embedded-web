@@ -8,5 +8,7 @@ export * from "./config.js";
 export * from "./events.js";
 // Payload types
 export * from "./payloads.js";
+// Response types
+export * from "./responses.js";
 // Protocol types
 export * from "./protocol.js";
