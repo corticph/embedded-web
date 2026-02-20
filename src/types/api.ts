@@ -1,6 +1,6 @@
 // Public API types for SDK consumers
 
-import type { ConfigureAppPayload } from './config.js';
+import type { ConfigureAppPayload } from "./config.js";
 import type {
   AuthChangedEventPayload,
   DocumentEventPayload,
@@ -8,7 +8,7 @@ import type {
   InteractionCreatedEventPayload,
   NavigationChangedEventPayload,
   UsageEventPayload,
-} from './events.js';
+} from "./events.js";
 import type {
   AddFactsPayload,
   AuthPayload,
@@ -18,19 +18,20 @@ import type {
   KeycloakTokenResponse,
   NavigatePayload,
   SetCredentialsPayload,
-} from './payloads.js';
-import type { DefaultMode } from './protocol.js';
+} from "./payloads.js";
+import type { DefaultMode } from "./protocol.js";
 import type {
   AuthResponse,
   ConfigureAppResponse,
   CreateInteractionResponse,
   GetStatusResponse,
   GetTemplatesResponse,
-} from './responses.js';
+  UserInfo,
+} from "./responses.js";
 
-export type { ConfigureAppPayload } from './config.js';
+export type { ConfigureAppPayload } from "./config.js";
 // Re-export common types for public API
-export type { UserInfo } from './responses.js';
+export type { UserInfo } from "./responses.js";
 
 /**
  * Authentication credentials for Assistant
@@ -68,14 +69,14 @@ export interface SessionConfig {
  */
 export interface EmbeddedEventData {
   ready: undefined;
-  'auth-changed': AuthChangedEventPayload;
-  'interaction-created': InteractionCreatedEventPayload;
-  'recording-started': undefined;
-  'recording-stopped': undefined;
-  'document-generated': DocumentEventPayload;
-  'document-updated': DocumentEventPayload;
-  'document-synced': DocumentEventPayload;
-  'navigation-changed': NavigationChangedEventPayload;
+  "auth-changed": AuthChangedEventPayload;
+  "interaction-created": InteractionCreatedEventPayload;
+  "recording-started": undefined;
+  "recording-stopped": undefined;
+  "document-generated": DocumentEventPayload;
+  "document-updated": DocumentEventPayload;
+  "document-synced": DocumentEventPayload;
+  "navigation-changed": NavigationChangedEventPayload;
   usage: UsageEventPayload;
   error: ErrorEventPayload;
 }
@@ -83,9 +84,7 @@ export interface EmbeddedEventData {
 // Window API Types
 export interface CortiEmbeddedV1API {
   auth(payload: KeycloakTokenResponse): Promise<AuthResponse>;
-  createInteraction(
-    payload: CreateInteractionPayload,
-  ): Promise<CreateInteractionResponse>;
+  createInteraction(payload: CreateInteractionPayload): Promise<CreateInteractionResponse>;
   addFacts(payload: AddFactsPayload): Promise<void>;
   configureSession(payload: ConfigureSessionPayload): Promise<void>;
   configure(payload: ConfigureAppPayload): Promise<ConfigureAppResponse>;
@@ -128,9 +127,7 @@ export interface CortiEmbeddedAPI {
    * @param encounter Encounter request data
    * @returns Promise resolving to interaction details
    */
-  createInteraction(
-    encounter: CreateInteractionPayload,
-  ): Promise<InteractionDetails>;
+  createInteraction(encounter: CreateInteractionPayload): Promise<InteractionDetails>;
 
   /**
    * Configure the current session
