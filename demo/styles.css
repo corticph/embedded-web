@@ -167,6 +167,7 @@ h1 {
   word-break: break-all;
   flex: 1;
   min-height: 0;
+  overflow: auto;
 }
 
 .log-entry {
