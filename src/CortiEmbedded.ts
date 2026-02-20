@@ -12,7 +12,6 @@ import type {
   AuthCredentials,
   ConfigureAppResponse,
   CortiEmbeddedAPI,
-  EmbeddedEventData,
   InteractionDetails,
   CreateInteractionPayload,
   SessionConfig,
@@ -83,47 +82,8 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
     if (iframe?.contentWindow) {
       const callbacks: PostMessageHandlerCallbacks = {
-        onReady: () => {
-          this.dispatchPublicEvent('ready', undefined);
-        },
-        onAuthChanged: payload => {
-          this.dispatchPublicEvent('auth-changed', { user: payload.user });
-        },
-        onInteractionCreated: payload => {
-          this.dispatchPublicEvent('interaction-created', {
-            interaction: payload.interaction,
-          });
-        },
-        onRecordingStarted: () => {
-          this.dispatchPublicEvent('recording-started', undefined);
-        },
-        onRecordingStopped: () => {
-          this.dispatchPublicEvent('recording-stopped', undefined);
-        },
-        onDocumentGenerated: payload => {
-          this.dispatchPublicEvent('document-generated', {
-            document: payload.document,
-          });
-        },
-        onDocumentUpdated: payload => {
-          this.dispatchPublicEvent('document-updated', {
-            document: payload.document,
-          });
-        },
-        onDocumentSynced: payload => {
-          this.dispatchPublicEvent('document-synced', {
-            document: payload.document,
-          });
-        },
-        onNavigationChanged: payload => {
-          this.dispatchPublicEvent('navigation-changed', {
-            path: payload.path,
-          });
-        },
-        onUsage: payload => {
-          this.dispatchPublicEvent('usage', {
-            creditsConsumed: payload.creditsConsumed,
-          });
+        onEvent: event => {
+          this.dispatchEmbeddedEvent(event.name, event.payload);
         },
         onError: error => {
           this.dispatchErrorEvent(error);
@@ -138,11 +98,18 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
   }
 
-  private dispatchPublicEvent<K extends keyof EmbeddedEventData>(
-    event: K,
-    data: EmbeddedEventData[K],
-  ) {
+  private dispatchPublicEvent(event: string, data: unknown) {
     this.dispatchEvent(new CustomEvent(event, { detail: data }));
+  }
+
+  private dispatchEmbeddedEvent(rawEventName: string, payload: unknown) {
+    // Preserve raw DOM event passthrough for consumers listening directly.
+    this.dispatchPublicEvent(rawEventName, payload);
+
+    this.dispatchPublicEvent('embedded-event', {
+      name: rawEventName,
+      payload,
+    });
   }
 
   private dispatchErrorEvent(error: {

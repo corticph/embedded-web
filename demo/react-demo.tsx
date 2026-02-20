@@ -1,17 +1,20 @@
 import { useCallback, useRef, useState } from 'react';
-// @ts-ignore - we don't want additional packges installed for the demo
 import { createRoot } from 'react-dom/client';
 import {
   type AuthCredentials,
+  type CortiEmbeddedEventDetail,
   type ConfigureAppPayload,
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
   type Fact,
   type SessionConfig,
+  useCortiEmbeddedApi,
+  useCortiEmbeddedStatus,
 } from '../dist/index.js';
 
 function CortiEmbeddedDemo() {
   const componentRef = useRef<CortiEmbeddedReactRef>(null);
+  const api = useCortiEmbeddedApi(componentRef);
   const [log, setLog] = useState<
     Array<{ time: string; message: string; type: string }>
   >([
@@ -21,10 +24,8 @@ function CortiEmbeddedDemo() {
       type: 'info',
     },
   ]);
-  const [status, setStatus] = useState({
-    isReady: false,
-    baseURL: 'https://assistant.eu.corti.app',
-  });
+  const [isReady, setIsReady] = useState(false);
+  const baseURL = 'https://assistant.staging-eu.corti.app';
 
   // Form states
   const [authPayload, setAuthPayload] = useState<string>(
@@ -111,49 +112,25 @@ function CortiEmbeddedDemo() {
     [],
   );
 
-  // Event handlers
-  const handleReady = useCallback(() => {
-    setStatus(prev => ({ ...prev, isReady: true }));
-    addLogEntry('Corti component loaded and ready', 'success');
-  }, [addLogEntry]);
-
-  const handleRecordingStarted = useCallback(
-    (event: CustomEvent) => {
-      addLogEntry(`Recording started: ${JSON.stringify(event.detail)}`, 'info');
-    },
-    [addLogEntry],
-  );
-
-  const handleRecordingStopped = useCallback(
-    (event: CustomEvent) => {
-      addLogEntry(`Recording stopped: ${JSON.stringify(event.detail)}`, 'info');
-    },
-    [addLogEntry],
-  );
-
-  const handleDocumentGenerated = useCallback(
-    (event: CustomEvent) => {
+  const {
+    status: embeddedStatus,
+    isLoading: isStatusLoading,
+    error: statusError,
+    lastEvent,
+  } = useCortiEmbeddedStatus(componentRef, {
+    onError: error => {
       addLogEntry(
-        `Document generated: ${JSON.stringify(event.detail)}`,
-        'success',
+        `Status refresh failed: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
       );
     },
-    [addLogEntry],
-  );
+  });
 
-  const handleDocumentUpdated = useCallback(
-    (event: CustomEvent) => {
-      addLogEntry(`Document updated: ${JSON.stringify(event.detail)}`, 'info');
-    },
-    [addLogEntry],
-  );
-
-  const handleDocumentSynced = useCallback(
-    (event: CustomEvent) => {
-      addLogEntry(`Document synced: ${JSON.stringify(event.detail)}`, 'info');
-    },
-    [addLogEntry],
-  );
+  // Event handlers
+  const handleReady = useCallback(() => {
+    setIsReady(true);
+    addLogEntry('Corti component loaded and ready', 'success');
+  }, [addLogEntry]);
 
   const handleError = useCallback(
     (event: CustomEvent) => {
@@ -162,41 +139,58 @@ function CortiEmbeddedDemo() {
     [addLogEntry],
   );
 
-  const handleUsage = useCallback(
-    (event: CustomEvent) => {
-      addLogEntry(`Usage event: ${JSON.stringify(event.detail)}`, 'info');
+  const handleEvent = useCallback(
+    (event: CustomEvent<CortiEmbeddedEventDetail>) => {
+      const { name, payload } = event.detail;
+      addLogEntry(`Event ${name}: ${JSON.stringify(payload)}`, 'info');
+      if (
+        name === 'embedded.interactionCreated' &&
+        payload &&
+        typeof payload === 'object' &&
+        'interaction' in payload
+      ) {
+        const { interaction } = payload as { interaction?: { id?: string } };
+        if (interaction?.id) {
+          setNavigatePayload(`/session/${interaction.id}`);
+        }
+      }
     },
     [addLogEntry],
   );
 
   // Action handlers
   const handleShow = () => {
-    if (componentRef.current?.show) {
-      componentRef.current.show();
+    try {
+      api.show();
       addLogEntry('Corti component shown', 'info');
+    } catch (error) {
+      addLogEntry(
+        `Show failed: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      );
     }
   };
 
   const handleHide = () => {
-    if (componentRef.current?.hide) {
-      componentRef.current.hide();
+    try {
+      api.hide();
       addLogEntry('Corti component hidden', 'info');
+    } catch (error) {
+      addLogEntry(
+        `Hide failed: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      );
     }
   };
 
   const handleAuth = async () => {
-    if (!componentRef.current?.auth) {
-      addLogEntry('Component not ready for authentication', 'error');
-      return;
-    }
-
     try {
       const payload = JSON.parse(authPayload) as AuthCredentials;
       addLogEntry(
         `Sending authentication request with payload: ${JSON.stringify(payload)}`,
         'info',
       );
-      const response = await componentRef.current.auth(payload);
+      const response = await api.auth(payload);
       addLogEntry(
         `Authentication successful: ${JSON.stringify(response)}`,
         'success',
@@ -210,18 +204,13 @@ function CortiEmbeddedDemo() {
   };
 
   const handleConfigureApp = async () => {
-    if (!componentRef.current?.configure) {
-      addLogEntry('Component not ready for configureApp', 'error');
-      return;
-    }
-
     try {
       const payload = JSON.parse(configureAppPayload) as ConfigureAppPayload;
       addLogEntry(
         `Configuring app with payload: ${JSON.stringify(payload)}`,
         'info',
       );
-      await componentRef.current.configure(payload);
+      await api.configure(payload);
       addLogEntry('App configuration successful', 'success');
     } catch (error) {
       addLogEntry(
@@ -232,18 +221,13 @@ function CortiEmbeddedDemo() {
   };
 
   const handleConfigureSession = async () => {
-    if (!componentRef.current?.configureSession) {
-      addLogEntry('Component not ready for configureSession', 'error');
-      return;
-    }
-
     try {
       const payload = JSON.parse(configureSessionPayload) as SessionConfig;
       addLogEntry(
         `Configuring session with payload: ${JSON.stringify(payload)}`,
         'info',
       );
-      await componentRef.current.configureSession(payload);
+      await api.configureSession(payload);
       addLogEntry('Session configuration successful', 'success');
     } catch (error) {
       addLogEntry(
@@ -254,18 +238,13 @@ function CortiEmbeddedDemo() {
   };
 
   const handleAddFacts = async () => {
-    if (!componentRef.current?.addFacts) {
-      addLogEntry('Component not ready for addFacts', 'error');
-      return;
-    }
-
     try {
       const payload = JSON.parse(addFactsPayload) as Fact[];
       addLogEntry(
         `Adding facts with payload: ${JSON.stringify(payload)}`,
         'info',
       );
-      await componentRef.current.addFacts(payload);
+      await api.addFacts(payload);
       addLogEntry('Add facts successful', 'success');
     } catch (error) {
       addLogEntry(
@@ -276,14 +255,9 @@ function CortiEmbeddedDemo() {
   };
 
   const handleNavigate = async () => {
-    if (!componentRef.current?.navigate) {
-      addLogEntry('Component not ready for navigate', 'error');
-      return;
-    }
-
     try {
       addLogEntry(`Navigating with payload: ${navigatePayload}`, 'info');
-      await componentRef.current.navigate(navigatePayload);
+      await api.navigate(navigatePayload);
     } catch (error) {
       addLogEntry(
         `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -293,18 +267,13 @@ function CortiEmbeddedDemo() {
   };
 
   const handleCreateInteraction = async () => {
-    if (!componentRef.current?.createInteraction) {
-      addLogEntry('Component not ready for createInteraction', 'error');
-      return;
-    }
-
     try {
       const payload = JSON.parse(createInteractionPayload);
       addLogEntry(
         `Creating interaction with payload: ${JSON.stringify(payload)}`,
         'info',
       );
-      const response = await componentRef.current.createInteraction(payload);
+      const response = await api.createInteraction(payload);
 
       // Update navigate payload with interaction ID
       if (response.id) {
@@ -322,6 +291,21 @@ function CortiEmbeddedDemo() {
     }
   };
 
+  const handleGetTemplates = async () => {
+    try {
+      const response = await api.getTemplates();
+      addLogEntry(
+        `Templates retrieved successfully: ${JSON.stringify(response)}`,
+        'success',
+      );
+    } catch (error) {
+      addLogEntry(
+        `Template retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
+        'error',
+      );
+    }
+  };
+
   const handleClearLog = () => {
     setLog([
       {
@@ -331,6 +315,20 @@ function CortiEmbeddedDemo() {
       },
     ]);
   };
+
+  const latestStatus = JSON.stringify(
+    {
+      isLoading: isStatusLoading,
+      error:
+        statusError instanceof Error
+          ? statusError.message
+          : (statusError ?? null),
+      lastEvent: lastEvent?.name ?? null,
+      status: embeddedStatus,
+    },
+    null,
+    2,
+  );
 
   return (
     <div className="container">
@@ -346,9 +344,27 @@ function CortiEmbeddedDemo() {
             <div className="status">
               <strong>Current Status:</strong>
               <br />
-              Base URL: {status.baseURL}
+              Base URL: {baseURL}
               <br />
-              Component Ready: {status.isReady ? 'Yes' : 'No'}
+              Component Ready: {isReady ? 'Yes' : 'No'}
+              <br />
+              Status Loading: {isStatusLoading ? 'Yes' : 'No'}
+              <br />
+              Authenticated:{' '}
+              {embeddedStatus?.auth?.isAuthenticated ? 'Yes' : 'No'}
+              <br />
+              Interaction ID: {embeddedStatus?.interaction?.id || 'N/A'}
+              <br />
+              Current URL: {embeddedStatus?.currentUrl || 'N/A'}
+              {statusError ? (
+                <>
+                  <br />
+                  Status Error:{' '}
+                  {statusError instanceof Error
+                    ? statusError.message
+                    : String(statusError)}
+                </>
+              ) : null}
             </div>
           </div>
 
@@ -360,6 +376,13 @@ function CortiEmbeddedDemo() {
               </button>
               <button type="button" className="hide-btn" onClick={handleHide}>
                 Hide Corti
+              </button>
+              <button
+                type="button"
+                className="get-templates-btn"
+                onClick={handleGetTemplates}
+              >
+                Get Templates
               </button>
             </div>
           </div>
@@ -510,47 +533,44 @@ function CortiEmbeddedDemo() {
             <div className="component-container">
               <CortiEmbeddedReact
                 ref={componentRef}
-                baseURL={status.baseURL}
+                baseURL={baseURL}
                 onReady={handleReady}
-                onInteractionCreated={response =>
-                  addLogEntry(
-                    `Interaction creation successful: ${JSON.stringify(response.detail.interaction)}`,
-                    'success',
-                  )
-                }
-                onNavigationChanged={() =>
-                  addLogEntry('Navigation successful', 'success')
-                }
-                onRecordingStarted={handleRecordingStarted}
-                onRecordingStopped={handleRecordingStopped}
-                onDocumentGenerated={handleDocumentGenerated}
-                onDocumentUpdated={handleDocumentUpdated}
-                onDocumentSynced={handleDocumentSynced}
+                onEvent={handleEvent}
                 onError={handleError}
-                onUsage={handleUsage}
               />
             </div>
           </div>
         </div>
 
-        {/* Right Panel - Message Log */}
+        {/* Right Panel - Status + Message Log */}
         <div className="right-panel">
-          <div className="demo-title">Message Log</div>
-          <div className="controls">
-            <button
-              type="button"
-              className="postmessage-btn"
-              onClick={handleClearLog}
-            >
-              Clear Log
-            </button>
-          </div>
-          <div className="log">
-            {log.map(entry => (
-              <div key={entry.time} className={`log-entry log-${entry.type}`}>
-                [{entry.time}] {entry.message}
+          <div className="right-split">
+            <div className="right-pane right-status-pane">
+              <div className="demo-title">Latest Status</div>
+              <pre className="status-json">{latestStatus}</pre>
+            </div>
+            <div className="right-pane right-log-pane">
+              <div className="demo-title">Message Log</div>
+              <div className="controls">
+                <button
+                  type="button"
+                  className="postmessage-btn"
+                  onClick={handleClearLog}
+                >
+                  Clear Log
+                </button>
               </div>
-            ))}
+              <div className="log">
+                {log.map((entry, index) => (
+                  <div
+                    key={`${entry.time}-${index}`}
+                    className={`log-entry log-${entry.type}`}
+                  >
+                    [{entry.time}] {entry.message}
+                  </div>
+                ))}
+              </div>
+            </div>
           </div>
         </div>
       </div>

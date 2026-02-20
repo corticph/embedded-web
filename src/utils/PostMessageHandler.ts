@@ -10,25 +10,14 @@ import type {
   CreateInteractionResponse,
   EmbeddedRequest,
   EmbeddedResponse,
-  EmbeddedEventData,
   GetStatusResponse,
   NavigatePayload,
   SetCredentialsPayload,
-  DocumentEventPayload,
   GetTemplatesResponse,
 } from '../types';
 
 export interface PostMessageHandlerCallbacks {
-  onReady?: () => void;
-  onAuthChanged?: (payload: any) => void;
-  onInteractionCreated?: (payload: any) => void;
-  onRecordingStarted?: () => void;
-  onRecordingStopped?: () => void;
-  onDocumentGenerated?: (payload: DocumentEventPayload) => void;
-  onDocumentUpdated?: (payload: DocumentEventPayload) => void;
-  onDocumentSynced?: (payload: DocumentEventPayload) => void;
-  onNavigationChanged?: (payload: any) => void;
-  onUsage?: (payload: EmbeddedEventData['usage']) => void;
+  onEvent?: (event: { name: string; payload: unknown }) => void;
   onError?: (error: {
     message: string;
     code?: string;
@@ -94,54 +83,18 @@ export class PostMessageHandler {
     const { payload } = eventData;
 
     // Handle ready-like events
-    if (eventType === 'ready' || eventType === 'loaded') {
+    if (
+      eventType === 'ready' ||
+      eventType === 'loaded' ||
+      eventType === 'embedded.ready'
+    ) {
       this.isReady = true;
     }
 
-    // Handle specific events with callbacks
-    switch (eventType) {
-      case 'embedded.ready':
-        this.callbacks.onReady?.();
-        break;
-      case 'authChanged':
-        this.callbacks.onAuthChanged?.(payload);
-        break;
-      case 'embedded.interactionCreated':
-        this.callbacks.onInteractionCreated?.(payload);
-        break;
-      case 'recording.started':
-        this.callbacks.onRecordingStarted?.();
-        break;
-      case 'recording.stopped':
-        this.callbacks.onRecordingStopped?.();
-        break;
-      case 'document.generated':
-        this.callbacks.onDocumentGenerated?.(
-          payload as EmbeddedEventData['document-generated'],
-        );
-        break;
-      case 'document.updated':
-        this.callbacks.onDocumentUpdated?.(
-          payload as EmbeddedEventData['document-updated'],
-        );
-        break;
-      case 'document.synced':
-        this.callbacks.onDocumentSynced?.(
-          payload as EmbeddedEventData['document-synced'],
-        );
-        break;
-      case 'embedded.navigated':
-        this.callbacks.onNavigationChanged?.(
-          payload as EmbeddedEventData['navigation-changed'],
-        );
-        break;
-      case 'account.creditsConsumed':
-        this.callbacks.onUsage?.(payload as EmbeddedEventData['usage']);
-        break;
-      default:
-        console.warn(`Unhandled event type: ${eventType}`);
-        break;
-    }
+    this.callbacks.onEvent?.({
+      name: eventType,
+      payload,
+    });
   }
 
   private handleResponse(data: any): void {
@@ -207,7 +160,9 @@ export class PostMessageHandler {
           event.source === this.iframe.contentWindow &&
           event.origin === this.getTrustedOrigin() &&
           event.data?.type === 'CORTI_EMBEDDED_EVENT' &&
-          event.data.event === 'ready'
+          (event.data.event === 'ready' ||
+            event.data.event === 'loaded' ||
+            event.data.event === 'embedded.ready')
         ) {
           clearTimeout(timeoutId);
           window.removeEventListener('message', readyListener);

@@ -62,33 +62,44 @@ import React, { useRef } from 'react';
 import {
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
-  type EmbeddedEventData,
+  useCortiEmbeddedApi,
+  useCortiEmbeddedStatus,
 } from '@corti/embedded-web/react';
 
 function App() {
   const cortiRef = useRef<CortiEmbeddedReactRef>(null);
+  const api = useCortiEmbeddedApi(cortiRef);
+  const { status } = useCortiEmbeddedStatus(cortiRef);
 
   const handleReady = () => {
     console.log('Corti component is ready!');
-    cortiRef.current?.show();
   };
 
-  const handleAuthChanged = (
-    event: CustomEvent<EmbeddedEventData['auth-changed']>,
+  const handleEvent = (
+    event: CustomEvent<{ name: string; payload: unknown }>,
   ) => {
-    console.log('User authenticated:', event.detail.user);
+    console.log('Event name:', event.detail.name);
+    console.log('Event payload:', event.detail.payload);
   };
 
   const handleAuth = async () => {
-    if (!cortiRef.current) return;
-
     try {
-      const user = await cortiRef.current.auth({
+      const user = await api.auth({
         access_token: 'your-token',
         token_type: 'Bearer',
         // ... rest of the token response
       });
       console.log('Authenticated:', user);
+
+      await api.configureSession({ defaultTemplateKey: 'soap_note' });
+      await api.createInteraction({
+        encounter: {
+          identifier: `encounter-${Date.now()}`,
+          status: 'planned',
+          type: 'first_consultation',
+          period: { startedAt: new Date().toISOString() },
+        },
+      });
     } catch (error) {
       console.error('Auth failed:', error);
     }
@@ -103,10 +114,12 @@ function App() {
         baseURL="https://assistant.eu.corti.app" // REQUIRED
         visibility="visible"
         onReady={handleReady}
+        onEvent={handleEvent}
+        onError={event => console.error('Embedded error:', event.detail)}
         style={{ width: '100%', height: '500px' }}
-        // or use className
-        className="w-full h-full"
       />
+
+      <pre>{JSON.stringify(status, null, 2)}</pre>
     </div>
   );
 }
@@ -211,10 +224,10 @@ The component uses a `PostMessageHandler` utility class that:
 
 The React component (`CortiEmbeddedReact`) is available as an additional export and provides:
 
-- **All Web Component APIs**: Full access to all methods via ref
-- **React Event Handlers**: Native React event handling with proper typing
-- **TypeScript Support**: Complete type definitions
-- **Forward Ref**: Access to the underlying component instance
+- **Hook-based API access**: `useCortiEmbeddedApi(ref)` exposes instance-bound methods (`auth`, `navigate`, `createInteraction`, etc.)
+- **Generic event stream**: `onEvent` receives all embedded events as `{ name, payload }`
+- **Status hook**: `useCortiEmbeddedStatus(ref)` keeps latest status/reactive state
+- **Multi-instance safety**: API methods are scoped to the ref you pass
 - **React Props**: Standard React props like `className`, `style`, etc.
 
 ### React Component Import
@@ -223,44 +236,59 @@ The React component (`CortiEmbeddedReact`) is available as an additional export 
 import {
   CortiEmbeddedReact,
   CortiEmbedded, // Web component also available
-  type CortiEmbeddedReactProps,
   type CortiEmbeddedReactRef,
+  useCortiEmbeddedApi,
+  useCortiEmbeddedStatus,
 } from '@corti/embedded-web/react';
 ```
 
-### Available Events (React)
+### Event Listener Setup
 
-- `onReady`: Component is ready to receive API calls
-- `onAuthChanged`: User authentication status changed
-- `onInteractionCreated`: New interaction was created
-- `onRecordingStarted` / `onRecordingStopped`: Recording status changes
-- `onDocumentGenerated` / `onDocumentUpdated`: Document events
-- `onNavigationChanged`: Navigation within the embedded UI changed
-- `onUsage`: Usage data (credits used)
-- `onError`: An error occurred
-
-### Event Data Access
-
-Events in React carry data in the `detail` property:
+- Use `onEvent` for all embedded events.
+- Event detail shape is `{ name: string; payload: unknown }`.
+- Full event catalog and payload details are documented at:
+  - https://docs.corti.ai/assistant/events
 
 ```tsx
-import type {
-  EmbeddedEventData,
-  CortiEmbeddedReactProps,
+<CortiEmbeddedReact
+  baseURL="https://assistant.eu.corti.app"
+  onEvent={event => {
+    console.log(event.detail.name, event.detail.payload);
+  }}
+  onReady={() => console.log('Ready')}
+  onError={event => console.error(event.detail)}
+/>
+```
+
+### API Methods (React)
+
+Use the API hook with the same component ref:
+
+```tsx
+import React, { useRef } from 'react';
+import {
+  CortiEmbeddedReact,
+  type CortiEmbeddedReactRef,
+  useCortiEmbeddedApi,
 } from '@corti/embedded-web/react';
 
-// Method 1: Use typed event handler interface
-const handleAuthChanged: CortiEmbeddedReactProps['onAuthChanged'] = event => {
-  console.log('User:', event.detail.user);
-};
+function Example() {
+  const ref = useRef<CortiEmbeddedReactRef>(null);
+  const api = useCortiEmbeddedApi(ref);
 
-// Method 2: Cast events manually
-const handleDocumentGenerated = (event: Event) => {
-  const customEvent = event as CustomEvent<
-    EmbeddedEventData['document-generated']
-  >;
-  console.log('Document:', customEvent.detail.document);
-};
+  const run = async () => {
+    await api.auth({ access_token: '...', token_type: 'Bearer', mode: 'stateful' });
+    const created = await api.createInteraction({ encounter: { ... } });
+    await api.navigate(`/session/${created.id}`);
+  };
+
+  return (
+    <>
+      <button onClick={() => void run()}>Run</button>
+      <CortiEmbeddedReact ref={ref} baseURL="https://assistant.eu.corti.app" />
+    </>
+  );
+}
 ```
 
 For detailed React usage examples, see [docs/react-usage.md](./docs/react-usage.md).
