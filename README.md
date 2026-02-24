@@ -152,11 +152,22 @@ component.hide();
 
 #### auth
 
+Authentication is required before using the embedded app. The payload passed to
+`component.auth(...)` should come directly from your identity provider token
+response (for example, Keycloak/OIDC token endpoint response), plus `mode`.
+
+- API details and payload shape: https://docs.corti.ai/assistant/api-reference#auth
+- End-to-end authentication guidance: https://docs.corti.ai/assistant/authentication
+
+Use user-based authentication (OAuth2/OIDC). Client-credentials-only flows are
+not supported for the embedded app.
+
 ```javascript
 const authResponse = await component.auth({
-  // Example: Keycloak-style token + mode
+  // Use the full token response from your IdP + mode
   access_token: 'YOUR_JWT',
   token_type: 'Bearer',
+  // include other token fields from your provider response (expires_in, refresh_token, etc.)
   mode: 'stateful',
   ...
 });
