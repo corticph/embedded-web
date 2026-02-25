@@ -1,15 +1,18 @@
 import type {
   AuthCredentials,
-  GetStatusResponsePayload,
   ConfigureAppPayload,
-  ConfigureAppResponsePayload,
   CortiEmbeddedAPI,
-  EmbeddedEventData,
   Fact,
   InteractionDetails,
   CreateInteractionPayload,
   SessionConfig,
+  GetStatusResponse,
 } from '../src/types';
+
+interface CortiEmbeddedEventDetail {
+  name: string;
+  payload: unknown;
+}
 
 // Get the component with proper typing
 const component = document.getElementById('corti-component') as HTMLElement &
@@ -92,11 +95,7 @@ export const testAuthentication = async (): Promise<void> => {
         `Sending authentication request with payload: ${JSON.stringify(authPayload)}`,
         'info',
       );
-      const response = await component.auth(authPayload);
-      addLogEntry(
-        `Authentication successful: ${JSON.stringify(response)}`,
-        'success',
-      );
+      await component.auth(authPayload);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -131,7 +130,6 @@ export const configureSession = async (): Promise<void> => {
         'info',
       );
       await component.configureSession(payload);
-      addLogEntry('Session configuration successful', 'success');
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -166,7 +164,6 @@ export const addFacts = async (): Promise<void> => {
         'info',
       );
       await component.addFacts(payload);
-      addLogEntry('Add facts successful', 'success');
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -201,7 +198,6 @@ export const navigate = async (): Promise<void> => {
         'info',
       );
       await component.navigate(payload.path);
-      addLogEntry('Navigation successful', 'success');
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -237,10 +233,6 @@ export const createInteraction = async (): Promise<void> => {
       );
       const response: InteractionDetails =
         await component.createInteraction(payload);
-      addLogEntry(
-        `Interaction creation successful: ${JSON.stringify(response)}`,
-        'success',
-      );
 
       // Update navigate payload textarea with the returned interaction ID
       try {
@@ -305,7 +297,6 @@ export const startRecording = async (): Promise<void> => {
     try {
       addLogEntry('Starting recording...', 'info');
       await component.startRecording();
-      addLogEntry('Recording started successfully', 'success');
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -321,7 +312,6 @@ export const stopRecording = async (): Promise<void> => {
     try {
       addLogEntry('Stopping recording...', 'info');
       await component.stopRecording();
-      addLogEntry('Recording stopped successfully', 'success');
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -336,7 +326,7 @@ export const getStatus = async (): Promise<void> => {
   if (component?.getStatus) {
     try {
       addLogEntry('Getting component status...', 'info');
-      const status: GetStatusResponsePayload = await component.getStatus();
+      const status: GetStatusResponse = await component.getStatus();
       addLogEntry(
         `Component status: ${JSON.stringify(status, null, 2)}`,
         'success',
@@ -374,12 +364,7 @@ export const configure = async (): Promise<void> => {
         `Configuring app with payload: ${JSON.stringify(payload)}`,
         'info',
       );
-      const response: ConfigureAppResponsePayload =
-        await component.configure(payload);
-      addLogEntry(
-        `App configuration successful: ${JSON.stringify(response)}`,
-        'success',
-      );
+      await component.configure(payload);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -411,7 +396,6 @@ export const setCredentials = async (): Promise<void> => {
 
       addLogEntry('Setting credentials...', 'info');
       await component.setCredentials(payload);
-      addLogEntry('Credentials set successfully', 'success');
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
@@ -524,91 +508,10 @@ customElements.whenDefined('corti-embedded').then(() => {
   updateStatus();
   addLogEntry('Corti component loaded and ready', 'success');
 
-  // Add typed event listeners
-  component.addEventListener('error', (event: EmbeddedEventData['error']) => {
-    console.log('Error event:', event);
-    addLogEntry(`[EVENT] - Component error: ${event.message}`, 'error');
-  });
-
-  component.addEventListener('auth-changed', (event: Event) => {
-    const customEvent = event as CustomEvent<EmbeddedEventData['auth-changed']>;
-    console.log('Auth changed event:', customEvent);
+  component.addEventListener('embedded-event', (event: Event) => {
+    const { detail } = event as CustomEvent<CortiEmbeddedEventDetail>;
     addLogEntry(
-      `[EVENT] - User authenticated: ${customEvent.detail.user.email}`,
-      'success',
-    );
-  });
-
-  component.addEventListener('interaction-created', (event: Event) => {
-    const customEvent = event as CustomEvent<
-      EmbeddedEventData['interaction-created']
-    >;
-    console.log('Interaction created event:', customEvent);
-    addLogEntry(
-      `[EVENT] - Interaction created: ${customEvent.detail.interaction.id}`,
-      'success',
-    );
-  });
-
-  component.addEventListener('recording-started', () => {
-    console.log('Recording started event');
-    addLogEntry('[EVENT] - Recording started (event)', 'info');
-  });
-
-  component.addEventListener('recording-stopped', () => {
-    console.log('Recording stopped event');
-    addLogEntry('[EVENT] - Recording stopped (event)', 'info');
-  });
-
-  component.addEventListener('document-generated', (event: Event) => {
-    const customEvent = event as CustomEvent<
-      EmbeddedEventData['document-generated']
-    >;
-    console.log('Document generated event:', customEvent);
-    addLogEntry(
-      `[EVENT] - Document generated: ${customEvent.detail.document.id}`,
-      'success',
-    );
-  });
-
-  component.addEventListener('document-updated', (event: Event) => {
-    const customEvent = event as CustomEvent<
-      EmbeddedEventData['document-updated']
-    >;
-    console.log('Document updated event:', customEvent);
-    addLogEntry(
-      `[EVENT] - Document updated: ${customEvent.detail.document.id}`,
-      'info',
-    );
-  });
-
-  component.addEventListener('document-synced', (event: Event) => {
-    const customEvent = event as CustomEvent<
-      EmbeddedEventData['document-synced']
-    >;
-    console.log('Document synced event:', customEvent);
-    addLogEntry(
-      `[EVENT] - Document synced: ${customEvent.detail.document.id}`,
-      'success',
-    );
-  });
-
-  component.addEventListener('navigation-changed', (event: Event) => {
-    const customEvent = event as CustomEvent<
-      EmbeddedEventData['navigation-changed']
-    >;
-    console.log('Navigation changed event:', customEvent);
-    addLogEntry(
-      `[EVENT] - Navigation changed to: ${customEvent.detail.path}`,
-      'info',
-    );
-  });
-
-  component.addEventListener('usage', (event: Event) => {
-    const customEvent = event as CustomEvent<EmbeddedEventData['usage']>;
-    console.log('Usage event:', customEvent);
-    addLogEntry(
-      `[EVENT] - Usage: ${customEvent.detail.creditsConsumed} credits`,
+      `[EMBEDDED-EVENT] - ${detail.name}: ${JSON.stringify(detail.payload)}`,
       'info',
     );
   });
