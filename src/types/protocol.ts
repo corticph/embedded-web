@@ -1,38 +1,39 @@
 // Protocol types for communication between parent applications and embedded Corti Assistant
 
-export type APIVersion = "v1";
+export type APIVersion = 'v1';
 
-export type MessageType = "CORTI_EMBEDDED" | "CORTI_EMBEDDED_RESPONSE" | "CORTI_EMBEDDED_EVENT";
+export type MessageType =
+  | 'CORTI_EMBEDDED'
+  | 'CORTI_EMBEDDED_RESPONSE'
+  | 'CORTI_EMBEDDED_EVENT';
 
-export type AuthMode = "stateless" | "stateful";
-
-export type DefaultMode = "virtual" | "in-person";
+export type DefaultMode = 'virtual' | 'in-person';
 
 export type EmbeddedAction =
-  | "auth"
-  | "createInteraction"
-  | "addFacts"
-  | "configureSession"
-  | "navigate"
-  | "startRecording"
-  | "stopRecording"
-  | "getStatus"
-  | "getTemplates"
-  | "configure"
-  | "setCredentials";
+  | 'auth'
+  | 'createInteraction'
+  | 'addFacts'
+  | 'configureSession'
+  | 'navigate'
+  | 'startRecording'
+  | 'stopRecording'
+  | 'getStatus'
+  | 'getTemplates'
+  | 'configure'
+  | 'setCredentials';
 
 export type DeprecatedEmbeddedEvent =
-  | "ready"
-  | "loaded"
-  | "recordingStarted"
-  | "recordingStopped"
-  | "documentGenerated"
-  | "documentUpdated"
-  | "documentSynced"
-  | "authChanged"
-  | "interactionCreated"
-  | "navigationChanged"
-  | "usage";
+  | 'ready'
+  | 'loaded'
+  | 'recordingStarted'
+  | 'recordingStopped'
+  | 'documentGenerated'
+  | 'documentUpdated'
+  | 'documentSynced'
+  | 'authChanged'
+  | 'interactionCreated'
+  | 'navigationChanged'
+  | 'usage';
 
 // Base Message Types
 export interface BaseMessage {
@@ -41,14 +42,14 @@ export interface BaseMessage {
 }
 
 export interface EmbeddedRequest extends BaseMessage {
-  type: "CORTI_EMBEDDED";
+  type: 'CORTI_EMBEDDED';
   action: EmbeddedAction;
   requestId: string;
   payload?: unknown;
 }
 
 export interface EmbeddedResponse extends BaseMessage {
-  type: "CORTI_EMBEDDED_RESPONSE";
+  type: 'CORTI_EMBEDDED_RESPONSE';
   action: EmbeddedAction;
   requestId: string;
   success: boolean;
@@ -59,7 +60,7 @@ export interface EmbeddedResponse extends BaseMessage {
 }
 
 interface BaseEventMessage extends BaseMessage {
-  type: "CORTI_EMBEDDED_EVENT";
+  type: 'CORTI_EMBEDDED_EVENT';
   event: string | DeprecatedEmbeddedEvent;
   payload?: unknown;
 }
@@ -76,92 +77,92 @@ export interface EmbeddedEventMessage extends BaseEventMessage {
 
 // Specific Request Types
 export interface AuthRequest extends EmbeddedRequest {
-  action: "auth";
+  action: 'auth';
 }
 
 export interface CreateInteractionRequest extends EmbeddedRequest {
-  action: "createInteraction";
+  action: 'createInteraction';
 }
 
 export interface AddFactsRequest extends EmbeddedRequest {
-  action: "addFacts";
+  action: 'addFacts';
 }
 
 export interface ConfigureSessionRequest extends EmbeddedRequest {
-  action: "configureSession";
+  action: 'configureSession';
 }
 
 export interface NavigateRequest extends EmbeddedRequest {
-  action: "navigate";
+  action: 'navigate';
 }
 
 export interface StartRecordingRequest extends EmbeddedRequest {
-  action: "startRecording";
+  action: 'startRecording';
 }
 
 export interface StopRecordingRequest extends EmbeddedRequest {
-  action: "stopRecording";
+  action: 'stopRecording';
 }
 
 export interface GetStatusRequest extends EmbeddedRequest {
-  action: "getStatus";
+  action: 'getStatus';
 }
 
 export interface GetTemplatesRequest extends EmbeddedRequest {
-  action: "getTemplates";
+  action: 'getTemplates';
 }
 
 export interface ConfigureRequest extends EmbeddedRequest {
-  action: "configure";
+  action: 'configure';
 }
 
 export interface SetCredentialsRequest extends EmbeddedRequest {
-  action: "setCredentials";
+  action: 'setCredentials';
 }
 
 // Event Types
 export interface ReadyEvent extends DeprecatedEmbeddedEventMessage {
-  event: "ready";
+  event: 'ready';
 }
 
 export interface LoadedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "loaded";
+  event: 'loaded';
 }
 
 export interface RecordingStartedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "recordingStarted";
+  event: 'recordingStarted';
 }
 
 export interface RecordingStoppedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "recordingStopped";
+  event: 'recordingStopped';
 }
 
 export interface DocumentGeneratedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "documentGenerated";
+  event: 'documentGenerated';
 }
 
 export interface DocumentUpdatedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "documentUpdated";
+  event: 'documentUpdated';
 }
 
 export interface DocumentSyncedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "documentSynced";
+  event: 'documentSynced';
 }
 
 export interface AuthChangedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "authChanged";
+  event: 'authChanged';
 }
 
 export interface InteractionCreatedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "interactionCreated";
+  event: 'interactionCreated';
 }
 
 export interface NavigationChangedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "navigationChanged";
+  event: 'navigationChanged';
 }
 
 export interface UsageEvent extends DeprecatedEmbeddedEventMessage {
-  event: "usage";
+  event: 'usage';
 }
 
 // Request/Response/Event type unions
