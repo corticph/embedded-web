@@ -100,10 +100,19 @@ export interface CortiEmbeddedWindowAPI {
   v1: CortiEmbeddedV1API;
 }
 
+/**
+ * Type representing the corti-embedded custom element in the DOM.
+ * Automatically available via querySelector/getElementById when this package is installed.
+ */
+export type CortiEmbeddedElement = HTMLElement & CortiEmbeddedAPI;
+
 // Extend Window interface
 declare global {
   interface Window {
     CortiEmbedded?: CortiEmbeddedWindowAPI;
+  }
+  interface HTMLElementTagNameMap {
+    'corti-embedded': CortiEmbeddedElement;
   }
 }
 
