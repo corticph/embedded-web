@@ -4,8 +4,6 @@ export type APIVersion = "v1";
 
 export type MessageType = "CORTI_EMBEDDED" | "CORTI_EMBEDDED_RESPONSE" | "CORTI_EMBEDDED_EVENT";
 
-export type AuthMode = "stateless" | "stateful";
-
 export type DefaultMode = "virtual" | "in-person";
 
 export type EmbeddedAction =
