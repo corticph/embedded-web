@@ -243,7 +243,6 @@ export class PostMessageHandler {
       action: 'auth',
       payload,
     });
-    this.isReady = false;
 
     if (response.payload && response.success) {
       return (response.payload as AuthResponse).user;
