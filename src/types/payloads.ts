@@ -1,7 +1,7 @@
 // Payload types for embedded API requests and responses
-import type { Corti } from "@corti/sdk";
+import type { Corti } from '@corti/sdk';
 
-import type { AuthMode, DefaultMode } from "./protocol.js";
+import type { DefaultMode } from './protocol.js';
 
 // Keycloak token structure
 export interface KeycloakTokenResponse {
@@ -12,7 +12,7 @@ export interface KeycloakTokenResponse {
   refresh_expires_in?: number | null;
   refresh_token?: string;
   id_token?: string;
-  "not-before-policy"?: number | null;
+  'not-before-policy'?: number | null;
   session_state?: string;
   scope?: string;
   profile?: {
@@ -22,25 +22,20 @@ export interface KeycloakTokenResponse {
   };
 }
 
-// Authentication payload
-export interface AuthPayload extends KeycloakTokenResponse {
-  mode: AuthMode;
-}
-
 // Fact structure
 export interface Fact {
-  text: Corti.FactsCreateInput["text"];
+  text: Corti.FactsCreateInput['text'];
   group: string;
-  source?: Corti.FactsCreateInput["source"];
+  source?: Corti.FactsCreateInput['source'];
 }
 
 // Create interaction payload
 export interface CreateInteractionPayload {
-  assignedUserId?: Corti.InteractionsCreateRequest["assignedUserId"] | null;
+  assignedUserId?: Corti.InteractionsCreateRequest['assignedUserId'] | null;
   encounter: {
-    identifier: Corti.InteractionsCreateRequest["encounter"]["identifier"];
-    status: Corti.InteractionsCreateRequest["encounter"]["status"];
-    type: Corti.InteractionsCreateRequest["encounter"]["type"];
+    identifier: Corti.InteractionsCreateRequest['encounter']['identifier'];
+    status: Corti.InteractionsCreateRequest['encounter']['status'];
+    type: Corti.InteractionsCreateRequest['encounter']['type'];
     period: {
       startedAt: string;
       endedAt?: string;
@@ -48,10 +43,10 @@ export interface CreateInteractionPayload {
     title?: string;
   };
   patient?: {
-    identifier?: Corti.InteractionsPatient["identifier"];
+    identifier?: Corti.InteractionsPatient['identifier'];
     name?: string;
     birthDate?: string | null;
-    gender?: Corti.InteractionsPatient["gender"];
+    gender?: Corti.InteractionsPatient['gender'];
   };
 }
 

@@ -68,7 +68,7 @@ function ApiExample() {
     await api.auth({
       access_token: '...',
       token_type: 'Bearer',
-      mode: 'stateful',
+      // ... rest of the token response
     });
     const created = await api.createInteraction({
       encounter: {
