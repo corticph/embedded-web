@@ -23,7 +23,7 @@
   "module": "dist/web-bundle.js",
   "exports": {
     ".": {
-      "types": "./dist/web-bundle.d.ts",
+      "types": "./dist/web-index.d.ts",
       "import": "./dist/web-bundle.js",
       "browser": "./dist/web-bundle.js",
       "default": "./dist/web-bundle.js"

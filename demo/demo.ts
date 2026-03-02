@@ -1,22 +1,21 @@
 import type {
   AuthCredentials,
   ConfigureAppPayload,
-  CortiEmbeddedAPI,
   Fact,
   InteractionDetails,
   CreateInteractionPayload,
   SessionConfig,
   GetStatusResponse,
-} from '../src/types';
+} from '../dist';
 
 interface CortiEmbeddedEventDetail {
   name: string;
   payload: unknown;
 }
 
-// Get the component with proper typing
-const component = document.getElementById('corti-component') as HTMLElement &
-  CortiEmbeddedAPI;
+// Get the component with proper typing — querySelector('corti-embedded') is
+// automatically typed as CortiEmbeddedElement via HTMLElementTagNameMap
+const component = document.querySelector('corti-embedded')
 
 // Define log entry types
 type LogType = 'info' | 'success' | 'error' | 'warning';
@@ -508,7 +507,7 @@ customElements.whenDefined('corti-embedded').then(() => {
   updateStatus();
   addLogEntry('Corti component loaded and ready', 'success');
 
-  component.addEventListener('embedded-event', (event: Event) => {
+  component?.addEventListener('embedded-event', (event: Event) => {
     const { detail } = event as CustomEvent<CortiEmbeddedEventDetail>;
     addLogEntry(
       `[EMBEDDED-EVENT] - ${detail.name}: ${JSON.stringify(detail.payload)}`,
