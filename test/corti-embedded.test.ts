@@ -56,7 +56,7 @@ describe('CortiEmbedded', () => {
     expect(iframe.getAttribute('style')).to.contain('display: none');
   });
 
-  it('throws and dispatches an error event on invalid baseURL (connectedCallback)', async () => {
+  it('dispatches an error event on invalid baseURL (connectedCallback) without throwing', async () => {
     const el = new CortiEmbedded();
     let errorEvent: CustomEvent | null = null;
     el.addEventListener('error', evt => {
@@ -69,7 +69,8 @@ describe('CortiEmbedded', () => {
     } catch (e: any) {
       thrown = e;
     }
-    expect(thrown).to.be.instanceOf(Error);
+    // connectedCallback must not throw — consumers handle invalid URLs via the error event
+    expect(thrown).to.equal(null);
     expect(errorEvent).to.exist;
     expect((errorEvent!.detail as any).message).to.match(/Invalid baseURL/i);
   });
@@ -95,8 +96,9 @@ describe('CortiEmbedded', () => {
       'https://assistant.us.corti.app/embedded',
     );
     const allowAttr = iframe.getAttribute('allow')!;
-    expect(allowAttr).to.include('microphone *');
-    expect(allowAttr).to.include('camera *');
+    // After a baseURL change, updated() sets origin-specific permissions
+    expect(allowAttr).to.include('microphone');
+    expect(allowAttr).to.include('camera');
   });
 
   it('ignores about:blank iframe loads (no handler setup)', async () => {
@@ -156,6 +158,37 @@ describe('CortiEmbedded', () => {
     });
   });
 
+  it("forwards 'embedded.ready' raw and suppresses raw 'ready'/'loaded'", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+
+    const fired: string[] = [];
+    for (const name of ['ready', 'loaded', 'embedded.ready', 'embedded-event']) {
+      el.addEventListener(name, () => fired.push(name));
+    }
+
+    // 'embedded.ready' should fire raw 'embedded.ready' + 'embedded-event'
+    (el as any).dispatchEmbeddedEvent('embedded.ready', {});
+    expect(fired).to.not.include('ready');
+    expect(fired).to.include('embedded-event');
+    expect(fired).to.include('embedded.ready');
+
+    fired.length = 0;
+
+    // 'ready' from iframe should only fire 'embedded-event', NOT the public 'ready'
+    (el as any).dispatchEmbeddedEvent('ready', {});
+    expect(fired).to.not.include('ready');
+    expect(fired).to.include('embedded-event');
+
+    fired.length = 0;
+
+    // 'loaded' from iframe should only fire 'embedded-event', NOT 'loaded' raw
+    (el as any).dispatchEmbeddedEvent('loaded', {});
+    expect(fired).to.not.include('loaded');
+    expect(fired).to.include('embedded-event');
+  });
+
   it('auth throws if component not ready', async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
@@ -202,22 +235,23 @@ describe('CortiEmbedded', () => {
       interaction: null,
     };
 
-    // Inject a minimal mock handler
+    // Inject a minimal mock handler that responds via the generic postMessage interface
     (el as any).postMessageHandler = {
-      auth: async () => mockUser,
-      createInteraction: async () => mockInteraction,
-      configureSession: async () => {},
-      addFacts: async () => {},
-      navigate: async () => {},
-      startRecording: async () => {},
-      stopRecording: async () => {},
-      getStatus: async () => mockStatus,
-      configure: async () => {},
-      setCredentials: async () => {},
+      postMessage: async (msg: { action: string }) => {
+        switch (msg.action) {
+          case 'auth':
+            return { success: true, payload: { user: mockUser } };
+          case 'createInteraction':
+            return { success: true, payload: mockInteraction };
+          case 'getStatus':
+            return { success: true, payload: mockStatus };
+          default:
+            return { success: true, payload: {} };
+        }
+      },
+      waitForReady: async () => {},
       destroy: () => {},
       ready: true,
-      on: () => {},
-      off: () => {},
     };
 
     const credentials: SetCredentialsPayload = {
@@ -273,7 +307,7 @@ describe('CortiEmbedded', () => {
     // Note: configure method would normally change baseURL, but our mock doesn't handle that
   });
 
-  it('dispatches error and removes iframe when baseURL becomes invalid (updated)', async () => {
+  it('dispatches error event when baseURL becomes invalid (updated) without throwing', async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
@@ -281,15 +315,19 @@ describe('CortiEmbedded', () => {
     // Ensure it starts valid
     expect(iframe.getAttribute('src')).to.equal(`${validBaseURL}/embedded`);
 
+    let errorEvent: CustomEvent | null = null;
+    el.addEventListener('error', evt => {
+      errorEvent = evt as unknown as CustomEvent;
+    });
+
     el.baseURL = 'https://example.com';
-    let thrown: Error | null = null;
-    try {
-      await el.updateComplete;
-    } catch (error: any) {
-      thrown = error;
-    }
-    expect(thrown).to.be.instanceOf(Error);
-    expect(String(thrown?.message || thrown)).to.match(/Invalid baseURL/i);
+    // updateComplete must not reject after the fix
+    await el.updateComplete;
+
+    expect(errorEvent).to.exist;
+    expect((errorEvent!.detail as any).message).to.match(/Invalid baseURL/i);
+    // The iframe src should have been reset to about:blank
+    expect(iframe.getAttribute('src')).to.equal('about:blank');
   });
 
   it('returns proper status when component is not ready', async () => {
