@@ -102,7 +102,7 @@ export const CortiEmbeddedReact = React.forwardRef<
       ref: internalRef,
       baseurl: baseURL,
       ...(visibility !== undefined ? { visibility } : {}),
-      ...(className !== undefined ? { class: className } : {}),
+      ...(className !== undefined ? { className } : {}),
       style,
     });
   },
