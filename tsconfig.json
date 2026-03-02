@@ -2,7 +2,7 @@
   "compilerOptions": {
     "target": "es2021",
     "module": "es2022",
-    "moduleResolution": "node",
+    "moduleResolution": "bundler",
     "noEmitOnError": true,
     "lib": ["es2021", "dom", "DOM.Iterable"],
     "strict": true,
@@ -12,11 +12,13 @@
     "emitDecoratorMetadata": false,
     "useDefineForClassFields": false,
     "importHelpers": false,
+    "rootDir": "src",
     "outDir": "dist",
     "sourceMap": true,
     "inlineSources": true,
     "declaration": true,
     "incremental": true,
+    "tsBuildInfoFile": ".tmp/tsconfig.tsbuildinfo",
     "skipLibCheck": true,
     "jsx": "react-jsx"
   },

@@ -23,39 +23,36 @@
   "module": "dist/web-bundle.js",
   "exports": {
     ".": {
-      "types": "./dist/web-bundle.d.ts",
+      "types": "./dist/web-index.d.ts",
       "import": "./dist/web-bundle.js",
       "browser": "./dist/web-bundle.js",
       "default": "./dist/web-bundle.js"
     },
-    "./types": {
-      "types": "./dist/types/index.d.ts",
-      "import": "./dist/types/index.js",
-      "default": "./dist/types/index.js"
-    },
-    "./types/*": {
-      "types": "./dist/types/*.d.ts",
-      "import": "./dist/types/*.js",
-      "default": "./dist/types/*.js"
-    },
     "./react": {
-      "types": "./dist/react/index.d.ts",
+      "types": "./dist/index.d.ts",
       "import": "./dist/bundle.js",
       "default": "./dist/bundle.js"
     }
   },
+  "sideEffects": [
+    "dist/corti-embedded.js",
+    "dist/web-bundle.js",
+    "dist/bundle.js"
+  ],
   "jsdelivr": "./dist/web-bundle.js",
   "browser": "./dist/web-bundle.js",
   "files": [
     "dist"
   ],
   "scripts": {
+    "clean": "node -e \"const fs=require('fs');for(const p of ['dist','.tmp/test-dist','.tmp/tsconfig.tsbuildinfo','.tmp/tsconfig.test.tsbuildinfo'])fs.rmSync(p,{recursive:true,force:true});\"",
     "analyze": "cem analyze --litelement",
-    "build": "tsc && npm run analyze -- --exclude dist",
+    "build:ts": "npm run clean && tsc",
+    "build": "npm run build:ts && npm run build:bundle && npm run build:web-bundle && npm run analyze -- --exclude dist",
     "build:bundle": "esbuild dist/index.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser --external:react --define:process.env.NODE_ENV='\"production\"' --minify",
     "build:web-bundle": "esbuild dist/web-index.js --bundle --outfile=dist/web-bundle.js --format=esm --platform=browser --define:process.env.NODE_ENV='\"production\"' --minify",
     "build:demo": "esbuild demo/react-demo.tsx --bundle --outfile=demo/react-demo-bundle.js --format=esm --platform=browser --jsx=automatic --loader:.tsx=tsx",
-    "prerelease": "npm run build && npm run build:bundle && npm run build:web-bundle",
+    "prerelease": "npm run build",
     "start": "npm run build && npm run build:demo && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"esbuild demo/react-demo.tsx --bundle --outfile=demo/react-demo-bundle.js --format=esm --platform=browser --jsx=automatic --loader:.tsx=tsx --watch\" \"web-dev-server\"",
     "start:simple": "npm run build && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"web-dev-server\"",
     "prepublish": "tsc && npm run analyze -- --exclude dist",
@@ -76,6 +73,7 @@
     "@open-wc/testing": "^4.0.0",
     "@types/mocha": "^10.0.7",
     "@types/react": "^19.2.7",
+    "@types/react-dom": "^19.2.3",
     "@typescript-eslint/eslint-plugin": "^7.16.0",
     "@typescript-eslint/parser": "^7.16.0",
     "@web/dev-server": "^0.4.6",

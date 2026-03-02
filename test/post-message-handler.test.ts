@@ -10,18 +10,64 @@ describe('PostMessageHandler', () => {
     return { handler, iframe, origin };
   }
 
-  it('waits for ready event and exposes ready=true', async () => {
+  it("waits for 'embedded.ready' event and exposes ready=true", async () => {
     const { handler, iframe, origin } = makeRealHandler();
     const readyPromise = handler.waitForReady(500);
     window.dispatchEvent(
       new MessageEvent('message', {
-        data: { type: 'CORTI_EMBEDDED_EVENT', event: 'ready' },
+        data: { type: 'CORTI_EMBEDDED_EVENT', event: 'embedded.ready' },
         origin,
         source: iframe.contentWindow as any,
       }),
     );
     await readyPromise;
     expect(handler.ready).to.equal(true);
+    handler.destroy();
+    iframe.remove();
+  });
+
+  it("does not set ready=true for 'ready' or 'loaded' events", async () => {
+    const { handler, iframe, origin } = makeRealHandler();
+    for (const event of ['ready', 'loaded']) {
+      let timedOut = false;
+      // Send the non-ready signal
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: { type: 'CORTI_EMBEDDED_EVENT', event },
+          origin,
+          source: iframe.contentWindow as any,
+        }),
+      );
+
+      // eslint-disable-next-line no-await-in-loop
+      await handler.waitForReady(50).catch(() => {
+        timedOut = true;
+      });
+
+      // waitForReady should still time out because these events don't signal readiness
+      expect(timedOut).to.equal(true);
+      expect(handler.ready).to.equal(false);
+      handler.destroy();
+      iframe.remove();
+    }
+  });
+
+  it('stores protocol version from embedded.ready payload', async () => {
+    const { handler, iframe, origin } = makeRealHandler();
+    const readyPromise = handler.waitForReady(500);
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: {
+          type: 'CORTI_EMBEDDED_EVENT',
+          event: 'embedded.ready',
+          payload: { version: 'v1' },
+        },
+        origin,
+        source: iframe.contentWindow as any,
+      }),
+    );
+    await readyPromise;
+    expect(handler.protocolVersion).to.equal('v1');
     handler.destroy();
     iframe.remove();
   });

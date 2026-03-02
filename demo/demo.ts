@@ -7,7 +7,7 @@ import type {
   CreateInteractionPayload,
   SessionConfig,
   GetStatusResponse,
-} from '../src/types';
+} from '../dist/index.js';
 
 interface CortiEmbeddedEventDetail {
   name: string;
