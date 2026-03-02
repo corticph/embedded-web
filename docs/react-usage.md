@@ -16,13 +16,18 @@ import {
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
   type CortiEmbeddedEventDetail,
+  type CortiEmbeddedErrorDetail,
 } from '@corti/embedded-web/react';
 
 function App() {
   const cortiRef = useRef<CortiEmbeddedReactRef>(null);
 
-  const handleEvent = (event: CustomEvent<CortiEmbeddedEventDetail>) => {
-    console.log(event.detail.name, event.detail.payload);
+  const handleEvent = (detail: CortiEmbeddedEventDetail) => {
+    console.log(detail.name, detail.payload);
+  };
+
+  const handleError = (detail: CortiEmbeddedErrorDetail) => {
+    console.error('Embedded error:', detail);
   };
 
   return (
@@ -32,7 +37,7 @@ function App() {
       visibility="visible"
       onReady={() => console.log('Corti embedded is ready')}
       onEvent={handleEvent}
-      onError={event => console.error('Embedded error:', event.detail)}
+      onError={handleError}
       style={{ width: '100%', height: '600px' }}
     />
   );
@@ -45,6 +50,9 @@ Use `onEvent` as the canonical event listener.
 
 - Event shape: `{ name: string; payload: unknown }`
 - This receives all embedded events
+- `onReady` is triggered by the raw `embedded.ready` event
+- Internal lifecycle events like `ready` and `loaded` are also visible in
+  `onEvent` (via `embedded-event`)
 - Event names and payload contracts are documented publicly at:
   - https://docs.corti.ai/assistant/events
 
@@ -112,7 +120,6 @@ The hook returns:
 - `isLoading`: `true` while a status fetch is in progress
 - `error`: last fetch error (if any)
 - `lastEvent`: latest received embedded event (`{ name, payload }`) used for refresh decisions
-- `refresh()`: manual trigger for an immediate status fetch
 
 How it works:
 
@@ -123,7 +130,7 @@ How it works:
 Suggested usage:
 
 - Mount one `CortiEmbeddedReact` instance and pass the same ref to the hook.
-- Use `status` for rendering UI state, and `refresh()` for user-triggered sync actions - only if necessary.
+- Use `status` for rendering UI state.
 - Keep event-specific logic in `onEvent` while letting the hook handle status synchronization.
 
 ```tsx
@@ -136,12 +143,10 @@ import {
 
 function StatusExample() {
   const ref = useRef<CortiEmbeddedReactRef>(null);
-  const { status, isLoading, error, lastEvent, refresh } =
-    useCortiEmbeddedStatus(ref);
+  const { status, isLoading, error, lastEvent } = useCortiEmbeddedStatus(ref);
 
   return (
     <div>
-      <button onClick={() => void refresh()}>Refresh Status</button>
       <div>Loading: {String(isLoading)}</div>
       <div>Last Event: {lastEvent?.name ?? 'none'}</div>
       <pre>{JSON.stringify(status, null, 2)}</pre>

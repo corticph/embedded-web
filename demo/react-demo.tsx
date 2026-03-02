@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import {
   type AuthCredentials,
   type CortiEmbeddedEventDetail,
+  type CortiEmbeddedErrorDetail,
   type ConfigureAppPayload,
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
@@ -17,13 +18,7 @@ function CortiEmbeddedDemo() {
   const api = useCortiEmbeddedApi(componentRef);
   const [log, setLog] = useState<
     Array<{ time: string; message: string; type: string }>
-  >([
-    {
-      time: new Date().toLocaleTimeString(),
-      message: 'Ready to send messages...',
-      type: 'info',
-    },
-  ]);
+  >([]);
   const [isReady, setIsReady] = useState(false);
   const baseURL = 'https://assistant.staging-eu.corti.app';
 
@@ -133,15 +128,15 @@ function CortiEmbeddedDemo() {
   }, [addLogEntry]);
 
   const handleError = useCallback(
-    (event: CustomEvent) => {
-      addLogEntry(`Error: ${JSON.stringify(event.detail)}`, 'error');
+    (detail: CortiEmbeddedErrorDetail) => {
+      addLogEntry(`Error: ${JSON.stringify(detail)}`, 'error');
     },
     [addLogEntry],
   );
 
   const handleEvent = useCallback(
-    (event: CustomEvent<CortiEmbeddedEventDetail>) => {
-      const { name, payload } = event.detail;
+    (detail: CortiEmbeddedEventDetail) => {
+      const { name, payload } = detail;
       addLogEntry(`Event ${name}: ${JSON.stringify(payload)}`, 'info');
       if (
         name === 'embedded.interactionCreated' &&
@@ -307,13 +302,7 @@ function CortiEmbeddedDemo() {
   };
 
   const handleClearLog = () => {
-    setLog([
-      {
-        time: new Date().toLocaleTimeString(),
-        message: 'Ready to send messages...',
-        type: 'info',
-      },
-    ]);
+    setLog([]);
   };
 
   const latestStatus = JSON.stringify(
