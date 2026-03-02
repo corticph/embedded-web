@@ -165,6 +165,7 @@ export class PostMessageHandler {
 
     return new Promise((resolve, reject) => {
       const timeoutId = setTimeout(() => {
+        window.removeEventListener('message', readyListener);
         reject(new Error('Timeout waiting for iframe to be ready'));
       }, timeout);
 

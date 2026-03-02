@@ -27,13 +27,9 @@ describe('PostMessageHandler', () => {
   });
 
   it("does not set ready=true for 'ready' or 'loaded' events", async () => {
+    const { handler, iframe, origin } = makeRealHandler();
     for (const event of ['ready', 'loaded']) {
-      const { handler, iframe, origin } = makeRealHandler();
       let timedOut = false;
-      // eslint-disable-next-line no-await-in-loop
-      await handler.waitForReady(50).catch(() => {
-        timedOut = true;
-      });
       // Send the non-ready signal
       window.dispatchEvent(
         new MessageEvent('message', {
@@ -42,6 +38,12 @@ describe('PostMessageHandler', () => {
           source: iframe.contentWindow as any,
         }),
       );
+
+      // eslint-disable-next-line no-await-in-loop
+      await handler.waitForReady(50).catch(() => {
+        timedOut = true;
+      });
+
       // waitForReady should still time out because these events don't signal readiness
       expect(timedOut).to.equal(true);
       expect(handler.ready).to.equal(false);
