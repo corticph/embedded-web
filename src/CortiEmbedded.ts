@@ -5,15 +5,17 @@ import { property } from 'lit/decorators.js';
 import type {
   AddFactsPayload,
   AuthPayload,
+  AuthResponse,
   ConfigureAppPayload,
+  ConfigureAppResponse,
   ConfigureSessionPayload,
+  CreateInteractionPayload,
+  CreateInteractionResponse,
   NavigatePayload,
   SetCredentialsPayload,
   AuthCredentials,
-  ConfigureAppResponse,
   CortiEmbeddedAPI,
   InteractionDetails,
-  CreateInteractionPayload,
   SessionConfig,
   User,
   GetStatusResponse,
@@ -60,7 +62,8 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       this.dispatchErrorEvent({
         message: (error as Error).message || 'Invalid baseURL',
       });
-      throw error;
+      // Dispatch the error event rather than throwing so consumers can handle it
+      // via the 'error' event listener without wrapping connectedCallback in try/catch.
     }
   }
 
@@ -103,9 +106,13 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   }
 
   private dispatchEmbeddedEvent(rawEventName: string, payload: unknown) {
-    // Preserve raw DOM event passthrough for consumers listening directly.
-    this.dispatchPublicEvent(rawEventName, payload);
+    if (rawEventName !== 'ready' && rawEventName !== 'loaded') {
+      // Pass all other events through as raw DOM events for direct listeners.
+      this.dispatchPublicEvent(rawEventName, payload);
+    }
 
+    // Always forward through the generic 'embedded-event' stream so consumers
+    // can observe the full event feed regardless of event name.
     this.dispatchPublicEvent('embedded-event', {
       name: rawEventName,
       payload,
@@ -151,15 +158,17 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   protected updated(changedProps: PropertyValues) {
     super.updated(changedProps);
     if (changedProps.has('baseURL')) {
-      // Validate baseURL and normalize; fail fast on invalid input
+      // Tear down the existing handler; the new one is created in handleIframeLoad
+      if (this.postMessageHandler) {
+        this.postMessageHandler.destroy();
+        this.postMessageHandler = null;
+      }
+
+      // Validate the new URL
       try {
         this.normalizedBaseURL = validateAndNormalizeBaseURL(this.baseURL);
       } catch (error) {
-        // Tear down and clear iframe to avoid keeping an old origin active
-        if (this.postMessageHandler) {
-          this.postMessageHandler.destroy();
-          this.postMessageHandler = null;
-        }
+        this.normalizedBaseURL = null;
         const iframe = this.getIframe();
         if (iframe) {
           iframe.setAttribute('src', 'about:blank');
@@ -169,16 +178,11 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         });
         return;
       }
-      // Tear down existing handler and re-point iframe to new URL
-      if (this.postMessageHandler) {
-        this.postMessageHandler.destroy();
-        this.postMessageHandler = null;
-      }
+
+      // Update the iframe to the new URL
       const iframe = this.getIframe();
       if (iframe) {
-        const expected = this.normalizedBaseURL
-          ? buildEmbeddedUrl(this.normalizedBaseURL)
-          : '';
+        const expected = buildEmbeddedUrl(this.normalizedBaseURL);
         if (iframe.getAttribute('src') !== expected) {
           iframe.setAttribute('src', expected);
           iframe.setAttribute(
@@ -191,6 +195,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   }
 
   // Public API Implementation
+
   /**
    * Authenticate with the Corti system
    * @param credentials Authentication credentials
@@ -217,8 +222,17 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         mode: credentials.mode,
       };
 
-      const user = await this.postMessageHandler.auth(payload);
-      return user;
+      const response = await this.postMessageHandler.postMessage({
+        type: 'CORTI_EMBEDDED',
+        version: 'v1',
+        action: 'auth',
+        payload,
+      });
+
+      if (response.payload && response.success) {
+        return (response.payload as AuthResponse).user;
+      }
+      throw new Error(response.error);
     } catch (error) {
       const formattedError = formatError(error, 'Authentication failed');
       this.dispatchErrorEvent(formattedError);
@@ -239,12 +253,21 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
 
     try {
-      const response =
-        await this.postMessageHandler.createInteraction(encounter);
-      return {
-        id: response.id,
-        createdAt: response.createdAt,
-      };
+      const response = await this.postMessageHandler.postMessage({
+        type: 'CORTI_EMBEDDED',
+        version: 'v1',
+        action: 'createInteraction',
+        payload: encounter,
+      });
+
+      if (response.payload && response.success) {
+        const result = response.payload as CreateInteractionResponse;
+        return {
+          id: result.id,
+          createdAt: result.createdAt,
+        };
+      }
+      throw new Error(response.error);
     } catch (error) {
       const formattedError = formatError(error, 'Failed to create interaction');
       this.dispatchErrorEvent(formattedError);
@@ -270,7 +293,12 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         defaultMode: config.defaultMode,
       };
 
-      await this.postMessageHandler.configureSession(payload);
+      await this.postMessageHandler.postMessage({
+        type: 'CORTI_EMBEDDED',
+        version: 'v1',
+        action: 'configureSession',
+        payload,
+      });
     } catch (error) {
       const formattedError = formatError(error, 'Failed to configure session');
       this.dispatchErrorEvent(formattedError);
@@ -290,7 +318,12 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
     try {
       const payload: AddFactsPayload = { facts };
-      await this.postMessageHandler.addFacts(payload);
+      await this.postMessageHandler.postMessage({
+        type: 'CORTI_EMBEDDED',
+        version: 'v1',
+        action: 'addFacts',
+        payload,
+      });
     } catch (error) {
       const formattedError = formatError(error, 'Failed to add facts');
       this.dispatchErrorEvent(formattedError);
@@ -310,7 +343,12 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
     try {
       const payload: NavigatePayload = { path };
-      await this.postMessageHandler.navigate(payload);
+      await this.postMessageHandler.postMessage({
+        type: 'CORTI_EMBEDDED',
+        version: 'v1',
+        action: 'navigate',
+        payload,
+      });
     } catch (error) {
       const formattedError = formatError(error, 'Failed to navigate');
       this.dispatchErrorEvent(formattedError);
@@ -328,7 +366,12 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
 
     try {
-      await this.postMessageHandler.startRecording();
+      await this.postMessageHandler.postMessage({
+        type: 'CORTI_EMBEDDED',
+        version: 'v1',
+        action: 'startRecording',
+        payload: {},
+      });
     } catch (error) {
       const formattedError = formatError(error, 'Failed to start recording');
       this.dispatchErrorEvent(formattedError);
@@ -346,7 +389,12 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
 
     try {
-      await this.postMessageHandler.stopRecording();
+      await this.postMessageHandler.postMessage({
+        type: 'CORTI_EMBEDDED',
+        version: 'v1',
+        action: 'stopRecording',
+        payload: {},
+      });
     } catch (error) {
       const formattedError = formatError(error, 'Failed to stop recording');
       this.dispatchErrorEvent(formattedError);
@@ -371,7 +419,17 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
 
     try {
-      return await this.postMessageHandler.getStatus();
+      const response = await this.postMessageHandler.postMessage({
+        type: 'CORTI_EMBEDDED',
+        version: 'v1',
+        action: 'getStatus',
+        payload: {},
+      });
+
+      if (response.payload && response.success) {
+        return response.payload as GetStatusResponse;
+      }
+      throw new Error(response.error);
     } catch (error) {
       const formattedError = formatError(error, 'Failed to get status');
       this.dispatchErrorEvent(formattedError);
@@ -390,7 +448,17 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
 
     try {
-      return await this.postMessageHandler.configure(config);
+      const response = await this.postMessageHandler.postMessage({
+        type: 'CORTI_EMBEDDED',
+        version: 'v1',
+        action: 'configure',
+        payload: config,
+      });
+
+      if (response.payload && response.success) {
+        return response.payload as ConfigureAppResponse;
+      }
+      throw new Error(response.error);
     } catch (error) {
       const formattedError = formatError(
         error,
@@ -415,7 +483,12 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       if (!credentials.password) {
         throw new Error('Password is required');
       }
-      await this.postMessageHandler.setCredentials(credentials);
+      await this.postMessageHandler.postMessage({
+        type: 'CORTI_EMBEDDED',
+        version: 'v1',
+        action: 'setCredentials',
+        payload: credentials,
+      });
     } catch (error) {
       const formattedError = formatError(error, 'Failed to set credentials');
       this.dispatchErrorEvent(formattedError);
@@ -446,8 +519,16 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
 
     try {
-      const response = await this.postMessageHandler.getTemplates();
-      return response;
+      const response = await this.postMessageHandler.postMessage({
+        type: 'CORTI_EMBEDDED',
+        version: 'v1',
+        action: 'getTemplates',
+      });
+
+      if (response.payload && response.success) {
+        return response.payload as GetTemplatesResponse;
+      }
+      throw new Error(response.error);
     } catch (error) {
       const formattedError = formatError(error, 'Failed to get templates');
       this.dispatchErrorEvent(formattedError);
@@ -476,22 +557,24 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   }
 
   render() {
-    // Don't render if baseURL is not provided
-    if (!this.baseURL) {
-      return html`<div>baseURL is required</div>`;
+    // Use the pre-validated normalizedBaseURL so render() never throws.
+    // normalizedBaseURL is set in connectedCallback (before first render) and
+    // kept up to date by updated() on each baseURL change.
+    if (!this.normalizedBaseURL) {
+      return html``;
     }
 
     return html`
       <iframe
-        src=${buildEmbeddedUrl(validateAndNormalizeBaseURL(this.baseURL))}
+        src=${buildEmbeddedUrl(this.normalizedBaseURL)}
         title="Corti Embedded UI"
         sandbox=${'allow-forms allow-modals allow-scripts allow-same-origin' as any}
         allow="microphone *; camera *; device-capture *; display-capture *"
         @load=${(event: Event) => this.handleIframeLoad(event)}
         @unload=${() => this.postMessageHandler?.destroy()}
         style=${this.visibility === 'hidden'
-          ? 'display: none;'
-          : 'display: block;'}
+        ? 'display: none;'
+        : 'display: block;'}
       ></iframe>
     `;
   }
