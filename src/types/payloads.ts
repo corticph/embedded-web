@@ -1,7 +1,7 @@
 // Payload types for embedded API requests and responses
 import type { Corti } from "@corti/sdk";
 
-import type { AuthMode, DefaultMode } from "./protocol.js";
+import type { DefaultMode } from "./protocol.js";
 
 // Keycloak token structure
 export interface KeycloakTokenResponse {
@@ -20,11 +20,6 @@ export interface KeycloakTokenResponse {
     email: string;
     sub: string;
   };
-}
-
-// Authentication payload
-export interface AuthPayload extends KeycloakTokenResponse {
-  mode: AuthMode;
 }
 
 // Fact structure
