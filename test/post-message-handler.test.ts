@@ -122,6 +122,44 @@ describe('PostMessageHandler', () => {
     iframe.remove();
   });
 
+  it('routes error.triggered to onError and does not forward via onEvent', async () => {
+    const forwarded: Array<{ name: string; payload: unknown }> = [];
+    const errors: Array<{ message: string; code?: string; details?: unknown }> =
+      [];
+    const { handler, iframe, origin } = makeRealHandler();
+    handler.updateCallbacks({
+      onEvent: event => forwarded.push(event),
+      onError: error => errors.push(error),
+    });
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: {
+          type: 'CORTI_EMBEDDED_EVENT',
+          event: 'error.triggered',
+          payload: { message: 'Boom', code: 'UNAUTHORIZED' },
+        },
+        origin,
+        source: iframe.contentWindow as any,
+      }),
+    );
+
+    expect(errors).to.have.length(1);
+    expect(errors[0]).to.deep.equal({
+      message: 'Boom',
+      code: 'UNAUTHORIZED',
+      details: {
+        type: 'CORTI_EMBEDDED_EVENT',
+        event: 'error.triggered',
+        payload: { message: 'Boom', code: 'UNAUTHORIZED' },
+      },
+    });
+    expect(forwarded).to.have.length(0);
+
+    handler.destroy();
+    iframe.remove();
+  });
+
   it('postMessage resolves on matching response from trusted origin', async () => {
     const { handler } = makeRealHandler();
     // Ensure waitForReady resolves quickly

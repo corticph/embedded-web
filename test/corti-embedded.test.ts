@@ -75,6 +75,90 @@ describe('CortiEmbedded', () => {
     expect((errorEvent!.detail as any).message).to.match(/Invalid baseURL/i);
   });
 
+  it('does not dispatch error event from API catch when error was already notified', async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    let count = 0;
+    let thrown: Error | null = null;
+    el.addEventListener('error', event => {
+      const detail = (event as unknown as CustomEvent).detail as {
+        message?: string;
+      };
+      if (detail.message === 'Failed to configure session') {
+        count += 1;
+      }
+    });
+
+    (el as any).postMessageHandler = {
+      postMessage: async () => {
+        throw new Error('User must be authenticated to configure session');
+      },
+    };
+
+    try {
+      await el.configureSession({});
+    } catch (error: unknown) {
+      thrown = error as Error;
+    }
+
+    expect(thrown).to.exist;
+    expect(count).to.equal(0);
+  });
+
+  it('dispatches error event from API catch when error was not already notified', async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    let count = 0;
+    let thrown: Error | null = null;
+    el.addEventListener('error', event => {
+      const detail = (event as unknown as CustomEvent).detail as {
+        message?: string;
+      };
+      if (detail.message === 'Failed to configure session') {
+        count += 1;
+      }
+    });
+
+    (el as any).postMessageHandler = {
+      postMessage: async () => {
+        throw new Error('User must be authenticated to configure session');
+      },
+    };
+
+    try {
+      await el.configureSession({});
+    } catch (error: unknown) {
+      thrown = error as Error;
+    }
+
+    expect(thrown).to.exist;
+    expect(count).to.equal(1);
+  });
+
+  it('dispatches both direct error events without component-side dedupe', async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    let count = 0;
+    el.addEventListener('error', () => {
+      count += 1;
+    });
+    (el as any).dispatchErrorEvent({
+      message: 'Duplicate test error',
+      code: 'TEST',
+      details: { a: 1 },
+    });
+    (el as any).dispatchErrorEvent({
+      message: 'Duplicate test error',
+      code: 'TEST',
+      details: { a: 1 },
+    });
+
+    expect(count).to.equal(2);
+  });
+
   it('updates iframe src and resets handler when baseURL changes', async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
@@ -164,7 +248,12 @@ describe('CortiEmbedded', () => {
     );
 
     const fired: string[] = [];
-    for (const name of ['ready', 'loaded', 'embedded.ready', 'embedded-event']) {
+    for (const name of [
+      'ready',
+      'loaded',
+      'embedded.ready',
+      'embedded-event',
+    ]) {
       el.addEventListener(name, () => fired.push(name));
     }
 

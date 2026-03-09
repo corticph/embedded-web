@@ -235,7 +235,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       throw new Error(response.error);
     } catch (error) {
       const formattedError = formatError(error, 'Authentication failed');
-      this.dispatchErrorEvent(formattedError);
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -270,7 +269,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       throw new Error(response.error);
     } catch (error) {
       const formattedError = formatError(error, 'Failed to create interaction');
-      this.dispatchErrorEvent(formattedError);
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -301,7 +299,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       });
     } catch (error) {
       const formattedError = formatError(error, 'Failed to configure session');
-      this.dispatchErrorEvent(formattedError);
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -326,7 +323,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       });
     } catch (error) {
       const formattedError = formatError(error, 'Failed to add facts');
-      this.dispatchErrorEvent(formattedError);
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -351,7 +347,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       });
     } catch (error) {
       const formattedError = formatError(error, 'Failed to navigate');
-      this.dispatchErrorEvent(formattedError);
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -374,7 +369,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       });
     } catch (error) {
       const formattedError = formatError(error, 'Failed to start recording');
-      this.dispatchErrorEvent(formattedError);
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -397,7 +391,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       });
     } catch (error) {
       const formattedError = formatError(error, 'Failed to stop recording');
-      this.dispatchErrorEvent(formattedError);
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -432,7 +425,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       throw new Error(response.error);
     } catch (error) {
       const formattedError = formatError(error, 'Failed to get status');
-      this.dispatchErrorEvent(formattedError);
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -464,7 +456,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         error,
         'Failed to configure component',
       );
-      this.dispatchErrorEvent(formattedError);
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -491,7 +482,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       });
     } catch (error) {
       const formattedError = formatError(error, 'Failed to set credentials');
-      this.dispatchErrorEvent(formattedError);
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -531,7 +521,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       throw new Error(response.error);
     } catch (error) {
       const formattedError = formatError(error, 'Failed to get templates');
-      this.dispatchErrorEvent(formattedError);
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -573,8 +562,8 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         @load=${(event: Event) => this.handleIframeLoad(event)}
         @unload=${() => this.postMessageHandler?.destroy()}
         style=${this.visibility === 'hidden'
-        ? 'display: none;'
-        : 'display: block;'}
+          ? 'display: none;'
+          : 'display: block;'}
       ></iframe>
     `;
   }

@@ -1,8 +1,4 @@
-import type {
-  AnyEvent,
-  EmbeddedRequest,
-  EmbeddedResponse,
-} from '../types';
+import type { AnyEvent, EmbeddedRequest, EmbeddedResponse } from '../types';
 
 export interface PostMessageHandlerCallbacks {
   onEvent?: (event: { name: string; payload: unknown }) => void;
@@ -98,6 +94,32 @@ export class PostMessageHandler {
       }
     }
 
+    if (eventType === 'error.triggered') {
+      const errorPayload =
+        payload && typeof payload === 'object'
+          ? (payload as Record<string, unknown>)
+          : undefined;
+      const payloadMessage =
+        errorPayload && typeof errorPayload.message === 'string'
+          ? errorPayload.message
+          : undefined;
+      const payloadCode =
+        errorPayload && typeof errorPayload.code === 'string'
+          ? errorPayload.code
+          : undefined;
+
+      this.callbacks.onError?.({
+        message:
+          payloadMessage ||
+          (typeof payload === 'string'
+            ? payload
+            : 'Embedded event reported an error'),
+        code: payloadCode,
+        details: eventData,
+      });
+      return;
+    }
+
     this.callbacks.onEvent?.({
       name: eventType,
       payload,
@@ -116,7 +138,6 @@ export class PostMessageHandler {
           code: data.errorCode,
           details: data.errorDetails,
         };
-        this.callbacks.onError?.(error);
         reject(error);
       } else {
         resolve(data);
@@ -164,24 +185,33 @@ export class PostMessageHandler {
     }
 
     return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      let readyListener: (event: MessageEvent) => void = () => {};
+
+      function cleanup() {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+        }
         window.removeEventListener('message', readyListener);
-        reject(new Error('Timeout waiting for iframe to be ready'));
-      }, timeout);
+      }
 
       // Create a one-time listener for the ready event
-      const readyListener = (event: MessageEvent) => {
+      readyListener = (event: MessageEvent) => {
         if (
           event.source === this.iframe.contentWindow &&
           event.origin === this.getTrustedOrigin() &&
           event.data?.type === 'CORTI_EMBEDDED_EVENT' &&
           event.data.event === 'embedded.ready'
         ) {
-          clearTimeout(timeoutId);
-          window.removeEventListener('message', readyListener);
+          cleanup();
           resolve();
         }
       };
+
+      timeoutId = setTimeout(() => {
+        cleanup();
+        reject(new Error('Timeout waiting for iframe to be ready'));
+      }, timeout);
 
       window.addEventListener('message', readyListener);
     });

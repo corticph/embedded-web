@@ -191,7 +191,7 @@ function CortiEmbeddedDemo() {
         'success',
       );
     } catch (error) {
-      addLogEntry(
+      console.error(
         `Authentication failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -208,7 +208,7 @@ function CortiEmbeddedDemo() {
       await api.configure(payload);
       addLogEntry('App configuration successful', 'success');
     } catch (error) {
-      addLogEntry(
+      console.error(
         `App configuration failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -225,7 +225,7 @@ function CortiEmbeddedDemo() {
       await api.configureSession(payload);
       addLogEntry('Session configuration successful', 'success');
     } catch (error) {
-      addLogEntry(
+      console.error(
         `Session configuration failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -242,7 +242,7 @@ function CortiEmbeddedDemo() {
       await api.addFacts(payload);
       addLogEntry('Add facts successful', 'success');
     } catch (error) {
-      addLogEntry(
+      console.error(
         `Add facts failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -254,7 +254,7 @@ function CortiEmbeddedDemo() {
       addLogEntry(`Navigating with payload: ${navigatePayload}`, 'info');
       await api.navigate(navigatePayload);
     } catch (error) {
-      addLogEntry(
+      console.error(
         `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -279,7 +279,7 @@ function CortiEmbeddedDemo() {
         );
       }
     } catch (error) {
-      addLogEntry(
+      console.error(
         `Interaction creation failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -294,7 +294,7 @@ function CortiEmbeddedDemo() {
         'success',
       );
     } catch (error) {
-      addLogEntry(
+      console.error(
         `Template retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
