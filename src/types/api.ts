@@ -11,7 +11,6 @@ import type {
 } from './events.js';
 import type {
   AddFactsPayload,
-  AuthPayload,
   ConfigureSessionPayload,
   CreateInteractionPayload,
   Fact,
@@ -31,11 +30,6 @@ import type {
 export type { ConfigureAppPayload } from './config.js';
 // Re-export common types for public API
 export type { UserInfo } from './responses.js';
-
-/**
- * Authentication credentials for Assistant
- */
-export type AuthCredentials = AuthPayload;
 
 /**
  * User information returned from authentication
@@ -121,7 +115,7 @@ export interface CortiEmbeddedAPI {
    * @param credentials Authentication credentials
    * @returns Promise resolving to user information
    */
-  auth(credentials: AuthCredentials): Promise<User>;
+  auth(credentials: KeycloakTokenResponse): Promise<User>;
 
   /**
    * Create a new interaction

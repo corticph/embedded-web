@@ -5,11 +5,11 @@ import { CortiEmbedded } from '../src/CortiEmbedded.js';
 import '../src/corti-embedded.js';
 import type {
   SetCredentialsPayload,
-  AuthCredentials,
   GetStatusResponse,
   InteractionDetails,
   SessionConfig,
   User,
+  KeycloakTokenResponse,
 } from '../src/types';
 
 describe('CortiEmbedded', () => {
@@ -160,10 +160,9 @@ describe('CortiEmbedded', () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
-    const credentials: AuthCredentials = {
+    const credentials: KeycloakTokenResponse = {
       access_token: 'test-token',
       token_type: 'Bearer',
-      mode: 'stateless',
     };
 
     try {
@@ -229,10 +228,9 @@ describe('CortiEmbedded', () => {
       defaultMode: 'virtual',
     };
 
-    const authPayload: AuthCredentials = {
+    const authPayload: KeycloakTokenResponse = {
       access_token: 'test-token',
       token_type: 'Bearer',
-      mode: 'stateless',
     };
 
     // Test all the API methods

@@ -4,12 +4,10 @@ import { html, LitElement, type PropertyValues } from 'lit';
 import { property } from 'lit/decorators.js';
 import type {
   AddFactsPayload,
-  AuthPayload,
   ConfigureAppPayload,
   ConfigureSessionPayload,
   NavigatePayload,
   SetCredentialsPayload,
-  AuthCredentials,
   ConfigureAppResponse,
   CortiEmbeddedAPI,
   InteractionDetails,
@@ -18,6 +16,7 @@ import type {
   User,
   GetStatusResponse,
   GetTemplatesResponse,
+  KeycloakTokenResponse,
 } from './types';
 import { baseStyles } from './styles/base.js';
 import { containerStyles } from './styles/container-styles.js';
@@ -196,13 +195,13 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    * @param credentials Authentication credentials
    * @returns Promise resolving to user information
    */
-  async auth(credentials: AuthCredentials): Promise<User> {
+  async auth(credentials: KeycloakTokenResponse): Promise<User> {
     if (!this.postMessageHandler) {
       throw new Error('Component not ready');
     }
 
     try {
-      const payload: AuthPayload = {
+      const payload: KeycloakTokenResponse = {
         access_token: credentials.access_token,
         token_type: credentials.token_type,
         expires_at: credentials.expires_at,
@@ -214,7 +213,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         session_state: credentials.session_state,
         scope: credentials.scope,
         profile: credentials.profile,
-        mode: credentials.mode,
       };
 
       const user = await this.postMessageHandler.auth(payload);

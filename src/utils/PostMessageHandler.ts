@@ -1,7 +1,6 @@
 import type {
   AddFactsPayload,
   AnyEvent,
-  AuthPayload,
   AuthResponse,
   ConfigureAppPayload,
   ConfigureAppResponse,
@@ -14,6 +13,7 @@ import type {
   NavigatePayload,
   SetCredentialsPayload,
   GetTemplatesResponse,
+  KeycloakTokenResponse,
 } from '../types';
 
 export interface PostMessageHandlerCallbacks {
@@ -236,7 +236,7 @@ export class PostMessageHandler {
    * @param payload - Auth payload
    * @returns Promise that resolves with user data
    */
-  async auth(payload: AuthPayload): Promise<AuthResponse['user']> {
+  async auth(payload: KeycloakTokenResponse): Promise<AuthResponse['user']> {
     const response = await this.postMessage({
       type: 'CORTI_EMBEDDED',
       version: 'v1',
