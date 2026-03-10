@@ -94,6 +94,7 @@ describe('CortiEmbedded', () => {
       postMessage: async () => {
         throw new Error('User must be authenticated to configure session');
       },
+      destroy: () => {},
     };
 
     try {
@@ -106,7 +107,7 @@ describe('CortiEmbedded', () => {
     expect(count).to.equal(0);
   });
 
-  it('dispatches error event from API catch when error was not already notified', async () => {
+  it('does not dispatch error event from API catch when the handler rejects', async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
@@ -125,6 +126,7 @@ describe('CortiEmbedded', () => {
       postMessage: async () => {
         throw new Error('User must be authenticated to configure session');
       },
+      destroy: () => {},
     };
 
     try {
@@ -134,7 +136,7 @@ describe('CortiEmbedded', () => {
     }
 
     expect(thrown).to.exist;
-    expect(count).to.equal(1);
+    expect(count).to.equal(0);
   });
 
   it('dispatches both direct error events without component-side dedupe', async () => {
