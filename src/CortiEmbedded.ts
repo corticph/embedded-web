@@ -227,7 +227,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         payload,
       });
 
-      if (response.payload && response.success) {
+      if (response.success && response.payload) {
         return (response.payload as AuthResponse).user;
       }
       throw new Error(response.error);
@@ -257,7 +257,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         payload: encounter,
       });
 
-      if (response.payload && response.success) {
+      if (response.success && response.payload) {
         const result = response.payload as CreateInteractionResponse;
         return {
           id: result.id,
@@ -417,7 +417,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         payload: {},
       });
 
-      if (response.payload && response.success) {
+      if (response.success && response.payload) {
         return response.payload as GetStatusResponse;
       }
       throw new Error(response.error);
@@ -445,7 +445,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         payload: config,
       });
 
-      if (response.payload && response.success) {
+      if (response.success && response.payload) {
         return response.payload as ConfigureAppResponse;
       }
       throw new Error(response.error);
@@ -513,7 +513,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         action: 'getTemplates',
       });
 
-      if (response.payload && response.success) {
+      if (response.success && response.payload) {
         return response.payload as GetTemplatesResponse;
       }
       throw new Error(response.error);
