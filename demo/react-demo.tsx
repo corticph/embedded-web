@@ -1,7 +1,7 @@
 import { useCallback, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import {
-  type AuthCredentials,
+  type KeycloakTokenResponse,
   type CortiEmbeddedEventDetail,
   type ConfigureAppPayload,
   CortiEmbeddedReact,
@@ -185,7 +185,7 @@ function CortiEmbeddedDemo() {
 
   const handleAuth = async () => {
     try {
-      const payload = JSON.parse(authPayload) as AuthCredentials;
+      const payload = JSON.parse(authPayload) as KeycloakTokenResponse;
       addLogEntry(
         `Sending authentication request with payload: ${JSON.stringify(payload)}`,
         'info',

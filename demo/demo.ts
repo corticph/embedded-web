@@ -1,11 +1,11 @@
 import type {
-  AuthCredentials,
   ConfigureAppPayload,
   Fact,
   InteractionDetails,
   CreateInteractionPayload,
   SessionConfig,
   GetStatusResponse,
+  KeycloakTokenResponse,
 } from '../dist';
 
 interface CortiEmbeddedEventDetail {
@@ -79,10 +79,10 @@ export const testAuthentication = async (): Promise<void> => {
         'auth-payload',
       ) as HTMLTextAreaElement;
       const authPayloadText = authPayloadElement.value;
-      let authPayload: AuthCredentials;
+      let authPayload: KeycloakTokenResponse;
 
       try {
-        authPayload = JSON.parse(authPayloadText) as AuthCredentials;
+        authPayload = JSON.parse(authPayloadText);
       } catch (jsonError) {
         const errorMessage =
           jsonError instanceof Error ? jsonError.message : 'Unknown JSON error';
