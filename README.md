@@ -152,7 +152,7 @@ component.hide();
 
 Authentication is required before using the embedded app. The payload passed to
 `component.auth(...)` should come directly from your identity provider token
-response (for example, Keycloak/OIDC token endpoint response), plus `mode`.
+response (for example, Keycloak/OIDC token endpoint response).
 
 - API details and payload shape: https://docs.corti.ai/assistant/api-reference#auth
 - End-to-end authentication guidance: https://docs.corti.ai/assistant/authentication
@@ -162,11 +162,10 @@ not supported for the embedded app.
 
 ```javascript
 const authResponse = await component.auth({
-  // Use the full token response from your IdP + mode
+  // Use the full token response from your IdP
   access_token: 'YOUR_JWT',
   token_type: 'Bearer',
   // include other token fields from your provider response (expires_in, refresh_token, etc.)
-  mode: 'stateful',
   ...
 });
 ```
@@ -265,10 +264,11 @@ import {
 - Use `onEvent` for all embedded events.
 - Event detail shape is `{ name: string; payload: unknown }`.
 - `onReady` fires when the raw `embedded.ready` event is received.
-- `onEvent` receives the generic `embedded-event` stream, including lifecycle
-  events like `ready` and `loaded`.
+- `onEvent` receives the generic `embedded-event` stream.
 - Full event catalog and payload details are documented at:
   - https://docs.corti.ai/assistant/events
+- The event listeners for `onEvent`, `onError` and `onReady` are unwrapping the CustomEvent emitted by the Lit component and cleanly return the "detail"
+  that contains the payload of the event. This makes it easier to work with the events in React without having to deal with the CustomEvent wrapper.
 
 ```tsx
 <CortiEmbeddedReact
@@ -299,7 +299,7 @@ function Example() {
   const api = useCortiEmbeddedApi(ref);
 
   const run = async () => {
-    await api.auth({ access_token: '...', token_type: 'Bearer', mode: 'stateful' });
+    await api.auth({ access_token: '...', token_type: 'Bearer' });
     const created = await api.createInteraction({ encounter: { ... } });
     await api.navigate(`/session/${created.id}`);
   };

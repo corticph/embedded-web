@@ -11,7 +11,6 @@ import type {
 } from './events.js';
 import type {
   AddFactsPayload,
-  AuthPayload,
   ConfigureSessionPayload,
   CreateInteractionPayload,
   Fact,
@@ -31,11 +30,6 @@ import type {
 export type { ConfigureAppPayload } from './config.js';
 // Re-export common types for public API
 export type { UserInfo } from './responses.js';
-
-/**
- * Authentication credentials for Assistant
- */
-export type AuthCredentials = AuthPayload;
 
 /**
  * User information returned from authentication
@@ -100,13 +94,6 @@ export interface CortiEmbeddedWindowAPI {
   v1: CortiEmbeddedV1API;
 }
 
-// Extend Window interface
-declare global {
-  interface Window {
-    CortiEmbedded?: CortiEmbeddedWindowAPI;
-  }
-}
-
 /**
  * Event listener function type
  */
@@ -121,7 +108,7 @@ export interface CortiEmbeddedAPI {
    * @param credentials Authentication credentials
    * @returns Promise resolving to user information
    */
-  auth(credentials: AuthCredentials): Promise<User>;
+  auth(credentials: KeycloakTokenResponse): Promise<User>;
 
   /**
    * Create a new interaction
@@ -200,4 +187,23 @@ export interface CortiEmbeddedAPI {
    * Hide the embedded UI
    */
   hide(): void;
+}
+
+/**
+ * Type representing the corti-embedded custom element in the DOM.
+ * When this package is installed, tag-name based APIs like
+ * document.querySelector('corti-embedded') and document.createElement('corti-embedded')
+ * are automatically typed via HTMLElementTagNameMap. Other lookups such as getElementById
+ * still return HTMLElement | null and require a cast or narrowing to CortiEmbeddedElement.
+ */
+export type CortiEmbeddedElement = HTMLElement & CortiEmbeddedAPI;
+
+// Extend Window interface
+declare global {
+  interface Window {
+    CortiEmbedded?: CortiEmbeddedWindowAPI;
+  }
+  interface HTMLElementTagNameMap {
+    'corti-embedded': CortiEmbeddedElement;
+  }
 }

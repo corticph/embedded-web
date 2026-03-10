@@ -51,8 +51,7 @@ Use `onEvent` as the canonical event listener.
 - Event shape: `{ name: string; payload: unknown }`
 - This receives all embedded events
 - `onReady` is triggered by the raw `embedded.ready` event
-- Internal lifecycle events like `ready` and `loaded` are also visible in
-  `onEvent` (via `embedded-event`)
+- `onEvent` receives the generic `embedded-event` stream
 - Event names and payload contracts are documented publicly at:
   - https://docs.corti.ai/assistant/events
 
@@ -76,7 +75,7 @@ function ApiExample() {
     await api.auth({
       access_token: '...',
       token_type: 'Bearer',
-      mode: 'stateful',
+      // ... rest of the token response
     });
     const created = await api.createInteraction({
       encounter: {

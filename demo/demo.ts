@@ -1,13 +1,12 @@
 import type {
-  AuthCredentials,
   ConfigureAppPayload,
-  CortiEmbeddedAPI,
   Fact,
   InteractionDetails,
   CreateInteractionPayload,
   SessionConfig,
   GetStatusResponse,
-} from '../dist/index.js';
+  KeycloakTokenResponse,
+} from '../dist';
 
 interface CortiEmbeddedEventDetail {
   name: string;
@@ -20,9 +19,9 @@ interface CortiEmbeddedErrorDetail {
   details?: unknown;
 }
 
-// Get the component with proper typing
-const component = document.getElementById('corti-component') as HTMLElement &
-  CortiEmbeddedAPI;
+// Get the component with proper typing — querySelector('corti-embedded') is
+// automatically typed as CortiEmbeddedElement via HTMLElementTagNameMap
+const component = document.querySelector('corti-embedded');
 
 // Define log entry types
 type LogType = 'info' | 'success' | 'error' | 'warning';
@@ -86,10 +85,10 @@ export const testAuthentication = async (): Promise<void> => {
         'auth-payload',
       ) as HTMLTextAreaElement;
       const authPayloadText = authPayloadElement.value;
-      let authPayload: AuthCredentials;
+      let authPayload: KeycloakTokenResponse;
 
       try {
-        authPayload = JSON.parse(authPayloadText) as AuthCredentials;
+        authPayload = JSON.parse(authPayloadText);
       } catch (jsonError) {
         const errorMessage =
           jsonError instanceof Error ? jsonError.message : 'Unknown JSON error';
@@ -511,7 +510,7 @@ customElements.whenDefined('corti-embedded').then(() => {
   updateStatus();
   addLogEntry('Corti component loaded and ready', 'success');
 
-  component.addEventListener('embedded-event', (event: Event) => {
+  component?.addEventListener('embedded-event', (event: Event) => {
     const { detail } = event as CustomEvent<CortiEmbeddedEventDetail>;
     if (detail.name === 'ready') return;
     addLogEntry(
@@ -519,7 +518,7 @@ customElements.whenDefined('corti-embedded').then(() => {
       'info',
     );
   });
-  component.addEventListener('error', (event: Event) => {
+  component?.addEventListener('error', (event: Event) => {
     const { detail } = event as CustomEvent<CortiEmbeddedErrorDetail>;
     addLogEntry(`[ERROR] - ${JSON.stringify(detail)}`, 'error');
   });
