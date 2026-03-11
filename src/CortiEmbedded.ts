@@ -41,6 +41,20 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
   private normalizedBaseURL: string | null = null;
 
+  private getIframeAllowPolicy(normalizedBaseURL?: string | null): string {
+    const permissionTarget = normalizedBaseURL
+      ? new URL(normalizedBaseURL).origin
+      : '*';
+
+    return [
+      `microphone ${permissionTarget}`,
+      `camera ${permissionTarget}`,
+      `device-capture ${permissionTarget}`,
+      `display-capture ${permissionTarget}`,
+      `clipboard-write ${permissionTarget}`,
+    ].join('; ');
+  }
+
   connectedCallback() {
     super.connectedCallback();
 
@@ -178,12 +192,9 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         const expected = this.normalizedBaseURL
           ? buildEmbeddedUrl(this.normalizedBaseURL)
           : '';
+        iframe.setAttribute('allow', this.getIframeAllowPolicy(this.normalizedBaseURL));
         if (iframe.getAttribute('src') !== expected) {
           iframe.setAttribute('src', expected);
-          iframe.setAttribute(
-            'allow',
-            `microphone ${expected}; camera ${expected}; device-capture ${expected}; display-capture ${expected}`,
-          );
         }
       }
     }
@@ -484,12 +495,14 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         src=${buildEmbeddedUrl(validateAndNormalizeBaseURL(this.baseURL))}
         title="Corti Embedded UI"
         sandbox=${'allow-forms allow-modals allow-scripts allow-same-origin' as any}
-        allow="microphone *; camera *; device-capture *; display-capture *"
+        allow=${this.getIframeAllowPolicy(
+          validateAndNormalizeBaseURL(this.baseURL),
+        )}
         @load=${(event: Event) => this.handleIframeLoad(event)}
         @unload=${() => this.postMessageHandler?.destroy()}
         style=${this.visibility === 'hidden'
-          ? 'display: none;'
-          : 'display: block;'}
+        ? 'display: none;'
+        : 'display: block;'}
       ></iframe>
     `;
   }
