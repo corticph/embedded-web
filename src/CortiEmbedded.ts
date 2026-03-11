@@ -3,6 +3,7 @@ import type { Corti } from '@corti/sdk';
 import { html, LitElement, type PropertyValues } from 'lit';
 import { property } from 'lit/decorators.js';
 import type {
+  AuthResponse,
   AddFactsPayload,
   ConfigureAppPayload,
   ConfigureAppResponse,
@@ -18,7 +19,6 @@ import type {
   GetStatusResponse,
   GetTemplatesResponse,
   KeycloakTokenResponse,
-  AuthResponse,
 } from './types';
 import { baseStyles } from './styles/base.js';
 import { containerStyles } from './styles/container-styles.js';
@@ -560,8 +560,8 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         @load=${(event: Event) => this.handleIframeLoad(event)}
         @unload=${() => this.postMessageHandler?.destroy()}
         style=${this.visibility === 'hidden'
-          ? 'display: none;'
-          : 'display: block;'}
+        ? 'display: none;'
+        : 'display: block;'}
       ></iframe>
     `;
   }

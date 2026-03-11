@@ -187,7 +187,7 @@ export class PostMessageHandler {
 
     return new Promise((resolve, reject) => {
       let timeoutId: ReturnType<typeof setTimeout> | null = null;
-      let readyListener: (event: MessageEvent) => void = () => {};
+      let readyListener: (event: MessageEvent) => void = () => { };
 
       function cleanup() {
         if (timeoutId !== null) {
