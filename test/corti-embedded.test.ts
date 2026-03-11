@@ -38,9 +38,9 @@ describe('CortiEmbedded', () => {
     const expectedSrc = `${validBaseURL}/embedded`;
     expect(iframe.getAttribute('src')).to.equal(expectedSrc);
     const allowAttr = iframe.getAttribute('allow')!;
-    expect(allowAttr).to.include('microphone https://assistant.eu.corti.app');
-    expect(allowAttr).to.include('camera https://assistant.eu.corti.app');
-    expect(allowAttr).to.include('clipboard-write https://assistant.eu.corti.app');
+    expect(allowAttr).to.include(`microphone ${validBaseURL}`);
+    expect(allowAttr).to.include(`camera ${validBaseURL}`);
+    expect(allowAttr).to.include(`clipboard-write ${validBaseURL}`);
   });
 
   it('is hidden by default and toggles visibility with show/hide', async () => {
@@ -96,11 +96,9 @@ describe('CortiEmbedded', () => {
       'https://assistant.us.corti.app/embedded',
     );
     const allowAttr = iframe.getAttribute('allow')!;
-    expect(allowAttr).to.include('microphone https://assistant.us.corti.app');
-    expect(allowAttr).to.include('camera https://assistant.us.corti.app');
-    expect(allowAttr).to.include(
-      'clipboard-write https://assistant.us.corti.app',
-    );
+    expect(allowAttr).to.include(`microphone ${el.baseURL}`);
+    expect(allowAttr).to.include(`camera ${el.baseURL}`);
+    expect(allowAttr).to.include(`clipboard-write ${el.baseURL}`);
   });
 
   it('ignores about:blank iframe loads (no handler setup)', async () => {
