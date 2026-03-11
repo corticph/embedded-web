@@ -46,6 +46,7 @@ export const CortiEmbeddedReact = React.forwardRef<
     forwardedRef,
   ) => {
     const internalRef = React.useRef<CortiEmbeddedReactRef | null>(null);
+    const hasEmittedReadyRef = React.useRef(false);
 
     // "Latest ref" pattern: update on every render so handlers are always
     // current without re-attaching event listeners.
@@ -81,8 +82,11 @@ export const CortiEmbeddedReact = React.forwardRef<
         onEventRef.current?.(
           (e as CustomEvent<CortiEmbeddedEventDetail>).detail,
         );
-      const handleReady = (e: Event) =>
+      const handleReady = (e: Event) => {
+        if (hasEmittedReadyRef.current) return;
+        hasEmittedReadyRef.current = true;
         onReadyRef.current?.((e as CustomEvent<unknown>).detail);
+      };
       const handleError = (e: Event) =>
         onErrorRef.current?.(
           (e as CustomEvent<CortiEmbeddedErrorDetail>).detail,

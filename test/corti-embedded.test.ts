@@ -161,6 +161,49 @@ describe('CortiEmbedded', () => {
     expect(count).to.equal(2);
   });
 
+  it('forwards iframe error.triggered through the error handler once', async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    const iframe = el.shadowRoot!.querySelector('iframe') as HTMLIFrameElement;
+    ensureContentWindow(iframe);
+    iframe.setAttribute('src', `${validBaseURL}/embedded`);
+    iframe.dispatchEvent(new Event('load'));
+
+    let embeddedEventCalled = false;
+    let errorDetail: unknown;
+
+    el.addEventListener('embedded-event', (event: Event) => {
+      embeddedEventCalled = true;
+    });
+    el.addEventListener('error', (event: Event) => {
+      errorDetail = (event as CustomEvent).detail;
+    });
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: {
+          type: 'CORTI_EMBEDDED_EVENT',
+          event: 'error.triggered',
+          payload: { message: 'Boom', code: 'UNAUTHORIZED' },
+        },
+        origin: validBaseURL,
+        source: iframe.contentWindow as any,
+      }),
+    );
+
+    expect(embeddedEventCalled).to.equal(false);
+    expect(errorDetail).to.deep.equal({
+      message: 'Boom',
+      code: 'UNAUTHORIZED',
+      details: {
+        type: 'CORTI_EMBEDDED_EVENT',
+        event: 'error.triggered',
+        payload: { message: 'Boom', code: 'UNAUTHORIZED' },
+      },
+    });
+  });
+
   it('updates iframe src and resets handler when baseURL changes', async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,

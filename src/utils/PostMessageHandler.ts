@@ -138,6 +138,7 @@ export class PostMessageHandler {
           code: data.errorCode,
           details: data.errorDetails,
         };
+        this.callbacks.onError?.(error);
         reject(error);
       } else {
         resolve(data);

@@ -222,6 +222,50 @@ describe('PostMessageHandler', () => {
     }
   });
 
+  it('emits onError when response indicates failure', async () => {
+    const errors: Array<{ message: string; code?: string; details?: unknown }> =
+      [];
+    const { handler } = makeRealHandler();
+    (handler as any).isReady = true;
+    handler.updateCallbacks({
+      onError: error => errors.push(error),
+    });
+
+    try {
+      const promise = handler.postMessage(
+        {
+          type: 'CORTI_EMBEDDED',
+          version: 'v1',
+          action: 'navigate',
+          payload: { path: '/foo' },
+        },
+        500,
+      );
+      await new Promise(r => {
+        setTimeout(r, 0);
+      });
+      const requestId = (handler as any).pendingRequests.keys().next().value;
+      (handler as any).handleResponse({
+        requestId,
+        success: false,
+        error: 'Bad request',
+        errorCode: 'BAD_REQUEST',
+        errorDetails: { field: 'path' },
+      });
+
+      await promise.catch(() => undefined);
+
+      expect(errors).to.have.length(1);
+      expect(errors[0]).to.deep.equal({
+        message: 'Bad request',
+        code: 'BAD_REQUEST',
+        details: { field: 'path' },
+      });
+    } finally {
+      handler.destroy();
+    }
+  });
+
   it('ignores messages from wrong origin and times out', async () => {
     const { handler, iframe } = makeRealHandler('https://trusted.example');
     (handler as any).isReady = true;
