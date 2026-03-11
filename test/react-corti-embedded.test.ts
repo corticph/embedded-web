@@ -1,10 +1,11 @@
 import { expect } from '@open-wc/testing';
-import * as React from 'react';
-import { createRoot, type Root } from 'react-dom/client';
 import {
+  React,
+  createRoot,
+  type Root,
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
-} from '../src/react/CortiEmbeddedReact.js';
+} from './vendor/react-test-bundle.js';
 
 describe('CortiEmbeddedReact', () => {
   let container: HTMLDivElement | null = null;
@@ -14,6 +15,20 @@ describe('CortiEmbeddedReact', () => {
     await new Promise(resolve => {
       setTimeout(resolve, 0);
     });
+  }
+
+  async function waitForRef(
+    ref: React.RefObject<CortiEmbeddedReactRef | null>,
+  ): Promise<CortiEmbeddedReactRef> {
+    for (let i = 0; i < 10; i += 1) {
+      if (ref.current) {
+        return ref.current;
+      }
+      // eslint-disable-next-line no-await-in-loop
+      await flushReact();
+    }
+
+    throw new Error('CortiEmbeddedReact ref was not attached');
   }
 
   beforeEach(() => {
@@ -44,13 +59,12 @@ describe('CortiEmbeddedReact', () => {
       }),
     );
 
+    const el = await waitForRef(ref);
     await flushReact();
-
-    const el = ref.current;
     expect(el).to.exist;
 
-    el!.dispatchEvent(new CustomEvent('embedded.ready', { detail: { a: 1 } }));
-    el!.dispatchEvent(new CustomEvent('embedded.ready', { detail: { a: 2 } }));
+    el.dispatchEvent(new CustomEvent('embedded.ready', { detail: { a: 1 } }));
+    el.dispatchEvent(new CustomEvent('embedded.ready', { detail: { a: 2 } }));
 
     expect(readyCalls).to.deep.equal([{ a: 1 }]);
   });

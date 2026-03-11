@@ -49,6 +49,7 @@
     "analyze": "cem analyze --litelement",
     "build:ts": "npm run clean && tsc",
     "build": "npm run build:ts && npm run build:bundle && npm run build:web-bundle && npm run analyze -- --exclude dist",
+    "build:test-react-bundle": "esbuild test/vendor/react-test-bundle-entry.ts --bundle --format=esm --platform=browser --outfile=.tmp/test-dist/test/vendor/react-test-bundle.js --define:process.env.NODE_ENV='\"development\"'",
     "build:bundle": "esbuild dist/index.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser --external:react --define:process.env.NODE_ENV='\"production\"' --minify",
     "build:web-bundle": "esbuild dist/web-index.js --bundle --outfile=dist/web-bundle.js --format=esm --platform=browser --define:process.env.NODE_ENV='\"production\"' --minify",
     "build:demo": "esbuild demo/react-demo.tsx --bundle --outfile=demo/react-demo-bundle.js --format=esm --platform=browser --jsx=automatic --loader:.tsx=tsx",
@@ -58,7 +59,7 @@
     "prepublish": "tsc && npm run analyze -- --exclude dist",
     "lint": "eslint --ext .ts,.tsx src --ignore-path .gitignore && prettier \"src/**/*.{ts,tsx}\" --check --ignore-path .gitignore",
     "format": "eslint --ext .ts,.tsx src --fix --ignore-path .gitignore && prettier \"src/**/*.{ts,tsx}\" --write --ignore-path .gitignore",
-    "test": "tsc -p tsconfig.test.json && wtr --coverage",
+    "test": "tsc -p tsconfig.test.json && npm run build:test-react-bundle && wtr --coverage && node scripts/print-coverage-summary.mjs",
     "test:watch": "concurrently -k -r \"tsc -p tsconfig.test.json --watch --preserveWatchOutput\" \"wtr --watch\"",
     "typecheck": "tsc --noEmit"
   },
