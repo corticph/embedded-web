@@ -1,20 +1,4 @@
-import type {
-  AddFactsPayload,
-  AnyEvent,
-  AuthResponse,
-  ConfigureAppPayload,
-  ConfigureAppResponse,
-  ConfigureSessionPayload,
-  CreateInteractionPayload,
-  CreateInteractionResponse,
-  EmbeddedRequest,
-  EmbeddedResponse,
-  GetStatusResponse,
-  NavigatePayload,
-  SetCredentialsPayload,
-  GetTemplatesResponse,
-  KeycloakTokenResponse,
-} from '../types';
+import type { AnyEvent, EmbeddedRequest, EmbeddedResponse } from '../types';
 
 export interface PostMessageHandlerCallbacks {
   onEvent?: (event: { name: string; payload: unknown }) => void;
@@ -23,6 +7,11 @@ export interface PostMessageHandlerCallbacks {
     code?: string;
     details?: unknown;
   }) => void;
+  /**
+   * Default timeout in milliseconds for postMessage requests.
+   * @default 10000
+   */
+  requestTimeout?: number;
 }
 
 export class PostMessageHandler {
@@ -37,6 +26,12 @@ export class PostMessageHandler {
 
   private isReady = false;
 
+  private _protocolVersion: string | null = null;
+
+  private static readonly SUPPORTED_PROTOCOL_VERSION = 'v1';
+
+  private readonly requestTimeout: number;
+
   private callbacks: PostMessageHandlerCallbacks;
 
   constructor(
@@ -45,6 +40,7 @@ export class PostMessageHandler {
   ) {
     this.iframe = iframe;
     this.callbacks = callbacks;
+    this.requestTimeout = callbacks.requestTimeout ?? 10000;
     this.setupMessageListener();
   }
 
@@ -82,13 +78,46 @@ export class PostMessageHandler {
     const eventType = (eventData as any).event;
     const { payload } = eventData;
 
-    // Handle ready-like events
-    if (
-      eventType === 'ready' ||
-      eventType === 'loaded' ||
-      eventType === 'embedded.ready'
-    ) {
+    // Only 'embedded.ready' signals that the iframe is ready to receive messages
+    if (eventType === 'embedded.ready') {
       this.isReady = true;
+
+      // Store and validate the protocol version from the ready payload
+      const version = (payload as any)?.version;
+      if (typeof version === 'string') {
+        this._protocolVersion = version;
+        if (version !== PostMessageHandler.SUPPORTED_PROTOCOL_VERSION) {
+          this.callbacks.onError?.({
+            message: `Protocol version mismatch: host supports '${PostMessageHandler.SUPPORTED_PROTOCOL_VERSION}', iframe reported '${version}'. Some features may not work correctly.`,
+          });
+        }
+      }
+    }
+
+    if (eventType === 'error.triggered') {
+      const errorPayload =
+        payload && typeof payload === 'object'
+          ? (payload as Record<string, unknown>)
+          : undefined;
+      const payloadMessage =
+        errorPayload && typeof errorPayload.message === 'string'
+          ? errorPayload.message
+          : undefined;
+      const payloadCode =
+        errorPayload && typeof errorPayload.code === 'string'
+          ? errorPayload.code
+          : undefined;
+
+      this.callbacks.onError?.({
+        message:
+          payloadMessage ||
+          (typeof payload === 'string'
+            ? payload
+            : 'Embedded event reported an error'),
+        code: payloadCode,
+        details: eventData,
+      });
+      return;
     }
 
     this.callbacks.onEvent?.({
@@ -133,16 +162,23 @@ export class PostMessageHandler {
   }
 
   /**
-   * Check if the iframe is ready to receive postMessages
+   * Whether the iframe has signaled it is ready to receive postMessages
    */
   get ready(): boolean {
     return this.isReady;
   }
 
   /**
-   * Wait for the iframe to be ready
+   * The protocol version reported by the iframe in its 'embedded.ready' event,
+   * or null if the version was not included in the ready payload.
+   */
+  get protocolVersion(): string | null {
+    return this._protocolVersion;
+  }
+
+  /**
+   * Wait for the iframe to signal readiness via the 'embedded.ready' event.
    * @param timeout - Optional timeout in milliseconds (default: 30000ms)
-   * @returns Promise that resolves when ready
    */
   async waitForReady(timeout = 30000): Promise<void> {
     if (this.isReady) {
@@ -150,39 +186,46 @@ export class PostMessageHandler {
     }
 
     return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new Error('Timeout waiting for iframe to be ready'));
-      }, timeout);
+      let timeoutId: ReturnType<typeof setTimeout> | null = null;
+      let readyListener: (event: MessageEvent) => void = () => { };
+
+      function cleanup() {
+        if (timeoutId !== null) {
+          clearTimeout(timeoutId);
+        }
+        window.removeEventListener('message', readyListener);
+      }
 
       // Create a one-time listener for the ready event
-      const readyListener = (event: MessageEvent) => {
+      readyListener = (event: MessageEvent) => {
         if (
           event.source === this.iframe.contentWindow &&
           event.origin === this.getTrustedOrigin() &&
           event.data?.type === 'CORTI_EMBEDDED_EVENT' &&
-          (event.data.event === 'ready' ||
-            event.data.event === 'loaded' ||
-            event.data.event === 'embedded.ready')
+          event.data.event === 'embedded.ready'
         ) {
-          clearTimeout(timeoutId);
-          window.removeEventListener('message', readyListener);
+          cleanup();
           resolve();
         }
       };
+
+      timeoutId = setTimeout(() => {
+        cleanup();
+        reject(new Error('Timeout waiting for iframe to be ready'));
+      }, timeout);
 
       window.addEventListener('message', readyListener);
     });
   }
 
   /**
-   * Sends a postMessage to the iframe and returns a Promise that resolves with the response
+   * Sends a postMessage to the iframe and returns a Promise that resolves with the response.
    * @param message - The message to send
-   * @param timeout - Optional timeout in milliseconds (default: 10000ms)
-   * @returns Promise that resolves with the response
+   * @param timeout - Optional timeout in milliseconds. Defaults to the requestTimeout set at construction.
    */
   async postMessage(
     message: Omit<EmbeddedRequest, 'requestId'>,
-    timeout = 10000,
+    timeout?: number,
   ): Promise<EmbeddedResponse> {
     if (!this.iframe.contentWindow) {
       throw new Error('Iframe not ready');
@@ -193,16 +236,15 @@ export class PostMessageHandler {
 
     const { contentWindow } = this.iframe;
     const requestId = PostMessageHandler.generateRequestId();
+    const effectiveTimeout = timeout ?? this.requestTimeout;
 
     return new Promise((resolve, reject) => {
-      // Set up timeout
       const timeoutId = setTimeout(() => {
         this.pendingRequests.delete(requestId);
         reject(new Error('Request timeout'));
-      }, timeout);
+      }, effectiveTimeout);
 
-      // Store the promise handlers
-      const handlers = {
+      this.pendingRequests.set(requestId, {
         resolve: (value: any) => {
           clearTimeout(timeoutId);
           resolve(value);
@@ -211,11 +253,8 @@ export class PostMessageHandler {
           clearTimeout(timeoutId);
           reject(reason);
         },
-      };
+      });
 
-      this.pendingRequests.set(requestId, handlers);
-
-      // Send the message
       const fullMessage: EmbeddedRequest = {
         ...message,
         requestId,
@@ -231,184 +270,8 @@ export class PostMessageHandler {
     });
   }
 
-  /**
-   * Helper method to send an auth message and return clean user data
-   * @param payload - Auth payload
-   * @returns Promise that resolves with user data
-   */
-  async auth(payload: KeycloakTokenResponse): Promise<AuthResponse['user']> {
-    const response = await this.postMessage({
-      type: 'CORTI_EMBEDDED',
-      version: 'v1',
-      action: 'auth',
-      payload,
-    });
-
-    if (response.payload && response.success) {
-      return (response.payload as AuthResponse).user;
-    }
-    throw new Error(response.error);
-  }
-
-  /**
-   * Helper method to configure a session
-   * @param payload - Session configuration payload
-   * @returns Promise that resolves when configuration is complete
-   */
-  async configureSession(payload: ConfigureSessionPayload): Promise<void> {
-    await this.postMessage({
-      type: 'CORTI_EMBEDDED',
-      version: 'v1',
-      action: 'configureSession',
-      payload,
-    });
-  }
-
-  /**
-   * Helper method to navigate to a specific path
-   * @param payload - Navigation payload
-   * @returns Promise that resolves when navigation is complete
-   */
-  async navigate(payload: NavigatePayload): Promise<void> {
-    await this.postMessage({
-      type: 'CORTI_EMBEDDED',
-      version: 'v1',
-      action: 'navigate',
-      payload,
-    });
-  }
-
-  /**
-   * Helper method to add facts to the session
-   * @param payload - Facts payload
-   * @returns Promise that resolves when facts are added
-   */
-  async addFacts(payload: AddFactsPayload): Promise<void> {
-    await this.postMessage({
-      type: 'CORTI_EMBEDDED',
-      version: 'v1',
-      action: 'addFacts',
-      payload,
-    });
-  }
-
-  /**
-   * Helper method to create a new interaction and return clean interaction data
-   * @param payload - Interaction creation payload
-   * @returns Promise that resolves with interaction details
-   */
-  async createInteraction(
-    payload: CreateInteractionPayload,
-  ): Promise<CreateInteractionResponse> {
-    const response = await this.postMessage({
-      type: 'CORTI_EMBEDDED',
-      version: 'v1',
-      action: 'createInteraction',
-      payload,
-    });
-
-    if (response.payload && response.success) {
-      return response.payload as CreateInteractionResponse;
-    }
-    throw new Error(response.error);
-  }
-
-  /**
-   * Helper method to start recording
-   * @returns Promise that resolves when recording starts
-   */
-  async startRecording(): Promise<void> {
-    await this.postMessage({
-      type: 'CORTI_EMBEDDED',
-      version: 'v1',
-      action: 'startRecording',
-      payload: {},
-    });
-  }
-
-  /**
-   * Helper method to stop recording
-   * @returns Promise that resolves when recording stops
-   */
-  async stopRecording(): Promise<void> {
-    await this.postMessage({
-      type: 'CORTI_EMBEDDED',
-      version: 'v1',
-      action: 'stopRecording',
-      payload: {},
-    });
-  }
-
-  /**
-   * Helper method to get current status
-   * @returns Promise that resolves with current status
-   */
-  async getStatus(): Promise<GetStatusResponse> {
-    const response = await this.postMessage({
-      type: 'CORTI_EMBEDDED',
-      version: 'v1',
-      action: 'getStatus',
-      payload: {},
-    });
-
-    if (response.payload && response.success) {
-      return response.payload as GetStatusResponse;
-    }
-    throw new Error(response.error);
-  }
-
-  /**
-   * Helper method to configure the component
-   * @param payload - Component configuration payload
-   * @returns Promise that resolves when configuration is applied
-   */
-  async configure(payload: ConfigureAppPayload): Promise<ConfigureAppResponse> {
-    const response = await this.postMessage({
-      type: 'CORTI_EMBEDDED',
-      version: 'v1',
-      action: 'configure',
-      payload,
-    });
-
-    if (response.payload && response.success) {
-      return response.payload as ConfigureAppResponse;
-    }
-    throw new Error(response.error);
-  }
-
-  /**
-   * Helper method to set credentials without triggering auth flow
-   * @param payload - Credentials payload
-   * @returns Promise that resolves when credentials are set
-   */
-  async setCredentials(payload: SetCredentialsPayload): Promise<void> {
-    await this.postMessage({
-      type: 'CORTI_EMBEDDED',
-      version: 'v1',
-      action: 'setCredentials',
-      payload,
-    });
-  }
-
-  /**
-   * Helper method to get templates
-   * @returns Promise that resolves with a list of templates
-   */
-  async getTemplates(): Promise<GetTemplatesResponse> {
-    const response = await this.postMessage({
-      type: 'CORTI_EMBEDDED',
-      version: 'v1',
-      action: 'getTemplates',
-    });
-
-    if (response.payload && response.success) {
-      return response.payload as GetTemplatesResponse;
-    }
-    throw new Error(response.error);
-  }
-
   private static generateRequestId(): string {
-    return `req_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    return `req_${Date.now()}_${Math.random().toString(36).substring(2, 9)}`;
   }
 
   /**
@@ -417,8 +280,6 @@ export class PostMessageHandler {
    */
   private getTrustedOrigin(): string | null {
     try {
-      // If iframe.src is relative, URL() will resolve against the current location.
-      // Embeds should provide an absolute baseURL; enforcing strict origin here.
       const src = this.iframe.getAttribute('src') || this.iframe.src;
       if (!src) return null;
       const url = new URL(src, window.location.href);

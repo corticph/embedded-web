@@ -10,18 +10,64 @@ describe('PostMessageHandler', () => {
     return { handler, iframe, origin };
   }
 
-  it('waits for ready event and exposes ready=true', async () => {
+  it("waits for 'embedded.ready' event and exposes ready=true", async () => {
     const { handler, iframe, origin } = makeRealHandler();
     const readyPromise = handler.waitForReady(500);
     window.dispatchEvent(
       new MessageEvent('message', {
-        data: { type: 'CORTI_EMBEDDED_EVENT', event: 'ready' },
+        data: { type: 'CORTI_EMBEDDED_EVENT', event: 'embedded.ready' },
         origin,
         source: iframe.contentWindow as any,
       }),
     );
     await readyPromise;
     expect(handler.ready).to.equal(true);
+    handler.destroy();
+    iframe.remove();
+  });
+
+  it("does not set ready=true for 'ready' or 'loaded' events", async () => {
+    const { handler, iframe, origin } = makeRealHandler();
+    for (const event of ['ready', 'loaded']) {
+      let timedOut = false;
+      // Send the non-ready signal
+      window.dispatchEvent(
+        new MessageEvent('message', {
+          data: { type: 'CORTI_EMBEDDED_EVENT', event },
+          origin,
+          source: iframe.contentWindow as any,
+        }),
+      );
+
+      // eslint-disable-next-line no-await-in-loop
+      await handler.waitForReady(50).catch(() => {
+        timedOut = true;
+      });
+
+      // waitForReady should still time out because these events don't signal readiness
+      expect(timedOut).to.equal(true);
+      expect(handler.ready).to.equal(false);
+      handler.destroy();
+      iframe.remove();
+    }
+  });
+
+  it('stores protocol version from embedded.ready payload', async () => {
+    const { handler, iframe, origin } = makeRealHandler();
+    const readyPromise = handler.waitForReady(500);
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: {
+          type: 'CORTI_EMBEDDED_EVENT',
+          event: 'embedded.ready',
+          payload: { version: 'v1' },
+        },
+        origin,
+        source: iframe.contentWindow as any,
+      }),
+    );
+    await readyPromise;
+    expect(handler.protocolVersion).to.equal('v1');
     handler.destroy();
     iframe.remove();
   });
@@ -71,6 +117,44 @@ describe('PostMessageHandler', () => {
       name: 'custom.event',
       payload: { a: 1 },
     });
+
+    handler.destroy();
+    iframe.remove();
+  });
+
+  it('routes error.triggered to onError and does not forward via onEvent', async () => {
+    const forwarded: Array<{ name: string; payload: unknown }> = [];
+    const errors: Array<{ message: string; code?: string; details?: unknown }> =
+      [];
+    const { handler, iframe, origin } = makeRealHandler();
+    handler.updateCallbacks({
+      onEvent: event => forwarded.push(event),
+      onError: error => errors.push(error),
+    });
+
+    window.dispatchEvent(
+      new MessageEvent('message', {
+        data: {
+          type: 'CORTI_EMBEDDED_EVENT',
+          event: 'error.triggered',
+          payload: { message: 'Boom', code: 'UNAUTHORIZED' },
+        },
+        origin,
+        source: iframe.contentWindow as any,
+      }),
+    );
+
+    expect(errors).to.have.length(1);
+    expect(errors[0]).to.deep.equal({
+      message: 'Boom',
+      code: 'UNAUTHORIZED',
+      details: {
+        type: 'CORTI_EMBEDDED_EVENT',
+        event: 'error.triggered',
+        payload: { message: 'Boom', code: 'UNAUTHORIZED' },
+      },
+    });
+    expect(forwarded).to.have.length(0);
 
     handler.destroy();
     iframe.remove();
@@ -133,6 +217,50 @@ describe('PostMessageHandler', () => {
       } catch (e: any) {
         expect(String(e.message || e)).to.match(/Bad request/);
       }
+    } finally {
+      handler.destroy();
+    }
+  });
+
+  it('emits onError when response indicates failure', async () => {
+    const errors: Array<{ message: string; code?: string; details?: unknown }> =
+      [];
+    const { handler } = makeRealHandler();
+    (handler as any).isReady = true;
+    handler.updateCallbacks({
+      onError: error => errors.push(error),
+    });
+
+    try {
+      const promise = handler.postMessage(
+        {
+          type: 'CORTI_EMBEDDED',
+          version: 'v1',
+          action: 'navigate',
+          payload: { path: '/foo' },
+        },
+        500,
+      );
+      await new Promise(r => {
+        setTimeout(r, 0);
+      });
+      const requestId = (handler as any).pendingRequests.keys().next().value;
+      (handler as any).handleResponse({
+        requestId,
+        success: false,
+        error: 'Bad request',
+        errorCode: 'BAD_REQUEST',
+        errorDetails: { field: 'path' },
+      });
+
+      await promise.catch(() => undefined);
+
+      expect(errors).to.have.length(1);
+      expect(errors[0]).to.deep.equal({
+        message: 'Bad request',
+        code: 'BAD_REQUEST',
+        details: { field: 'path' },
+      });
     } finally {
       handler.destroy();
     }
