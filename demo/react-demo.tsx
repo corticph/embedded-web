@@ -25,7 +25,7 @@ function CortiEmbeddedDemo() {
     },
   ]);
   const [isReady, setIsReady] = useState(false);
-  const baseURL = 'https://assistant.staging-eu.corti.app';
+  const baseURL = 'https://assistant.eu.corti.app';
 
   // Form states
   const [authPayload, setAuthPayload] = useState<string>(
