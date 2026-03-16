@@ -11,6 +11,10 @@ interface FormattedError {
   details?: unknown;
 }
 
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
 /**
  * Attempts to parse a JSON string safely
  */
@@ -138,13 +142,23 @@ export function formatError(
   }
 
   // Handle error objects
-  if (typeof error === 'object') {
-    const errorObj = error as any;
+  if (isRecord(error)) {
+    const errorObj = error;
+    const objectMessage =
+      typeof errorObj.message === 'string' ? errorObj.message : undefined;
+    const objectCode =
+      typeof errorObj.code === 'string' ? errorObj.code : undefined;
+    const objectStatus =
+      typeof errorObj.status === 'string'
+        ? errorObj.status
+        : typeof errorObj.status === 'number'
+          ? String(errorObj.status)
+          : undefined;
 
     // Handle objects with message and details structure (your original case)
-    if (errorObj.message && typeof errorObj.message === 'string') {
-      let formattedMessage = errorObj.message;
-      let { code } = errorObj;
+    if (objectMessage) {
+      let formattedMessage = objectMessage;
+      let code = objectCode;
 
       // If no code is provided, try to extract it from the message
       if (!code) {
@@ -153,7 +167,7 @@ export function formatError(
 
       // Try to enhance the message with parsed details
       if (
-        errorObj.details?.message &&
+        isRecord(errorObj.details) &&
         typeof errorObj.details.message === 'string'
       ) {
         const parsedDetails = tryParseJson(errorObj.details.message);
@@ -177,22 +191,38 @@ export function formatError(
     }
 
     // Handle single validation error objects
-    if (isValidationError(errorObj)) {
+    if (
+      'expected' in errorObj ||
+      'code' in errorObj ||
+      'path' in errorObj ||
+      'message' in errorObj
+    ) {
+      const validationError: ValidationError = {
+        expected:
+          typeof errorObj.expected === 'string' ? errorObj.expected : undefined,
+        code: objectCode,
+        path:
+          Array.isArray(errorObj.path) &&
+          errorObj.path.every(pathPart => typeof pathPart === 'string')
+            ? errorObj.path
+            : undefined,
+        message: objectMessage,
+      };
       return {
-        message: formatValidationError(errorObj),
-        code: errorObj.code,
+        message: formatValidationError(validationError),
+        code: validationError.code,
         details: error,
       };
     }
 
     // Handle objects that might have useful error info
-    if (errorObj.error || errorObj.message || errorObj.detail) {
-      const message = errorObj.error || errorObj.message || errorObj.detail;
+    if (errorObj.error || errorObj.detail || objectStatus || objectCode) {
+      const message = errorObj.error ?? objectMessage ?? errorObj.detail;
       const messageStr =
         typeof message === 'string' ? message : fallbackMessage;
 
       // Try to get code from various properties, or extract from message
-      let code = errorObj.code || errorObj.status;
+      let code = objectCode ?? objectStatus;
       if (!code && typeof message === 'string') {
         code = extractStatusCode(message);
       }

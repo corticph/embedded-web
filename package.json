@@ -35,6 +35,7 @@
     }
   },
   "sideEffects": [
+    "src/corti-embedded.ts",
     "dist/corti-embedded.js",
     "dist/web-bundle.js",
     "dist/bundle.js"

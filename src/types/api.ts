@@ -176,7 +176,7 @@ export interface CortiEmbeddedAPI {
    * @param credentials Authentication credentials to store
    * @returns Promise that resolves when credentials are set
    */
-  setCredentials(credentials: { password: string }): Promise<void>;
+  setCredentials(credentials: SetCredentialsPayload): Promise<void>;
 
   /**
    * Show the embedded UI
