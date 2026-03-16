@@ -1,4 +1,4 @@
-// Main exports for @corti/embedded-types
+// Main exports for @assistant/embedded-types
 
 // Public API types
 export * from "./api.js";
