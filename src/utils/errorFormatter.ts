@@ -5,6 +5,12 @@ interface ValidationError {
   message?: string;
 }
 
+type ValidationErrorLike =
+  | ({ expected: unknown } & Record<string, unknown>)
+  | ({ code: unknown } & Record<string, unknown>)
+  | ({ path: unknown } & Record<string, unknown>)
+  | ({ message: unknown } & Record<string, unknown>);
+
 interface FormattedError {
   message: string;
   code?: string;
@@ -13,6 +19,18 @@ interface FormattedError {
 
 function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
+}
+
+function getStringOrFiniteNumber(value: unknown): string | undefined {
+  if (typeof value === 'string') {
+    return value;
+  }
+
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return String(value);
+  }
+
+  return undefined;
 }
 
 /**
@@ -38,7 +56,7 @@ function extractStatusCode(message: string): string | undefined {
 /**
  * Checks if an object looks like a validation error
  */
-function isValidationError(obj: unknown): obj is ValidationError {
+function isValidationError(obj: unknown): obj is ValidationErrorLike {
   return (
     typeof obj === 'object' &&
     obj !== null &&
@@ -146,14 +164,8 @@ export function formatError(
     const errorObj = error;
     const objectMessage =
       typeof errorObj.message === 'string' ? errorObj.message : undefined;
-    const objectCode =
-      typeof errorObj.code === 'string' ? errorObj.code : undefined;
-    const objectStatus =
-      typeof errorObj.status === 'string'
-        ? errorObj.status
-        : typeof errorObj.status === 'number'
-          ? String(errorObj.status)
-          : undefined;
+    const objectCode = getStringOrFiniteNumber(errorObj.code);
+    const objectStatus = getStringOrFiniteNumber(errorObj.status);
 
     // Handle objects with message and details structure (your original case)
     if (objectMessage) {
@@ -191,12 +203,7 @@ export function formatError(
     }
 
     // Handle single validation error objects
-    if (
-      'expected' in errorObj ||
-      'code' in errorObj ||
-      'path' in errorObj ||
-      'message' in errorObj
-    ) {
+    if (isValidationError(errorObj)) {
       const validationError: ValidationError = {
         expected:
           typeof errorObj.expected === 'string' ? errorObj.expected : undefined,
