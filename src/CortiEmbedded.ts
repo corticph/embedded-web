@@ -567,9 +567,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         src=${buildEmbeddedUrl(this.normalizedBaseURL)}
         title="Corti Embedded UI"
         sandbox=${'allow-forms allow-modals allow-scripts allow-same-origin' as any}
-        allow=${this.getIframeAllowPolicy(
-      validateAndNormalizeBaseURL(this.baseURL),
-    )}
+        allow=${this.getIframeAllowPolicy(this.normalizedBaseURL)}
         @load=${(event: Event) => this.handleIframeLoad(event)}
         @unload=${() => this.postMessageHandler?.destroy()}
         style=${this.visibility === 'hidden'
