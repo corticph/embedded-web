@@ -317,7 +317,7 @@ For detailed React usage examples, see [docs/react-usage.md](./docs/react-usage.
 
 ## Package Structure
 
-- **Default export**: Web component only (`dist/web-bundle.js`)
+- **Default export**: Web component only (`dist/web-bundle.js`, readable non-minified bundle)
 - **React export**: Web component + React component (`@corti/embedded-web/react`)
 - **No dependencies**: Web component bundle has zero external dependencies
 - **Peer dependencies**: React components require React as peer dependency only
