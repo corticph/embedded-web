@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import {
   type KeycloakTokenResponse,
   type CortiEmbeddedEventDetail,
+  type CortiEmbeddedErrorDetail,
   type ConfigureAppPayload,
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
@@ -17,13 +18,7 @@ function CortiEmbeddedDemo() {
   const api = useCortiEmbeddedApi(componentRef);
   const [log, setLog] = useState<
     Array<{ time: string; message: string; type: string }>
-  >([
-    {
-      time: new Date().toLocaleTimeString(),
-      message: 'Ready to send messages...',
-      type: 'info',
-    },
-  ]);
+  >([]);
   const [isReady, setIsReady] = useState(false);
   const baseURL = 'https://assistant.eu.corti.app';
 
@@ -133,15 +128,15 @@ function CortiEmbeddedDemo() {
   }, [addLogEntry]);
 
   const handleError = useCallback(
-    (event: CustomEvent) => {
-      addLogEntry(`Error: ${JSON.stringify(event.detail)}`, 'error');
+    (detail: CortiEmbeddedErrorDetail) => {
+      addLogEntry(`Error: ${JSON.stringify(detail)}`, 'error');
     },
     [addLogEntry],
   );
 
   const handleEvent = useCallback(
-    (event: CustomEvent<CortiEmbeddedEventDetail>) => {
-      const { name, payload } = event.detail;
+    (detail: CortiEmbeddedEventDetail) => {
+      const { name, payload } = detail;
       addLogEntry(`Event ${name}: ${JSON.stringify(payload)}`, 'info');
       if (
         name === 'embedded.interactionCreated' &&
@@ -196,7 +191,7 @@ function CortiEmbeddedDemo() {
         'success',
       );
     } catch (error) {
-      addLogEntry(
+      console.error(
         `Authentication failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -213,7 +208,7 @@ function CortiEmbeddedDemo() {
       await api.configure(payload);
       addLogEntry('App configuration successful', 'success');
     } catch (error) {
-      addLogEntry(
+      console.error(
         `App configuration failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -230,7 +225,7 @@ function CortiEmbeddedDemo() {
       await api.configureSession(payload);
       addLogEntry('Session configuration successful', 'success');
     } catch (error) {
-      addLogEntry(
+      console.error(
         `Session configuration failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -247,7 +242,7 @@ function CortiEmbeddedDemo() {
       await api.addFacts(payload);
       addLogEntry('Add facts successful', 'success');
     } catch (error) {
-      addLogEntry(
+      console.error(
         `Add facts failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -259,7 +254,7 @@ function CortiEmbeddedDemo() {
       addLogEntry(`Navigating with payload: ${navigatePayload}`, 'info');
       await api.navigate(navigatePayload);
     } catch (error) {
-      addLogEntry(
+      console.error(
         `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -284,7 +279,7 @@ function CortiEmbeddedDemo() {
         );
       }
     } catch (error) {
-      addLogEntry(
+      console.error(
         `Interaction creation failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -299,7 +294,7 @@ function CortiEmbeddedDemo() {
         'success',
       );
     } catch (error) {
-      addLogEntry(
+      console.error(
         `Template retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
         'error',
       );
@@ -307,13 +302,7 @@ function CortiEmbeddedDemo() {
   };
 
   const handleClearLog = () => {
-    setLog([
-      {
-        time: new Date().toLocaleTimeString(),
-        message: 'Ready to send messages...',
-        type: 'info',
-      },
-    ]);
+    setLog([]);
   };
 
   const latestStatus = JSON.stringify(

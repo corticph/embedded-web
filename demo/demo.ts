@@ -13,9 +13,15 @@ interface CortiEmbeddedEventDetail {
   payload: unknown;
 }
 
+interface CortiEmbeddedErrorDetail {
+  message: string;
+  code?: string;
+  details?: unknown;
+}
+
 // Get the component with proper typing — querySelector('corti-embedded') is
 // automatically typed as CortiEmbeddedElement via HTMLElementTagNameMap
-const component = document.querySelector('corti-embedded')
+const component = document.querySelector('corti-embedded');
 
 // Define log entry types
 type LogType = 'info' | 'success' | 'error' | 'warning';
@@ -98,7 +104,7 @@ export const testAuthentication = async (): Promise<void> => {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      addLogEntry(`Authentication failed: ${errorMessage}`, 'error');
+      console.log('Auth failed - ', errorMessage);
     }
   } else {
     addLogEntry('Component not ready for authentication', 'error');
@@ -132,7 +138,7 @@ export const configureSession = async (): Promise<void> => {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      addLogEntry(`Session configuration failed: ${errorMessage}`, 'error');
+      console.error(`Session configuration failed: ${errorMessage}`);
     }
   } else {
     addLogEntry('Component not ready for configureSession', 'error');
@@ -166,7 +172,7 @@ export const addFacts = async (): Promise<void> => {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      addLogEntry(`Add facts failed: ${errorMessage}`, 'error');
+      console.error(`Add facts failed: ${errorMessage}`);
     }
   } else {
     addLogEntry('Component not ready for addFacts', 'error');
@@ -200,7 +206,7 @@ export const navigate = async (): Promise<void> => {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      addLogEntry(`Navigation failed: ${errorMessage}`, 'error');
+      console.error(`Navigation failed: ${errorMessage}`);
     }
   } else {
     addLogEntry('Component not ready for navigate', 'error');
@@ -276,15 +282,12 @@ export const createInteraction = async (): Promise<void> => {
       } catch (updateError) {
         const errorMessage =
           updateError instanceof Error ? updateError.message : 'Unknown error';
-        addLogEntry(
-          `Failed to update navigate payload: ${errorMessage}`,
-          'error',
-        );
+        console.error(`Failed to update navigate payload: ${errorMessage}`);
       }
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      addLogEntry(`Interaction creation failed: ${errorMessage}`, 'error');
+      console.error(`Interaction creation failed: ${errorMessage}`);
     }
   } else {
     addLogEntry('Component not ready for createInteraction', 'error');
@@ -299,7 +302,7 @@ export const startRecording = async (): Promise<void> => {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      addLogEntry(`Failed to start recording: ${errorMessage}`, 'error');
+      console.error(`Failed to start recording: ${errorMessage}`);
     }
   } else {
     addLogEntry('Component not ready for startRecording', 'error');
@@ -314,7 +317,7 @@ export const stopRecording = async (): Promise<void> => {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      addLogEntry(`Failed to stop recording: ${errorMessage}`, 'error');
+      console.error(`Failed to stop recording: ${errorMessage}`);
     }
   } else {
     addLogEntry('Component not ready for stopRecording', 'error');
@@ -333,7 +336,7 @@ export const getStatus = async (): Promise<void> => {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      addLogEntry(`Failed to get status: ${errorMessage}`, 'error');
+      console.error(`Failed to get status: ${errorMessage}`);
     }
   } else {
     addLogEntry('Component not ready for getStatus', 'error');
@@ -367,7 +370,7 @@ export const configure = async (): Promise<void> => {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      addLogEntry(`App configuration failed: ${errorMessage}`, 'error');
+      console.error(`App configuration failed: ${errorMessage}`);
     }
   } else {
     addLogEntry('Component not ready for configure', 'error');
@@ -398,7 +401,7 @@ export const setCredentials = async (): Promise<void> => {
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : 'Unknown error';
-      addLogEntry(`Failed to set credentials: ${errorMessage}`, 'error');
+      console.error(`Failed to set credentials: ${errorMessage}`);
     }
   } else {
     addLogEntry('Component not ready for setCredentials', 'error');
@@ -509,9 +512,14 @@ customElements.whenDefined('corti-embedded').then(() => {
 
   component?.addEventListener('embedded-event', (event: Event) => {
     const { detail } = event as CustomEvent<CortiEmbeddedEventDetail>;
+    if (detail.name === 'ready') return;
     addLogEntry(
       `[EMBEDDED-EVENT] - ${detail.name}: ${JSON.stringify(detail.payload)}`,
       'info',
     );
+  });
+  component?.addEventListener('error', (event: Event) => {
+    const { detail } = event as CustomEvent<CortiEmbeddedErrorDetail>;
+    addLogEntry(`[ERROR] - ${JSON.stringify(detail)}`, 'error');
   });
 });

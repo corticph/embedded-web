@@ -22,7 +22,7 @@ npm install @corti/embedded-web
 ```html
 <corti-embedded
   id="corti-component"
-  base-url="https://assistant.eu.corti.app" <!-- REQUIRED -->
+  baseurl="https://assistant.eu.corti.app" <!-- REQUIRED -->
 ></corti-embedded>
 ```
 
@@ -84,11 +84,9 @@ function App() {
     console.log('Corti component is ready!');
   };
 
-  const handleEvent = (
-    event: CustomEvent<{ name: string; payload: unknown }>,
-  ) => {
-    console.log('Event name:', event.detail.name);
-    console.log('Event payload:', event.detail.payload);
+  const handleEvent = (detail: { name: string; payload: unknown }) => {
+    console.log('Event name:', detail.name);
+    console.log('Event payload:', detail.payload);
   };
 
   const handleAuth = async () => {
@@ -124,7 +122,7 @@ function App() {
         visibility="visible"
         onReady={handleReady}
         onEvent={handleEvent}
-        onError={event => console.error('Embedded error:', event.detail)}
+        onError={detail => console.error('Embedded error:', detail)}
         style={{ width: '100%', height: '500px' }}
       />
 
@@ -227,7 +225,7 @@ await component.stopRecording();
 #### getStatus (debugging)
 
 ```javascript
-console.log(component.getStatus());
+console.log(await component.getStatus());
 ```
 
 ## Architecture
@@ -265,17 +263,22 @@ import {
 
 - Use `onEvent` for all embedded events.
 - Event detail shape is `{ name: string; payload: unknown }`.
+- `onReady` fires when the raw `embedded.ready` event is received.
+- `onEvent` receives the generic `embedded-event` stream.
 - Full event catalog and payload details are documented at:
   - https://docs.corti.ai/assistant/events
+- The event listeners for `onEvent`, `onError` and `onReady` are unwrapping the CustomEvent emitted by the Lit component and cleanly return the "detail"
+  that contains the payload of the event. This makes it easier to work with the events in React without having to deal with the CustomEvent wrapper.
 
 ```tsx
 <CortiEmbeddedReact
   baseURL="https://assistant.eu.corti.app"
-  onEvent={event => {
-    console.log(event.detail.name, event.detail.payload);
+  onEvent={detail => {
+    if (detail.name === 'ready' || detail.name === 'loaded') return;
+    console.log(detail.name, detail.payload);
   }}
   onReady={() => console.log('Ready')}
-  onError={event => console.error(event.detail)}
+  onError={detail => console.error(detail)}
 />
 ```
 

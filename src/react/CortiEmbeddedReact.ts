@@ -1,6 +1,6 @@
-import { createComponent } from '@lit/react';
 import * as React from 'react';
-import { CortiEmbedded } from '../CortiEmbedded.js';
+import '../corti-embedded.js';
+import type { CortiEmbedded } from '../CortiEmbedded.js';
 import type { CortiEmbeddedAPI } from '../types';
 
 export interface CortiEmbeddedEventDetail {
@@ -8,15 +8,21 @@ export interface CortiEmbeddedEventDetail {
   payload: unknown;
 }
 
+export interface CortiEmbeddedErrorDetail {
+  message: string;
+  code?: string;
+  details?: unknown;
+}
+
 // Props interface
 export interface CortiEmbeddedReactProps {
   baseURL: string;
   visibility?: 'visible' | 'hidden';
 
-  // Event handlers
-  onEvent?: (event: CustomEvent<CortiEmbeddedEventDetail>) => void;
-  onReady?: (event: CustomEvent<unknown>) => void;
-  onError?: (event: CustomEvent<unknown>) => void;
+  // Event handlers receive the unwrapped detail, not the raw CustomEvent
+  onEvent?: (detail: CortiEmbeddedEventDetail) => void;
+  onReady?: (detail: unknown) => void;
+  onError?: (detail: CortiEmbeddedErrorDetail) => void;
 
   // Additional props
   className?: string;
@@ -28,19 +34,85 @@ export type CortiEmbeddedReactRef = CortiEmbedded & CortiEmbeddedAPI;
 // Export public types
 export * from '../types/index.js';
 
-// Create the component directly without additional forwardRef wrapping
-export const CortiEmbeddedReact = createComponent({
-  tagName: 'corti-embedded',
-  elementClass: CortiEmbedded,
-  react: React,
-  events: {
-    onEvent: 'embedded-event',
-    onReady: 'ready',
-    onError: 'error',
+// Renders the custom element directly so React sets the ref to the actual
+// CortiEmbedded DOM instance. This avoids the @lit/react wrapper chain that
+// was preventing the ref from reaching the DOM node in React 19.
+export const CortiEmbeddedReact = React.forwardRef<
+  CortiEmbeddedReactRef,
+  CortiEmbeddedReactProps
+>(
+  (
+    { onEvent, onReady, onError, baseURL, visibility, className, style },
+    forwardedRef,
+  ) => {
+    const internalRef = React.useRef<CortiEmbeddedReactRef | null>(null);
+    const hasEmittedReadyRef = React.useRef(false);
+
+    // "Latest ref" pattern: update on every render so handlers are always
+    // current without re-attaching event listeners.
+    const onEventRef = React.useRef(onEvent);
+    const onReadyRef = React.useRef(onReady);
+    const onErrorRef = React.useRef(onError);
+    onEventRef.current = onEvent;
+    onReadyRef.current = onReady;
+    onErrorRef.current = onError;
+
+    // Expose the DOM element to the consumer's forwarded ref. Native element
+    // refs are set during React's mutation phase, before layout effects run,
+    // so internalRef.current is always populated when this executes.
+    React.useImperativeHandle(forwardedRef, () => internalRef.current!, []);
+
+    // Keep LitElement reactive properties in sync with React props.
+    React.useLayoutEffect(() => {
+      if (internalRef.current) internalRef.current.baseURL = baseURL;
+    }, [baseURL]);
+
+    React.useLayoutEffect(() => {
+      if (internalRef.current == null || visibility === undefined) return;
+      internalRef.current.visibility = visibility;
+    }, [visibility]);
+
+    // Attach DOM event listeners once on mount. The latest-ref pattern above
+    // ensures handlers always call the current prop without re-attaching.
+    React.useEffect(() => {
+      const el = internalRef.current;
+      if (!el) return undefined;
+
+      const handleEvent = (e: Event) =>
+        onEventRef.current?.(
+          (e as CustomEvent<CortiEmbeddedEventDetail>).detail,
+        );
+      const handleReady = (e: Event) => {
+        if (hasEmittedReadyRef.current) return;
+        hasEmittedReadyRef.current = true;
+        onReadyRef.current?.((e as CustomEvent<unknown>).detail);
+      };
+      const handleError = (e: Event) =>
+        onErrorRef.current?.(
+          (e as CustomEvent<CortiEmbeddedErrorDetail>).detail,
+        );
+
+      el.addEventListener('embedded-event', handleEvent);
+      el.addEventListener('embedded.ready', handleReady);
+      el.addEventListener('error', handleError);
+      return () => {
+        el.removeEventListener('embedded-event', handleEvent);
+        el.removeEventListener('embedded.ready', handleReady);
+        el.removeEventListener('error', handleError);
+      };
+    }, []);
+
+    return React.createElement('corti-embedded', {
+      ref: internalRef,
+      baseurl: baseURL,
+      ...(visibility !== undefined ? { visibility } : {}),
+      ...(className !== undefined ? { className } : {}),
+      style,
+    });
   },
-}) as React.ForwardRefExoticComponent<
-  CortiEmbeddedReactProps & React.RefAttributes<CortiEmbeddedReactRef>
->;
+);
+
+CortiEmbeddedReact.displayName = 'CortiEmbeddedReact';
 
 export interface UseCortiEmbeddedStatusOptions {
   enabled?: boolean;
@@ -53,7 +125,6 @@ export interface UseCortiEmbeddedStatusResult {
   isLoading: boolean;
   error: unknown;
   lastEvent: CortiEmbeddedEventDetail | null;
-  refresh: () => Promise<void>;
 }
 
 export function useCortiEmbeddedStatus(
@@ -126,7 +197,6 @@ export function useCortiEmbeddedStatus(
     isLoading,
     error,
     lastEvent,
-    refresh,
   };
 }
 
@@ -211,5 +281,3 @@ export function useCortiEmbeddedApi(
     [getInstance],
   );
 }
-
-CortiEmbeddedReact.displayName = 'CortiEmbeddedReact';

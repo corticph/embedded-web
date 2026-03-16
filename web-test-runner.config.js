@@ -4,7 +4,7 @@ const filteredLogs = ['Running in dev mode', 'Lit is in dev mode'];
 
 export default /** @type {import("@web/test-runner").TestRunnerConfig} */ ({
   /** Test files to run */
-  files: 'dist/test/**/*.test.js',
+  files: '.tmp/test-dist/test/**/*.test.js',
 
   /** Resolve bare module imports */
   nodeResolve: {
@@ -13,6 +13,25 @@ export default /** @type {import("@web/test-runner").TestRunnerConfig} */ ({
 
   /** Use Playwright Chromium (bundled) so no CHROME_PATH is required */
   browsers: [playwrightLauncher({ product: 'chromium' })],
+
+  coverageConfig: {
+    include: ['src/**/*.ts'],
+    exclude: ['.tmp/test-dist/test/vendor/**'],
+  },
+
+  testRunnerHtml: testFrameworkImport => `<!DOCTYPE html>
+    <html>
+      <head>
+        <script>
+          window.process = window.process || { env: {} };
+          window.process.env = window.process.env || {};
+          window.process.env.NODE_ENV = window.process.env.NODE_ENV || 'development';
+        </script>
+      </head>
+      <body>
+        <script type="module" src="${testFrameworkImport}"></script>
+      </body>
+    </html>`,
 
   /** Filter out lit dev mode logs */
   filterBrowserLogs(log) {
@@ -23,9 +42,6 @@ export default /** @type {import("@web/test-runner").TestRunnerConfig} */ ({
     }
     return true;
   },
-
-  /** Compile JS for older browsers. Requires @web/dev-server-esbuild plugin */
-  // esbuildTarget: 'auto',
 
   /** Amount of browsers to run concurrently */
   // concurrentBrowsers: 2,
