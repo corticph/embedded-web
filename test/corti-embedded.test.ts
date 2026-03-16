@@ -38,8 +38,9 @@ describe('CortiEmbedded', () => {
     const expectedSrc = `${validBaseURL}/embedded`;
     expect(iframe.getAttribute('src')).to.equal(expectedSrc);
     const allowAttr = iframe.getAttribute('allow')!;
-    expect(allowAttr).to.include('microphone *');
-    expect(allowAttr).to.include('camera *');
+    expect(allowAttr).to.include(`microphone ${validBaseURL}`);
+    expect(allowAttr).to.include(`camera ${validBaseURL}`);
+    expect(allowAttr).to.include(`clipboard-write ${validBaseURL}`);
   });
 
   it('is hidden by default and toggles visibility with show/hide', async () => {
@@ -94,7 +95,7 @@ describe('CortiEmbedded', () => {
       postMessage: async () => {
         throw new Error('User must be authenticated to configure session');
       },
-      destroy: () => {},
+      destroy: () => { },
     };
 
     try {
@@ -126,7 +127,7 @@ describe('CortiEmbedded', () => {
       postMessage: async () => {
         throw new Error('User must be authenticated to configure session');
       },
-      destroy: () => {},
+      destroy: () => { },
     };
 
     try {
@@ -225,9 +226,9 @@ describe('CortiEmbedded', () => {
       'https://assistant.us.corti.app/embedded',
     );
     const allowAttr = iframe.getAttribute('allow')!;
-    // After a baseURL change, updated() sets origin-specific permissions
-    expect(allowAttr).to.include('microphone');
-    expect(allowAttr).to.include('camera');
+    expect(allowAttr).to.include(`microphone ${el.baseURL}`);
+    expect(allowAttr).to.include(`camera ${el.baseURL}`);
+    expect(allowAttr).to.include(`clipboard-write ${el.baseURL}`);
   });
 
   it('ignores about:blank iframe loads (no handler setup)', async () => {
@@ -382,8 +383,8 @@ describe('CortiEmbedded', () => {
             return { success: true, payload: {} };
         }
       },
-      waitForReady: async () => {},
-      destroy: () => {},
+      waitForReady: async () => { },
+      destroy: () => { },
       ready: true,
     };
 
