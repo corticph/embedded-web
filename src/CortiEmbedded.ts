@@ -30,11 +30,11 @@ import {
   type PostMessageHandlerCallbacks,
 } from './utils/PostMessageHandler.js';
 
+const IFRAME_SANDBOX_POLICY =
+  'allow-forms allow-modals allow-scripts allow-same-origin';
+
 export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   static styles = [baseStyles, containerStyles];
-
-  private static readonly IFRAME_SANDBOX_POLICY =
-    'allow-forms allow-modals allow-scripts allow-same-origin';
 
   @property({ type: String, reflect: true })
   visibility = 'hidden';
@@ -570,7 +570,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       <iframe
         src=${buildEmbeddedUrl(this.normalizedBaseURL)}
         title="Corti Embedded UI"
-        sandbox=${CortiEmbedded.IFRAME_SANDBOX_POLICY}
+        sandbox=${IFRAME_SANDBOX_POLICY}
         allow=${this.getIframeAllowPolicy(this.normalizedBaseURL)}
         @load=${(event: Event) => this.handleIframeLoad(event)}
         @unload=${() => this.postMessageHandler?.destroy()}

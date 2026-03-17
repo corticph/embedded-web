@@ -21,7 +21,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null;
 }
 
-function getStringOrFiniteNumber(value: unknown): string | undefined {
+function toStringIfFiniteNumberOrString(value: unknown): string | undefined {
   if (typeof value === 'string') {
     return value;
   }
@@ -164,8 +164,8 @@ export function formatError(
     const errorObj = error;
     const objectMessage =
       typeof errorObj.message === 'string' ? errorObj.message : undefined;
-    const objectCode = getStringOrFiniteNumber(errorObj.code);
-    const objectStatus = getStringOrFiniteNumber(errorObj.status);
+    const objectCode = toStringIfFiniteNumberOrString(errorObj.code);
+    const objectStatus = toStringIfFiniteNumberOrString(errorObj.status);
 
     // Handle objects with message and details structure (your original case)
     if (objectMessage) {
@@ -210,7 +210,7 @@ export function formatError(
         code: objectCode,
         path:
           Array.isArray(errorObj.path) &&
-          errorObj.path.every(pathPart => typeof pathPart === 'string')
+            errorObj.path.every(pathPart => typeof pathPart === 'string')
             ? errorObj.path
             : undefined,
         message: objectMessage,
