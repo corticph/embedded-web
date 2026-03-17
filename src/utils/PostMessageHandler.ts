@@ -14,11 +14,41 @@ export interface PostMessageHandlerCallbacks {
   requestTimeout?: number;
 }
 
+interface PostMessageHandlerError {
+  message: string;
+  code?: string;
+  details?: unknown;
+}
+
+interface PendingRequest {
+  resolve: (value: EmbeddedResponse) => void;
+  reject: (reason: PostMessageHandlerError) => void;
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return typeof value === 'object' && value !== null;
+}
+
+function isEmbeddedEventMessage(value: unknown): value is AnyEvent {
+  return (
+    isRecord(value) &&
+    value.type === 'CORTI_EMBEDDED_EVENT' &&
+    typeof value.event === 'string'
+  );
+}
+
+function isEmbeddedResponseMessage(value: unknown): value is EmbeddedResponse {
+  return (
+    isRecord(value) &&
+    value.type === 'CORTI_EMBEDDED_RESPONSE' &&
+    typeof value.action === 'string' &&
+    typeof value.requestId === 'string' &&
+    typeof value.success === 'boolean'
+  );
+}
+
 export class PostMessageHandler {
-  private pendingRequests = new Map<
-    string,
-    { resolve: (value: any) => void; reject: (reason: any) => void }
-  >();
+  private pendingRequests = new Map<string, PendingRequest>();
 
   private messageListener: ((event: MessageEvent) => void) | null = null;
 
@@ -60,13 +90,16 @@ export class PostMessageHandler {
       const { data } = event;
 
       // Check for Corti embedded events
-      if (data?.type === 'CORTI_EMBEDDED_EVENT') {
+      if (isEmbeddedEventMessage(data)) {
         this.handleEvent(data);
         return;
       }
 
       // Check if this is a response to a pending request
-      if (data.requestId && this.pendingRequests.has(data.requestId)) {
+      if (
+        isEmbeddedResponseMessage(data) &&
+        this.pendingRequests.has(data.requestId)
+      ) {
         this.handleResponse(data);
       }
     };
@@ -75,7 +108,7 @@ export class PostMessageHandler {
   }
 
   private handleEvent(eventData: AnyEvent): void {
-    const eventType = (eventData as any).event;
+    const eventType = eventData.event;
     const { payload } = eventData;
 
     // Only 'embedded.ready' signals that the iframe is ready to receive messages
@@ -83,7 +116,10 @@ export class PostMessageHandler {
       this.isReady = true;
 
       // Store and validate the protocol version from the ready payload
-      const version = (payload as any)?.version;
+      const version =
+        isRecord(payload) && typeof payload.version === 'string'
+          ? payload.version
+          : undefined;
       if (typeof version === 'string') {
         this._protocolVersion = version;
         if (version !== PostMessageHandler.SUPPORTED_PROTOCOL_VERSION) {
@@ -126,7 +162,7 @@ export class PostMessageHandler {
     });
   }
 
-  private handleResponse(data: any): void {
+  private handleResponse(data: EmbeddedResponse): void {
     const pendingRequest = this.pendingRequests.get(data.requestId);
     if (pendingRequest) {
       const { resolve, reject } = pendingRequest;
@@ -245,11 +281,11 @@ export class PostMessageHandler {
       }, effectiveTimeout);
 
       this.pendingRequests.set(requestId, {
-        resolve: (value: any) => {
+        resolve: value => {
           clearTimeout(timeoutId);
           resolve(value);
         },
-        reject: (reason: any) => {
+        reject: reason => {
           clearTimeout(timeoutId);
           reject(reason);
         },

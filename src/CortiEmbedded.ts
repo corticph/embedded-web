@@ -30,6 +30,9 @@ import {
   type PostMessageHandlerCallbacks,
 } from './utils/PostMessageHandler.js';
 
+const IFRAME_SANDBOX_POLICY =
+  'allow-forms allow-modals allow-scripts allow-same-origin';
+
 export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   static styles = [baseStyles, containerStyles];
 
@@ -43,6 +46,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
   private normalizedBaseURL: string | null = null;
 
+  // eslint-disable-next-line class-methods-use-this
   private getIframeAllowPolicy(normalizedBaseURL?: string | null): string {
     const permissionTarget = normalizedBaseURL
       ? new URL(normalizedBaseURL).origin
@@ -566,13 +570,13 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       <iframe
         src=${buildEmbeddedUrl(this.normalizedBaseURL)}
         title="Corti Embedded UI"
-        sandbox=${'allow-forms allow-modals allow-scripts allow-same-origin' as any}
+        sandbox=${IFRAME_SANDBOX_POLICY}
         allow=${this.getIframeAllowPolicy(this.normalizedBaseURL)}
         @load=${(event: Event) => this.handleIframeLoad(event)}
         @unload=${() => this.postMessageHandler?.destroy()}
         style=${this.visibility === 'hidden'
-        ? 'display: none;'
-        : 'display: block;'}
+          ? 'display: none;'
+          : 'display: block;'}
       ></iframe>
     `;
   }
