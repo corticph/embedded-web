@@ -18,15 +18,15 @@ interface FormattedError {
 }
 
 function isRecord(value: unknown): value is Record<string, unknown> {
-  return typeof value === 'object' && value !== null;
+  return typeof value === "object" && value !== null;
 }
 
 function toStringIfFiniteNumberOrString(value: unknown): string | undefined {
-  if (typeof value === 'string') {
+  if (typeof value === "string") {
     return value;
   }
 
-  if (typeof value === 'number' && Number.isFinite(value)) {
+  if (typeof value === "number" && Number.isFinite(value)) {
     return String(value);
   }
 
@@ -58,9 +58,9 @@ function extractStatusCode(message: string): string | undefined {
  */
 function isValidationError(obj: unknown): obj is ValidationErrorLike {
   return (
-    typeof obj === 'object' &&
+    typeof obj === "object" &&
     obj !== null &&
-    ('expected' in obj || 'code' in obj || 'path' in obj || 'message' in obj)
+    ("expected" in obj || "code" in obj || "path" in obj || "message" in obj)
   );
 }
 
@@ -76,7 +76,7 @@ function formatValidationError(error: ValidationError): string {
   }
 
   // Build a descriptive message from the parts
-  const pathString = path && path.length > 0 ? path.join('.') : 'field';
+  const pathString = path && path.length > 0 ? path.join(".") : "field";
 
   if (expected) {
     return `Invalid ${pathString}: expected ${expected}`;
@@ -94,7 +94,7 @@ function formatValidationError(error: ValidationError): string {
  */
 function formatValidationErrors(errors: ValidationError[]): string {
   if (errors.length === 0) {
-    return 'Unknown validation error';
+    return "Unknown validation error";
   }
 
   if (errors.length === 1) {
@@ -102,7 +102,7 @@ function formatValidationErrors(errors: ValidationError[]): string {
   }
 
   const errorMessages = errors.map(formatValidationError);
-  return `Multiple validation errors: ${errorMessages.join('; ')}`;
+  return `Multiple validation errors: ${errorMessages.join("; ")}`;
 }
 
 /**
@@ -110,7 +110,7 @@ function formatValidationErrors(errors: ValidationError[]): string {
  */
 export function formatError(
   error: unknown,
-  fallbackMessage = 'An error occurred',
+  fallbackMessage = "An error occurred",
 ): FormattedError {
   // Handle null/undefined
   if (!error) {
@@ -131,7 +131,7 @@ export function formatError(
   }
 
   // Handle string errors (like "400 Bad Request")
-  if (typeof error === 'string') {
+  if (typeof error === "string") {
     const extractedCode = extractStatusCode(error);
     return {
       message: error,
@@ -163,7 +163,7 @@ export function formatError(
   if (isRecord(error)) {
     const errorObj = error;
     const objectMessage =
-      typeof errorObj.message === 'string' ? errorObj.message : undefined;
+      typeof errorObj.message === "string" ? errorObj.message : undefined;
     const objectCode = toStringIfFiniteNumberOrString(errorObj.code);
     const objectStatus = toStringIfFiniteNumberOrString(errorObj.status);
 
@@ -180,7 +180,7 @@ export function formatError(
       // Try to enhance the message with parsed details
       if (
         isRecord(errorObj.details) &&
-        typeof errorObj.details.message === 'string'
+        typeof errorObj.details.message === "string"
       ) {
         const parsedDetails = tryParseJson(errorObj.details.message);
 
@@ -206,11 +206,11 @@ export function formatError(
     if (isValidationError(errorObj)) {
       const validationError: ValidationError = {
         expected:
-          typeof errorObj.expected === 'string' ? errorObj.expected : undefined,
+          typeof errorObj.expected === "string" ? errorObj.expected : undefined,
         code: objectCode,
         path:
           Array.isArray(errorObj.path) &&
-            errorObj.path.every(pathPart => typeof pathPart === 'string')
+          errorObj.path.every(pathPart => typeof pathPart === "string")
             ? errorObj.path
             : undefined,
         message: objectMessage,
@@ -226,11 +226,11 @@ export function formatError(
     if (errorObj.error || errorObj.detail || objectStatus || objectCode) {
       const message = errorObj.error ?? objectMessage ?? errorObj.detail;
       const messageStr =
-        typeof message === 'string' ? message : fallbackMessage;
+        typeof message === "string" ? message : fallbackMessage;
 
       // Try to get code from various properties, or extract from message
       let code = objectCode ?? objectStatus;
-      if (!code && typeof message === 'string') {
+      if (!code && typeof message === "string") {
         code = extractStatusCode(message);
       }
 

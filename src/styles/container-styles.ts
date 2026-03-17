@@ -1,4 +1,4 @@
-import { css } from 'lit';
+import { css } from "lit";
 
 // Main container styles for the Corti Agent component
 export const containerStyles = css`
@@ -20,7 +20,7 @@ export const containerStyles = css`
   }
 
   /* Handle visibility state */
-  :host([visibility='hidden']) {
+  :host([visibility="hidden"]) {
     display: none;
   }
 
