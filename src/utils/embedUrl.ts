@@ -6,7 +6,7 @@ export function isRealEmbeddedLoad(
   src: string,
   normalizedBaseURL: string,
 ): boolean {
-  if (!src || src.startsWith('about:')) {
+  if (!src || src.startsWith("about:")) {
     return false;
   }
   try {
@@ -17,8 +17,8 @@ export function isRealEmbeddedLoad(
       return false;
     }
     // Accept /embedded with optional trailing slash; allow query/hash
-    const normalizedPath = srcUrl.pathname.replace(/\/+$/, '');
-    return normalizedPath === '/embedded';
+    const normalizedPath = srcUrl.pathname.replace(/\/+$/, "");
+    return normalizedPath === "/embedded";
   } catch {
     return false;
   }

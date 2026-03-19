@@ -1,4 +1,4 @@
-import { css } from 'lit';
+import { css } from "lit";
 
 /**
  * Base styles to be applied to all components within the application.

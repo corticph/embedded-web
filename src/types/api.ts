@@ -1,6 +1,6 @@
 // Public API types for SDK consumers
 
-import type { ConfigureAppPayload } from './config.js';
+import type { ConfigureAppPayload } from "./config.js";
 import type {
   AuthChangedEventPayload,
   DocumentEventPayload,
@@ -8,7 +8,7 @@ import type {
   InteractionCreatedEventPayload,
   NavigationChangedEventPayload,
   UsageEventPayload,
-} from './events.js';
+} from "./events.js";
 import type {
   AddFactsPayload,
   ConfigureSessionPayload,
@@ -17,19 +17,19 @@ import type {
   KeycloakTokenResponse,
   NavigatePayload,
   SetCredentialsPayload,
-} from './payloads.js';
-import type { DefaultMode } from './protocol.js';
+} from "./payloads.js";
+import type { DefaultMode } from "./protocol.js";
 import type {
   AuthResponse,
   ConfigureAppResponse,
   CreateInteractionResponse,
   GetStatusResponse,
   GetTemplatesResponse,
-} from './responses.js';
+} from "./responses.js";
 
-export type { ConfigureAppPayload } from './config.js';
+export type { ConfigureAppPayload } from "./config.js";
 // Re-export common types for public API
-export type { UserInfo } from './responses.js';
+export type { UserInfo } from "./responses.js";
 
 /**
  * User information returned from authentication
@@ -62,14 +62,14 @@ export interface SessionConfig {
  */
 export interface EmbeddedEventData {
   ready: undefined;
-  'auth-changed': AuthChangedEventPayload;
-  'interaction-created': InteractionCreatedEventPayload;
-  'recording-started': undefined;
-  'recording-stopped': undefined;
-  'document-generated': DocumentEventPayload;
-  'document-updated': DocumentEventPayload;
-  'document-synced': DocumentEventPayload;
-  'navigation-changed': NavigationChangedEventPayload;
+  "auth-changed": AuthChangedEventPayload;
+  "interaction-created": InteractionCreatedEventPayload;
+  "recording-started": undefined;
+  "recording-stopped": undefined;
+  "document-generated": DocumentEventPayload;
+  "document-updated": DocumentEventPayload;
+  "document-synced": DocumentEventPayload;
+  "navigation-changed": NavigationChangedEventPayload;
   usage: UsageEventPayload;
   error: ErrorEventPayload;
 }
@@ -187,23 +187,4 @@ export interface CortiEmbeddedAPI {
    * Hide the embedded UI
    */
   hide(): void;
-}
-
-/**
- * Type representing the corti-embedded custom element in the DOM.
- * When this package is installed, tag-name based APIs like
- * document.querySelector('corti-embedded') and document.createElement('corti-embedded')
- * are automatically typed via HTMLElementTagNameMap. Other lookups such as getElementById
- * still return HTMLElement | null and require a cast or narrowing to CortiEmbeddedElement.
- */
-export type CortiEmbeddedElement = HTMLElement & CortiEmbeddedAPI;
-
-// Extend Window interface
-declare global {
-  interface Window {
-    CortiEmbedded?: CortiEmbeddedWindowAPI;
-  }
-  interface HTMLElementTagNameMap {
-    'corti-embedded': CortiEmbeddedElement;
-  }
 }

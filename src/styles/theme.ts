@@ -1,10 +1,10 @@
-import { css } from 'lit';
+import { css } from "lit";
 
 const ThemeStyles = css`
   :host {
     color-scheme: light dark;
     /* Component Defaults */
-    --component-font-family: 'Segoe UI', Roboto, sans-serif;
+    --component-font-family: "Segoe UI", Roboto, sans-serif;
 
     /* Plain (Default) Colors */
     --plain-bg-color: light-dark(#f5f5f5, #3a3a3a);

@@ -1,7 +1,7 @@
-import * as React from 'react';
-import '../corti-embedded.js';
-import type { CortiEmbedded } from '../CortiEmbedded.js';
-import type { CortiEmbeddedAPI } from '../types';
+import * as React from "react";
+import "../corti-embedded.js";
+import type { CortiEmbedded } from "../CortiEmbedded.js";
+import type { CortiEmbeddedAPI } from "../types";
 
 export interface CortiEmbeddedEventDetail {
   name: string;
@@ -17,7 +17,7 @@ export interface CortiEmbeddedErrorDetail {
 // Props interface
 export interface CortiEmbeddedReactProps {
   baseURL: string;
-  visibility?: 'visible' | 'hidden';
+  visibility?: "visible" | "hidden";
 
   // Event handlers receive the unwrapped detail, not the raw CustomEvent
   onEvent?: (detail: CortiEmbeddedEventDetail) => void;
@@ -32,7 +32,7 @@ export interface CortiEmbeddedReactProps {
 export type CortiEmbeddedReactRef = CortiEmbedded & CortiEmbeddedAPI;
 
 // Export public types
-export * from '../types/index.js';
+export * from "../types/index.js";
 
 // Renders the custom element directly so React sets the ref to the actual
 // CortiEmbedded DOM instance. This avoids the @lit/react wrapper chain that
@@ -92,17 +92,17 @@ export const CortiEmbeddedReact = React.forwardRef<
           (e as CustomEvent<CortiEmbeddedErrorDetail>).detail,
         );
 
-      el.addEventListener('embedded-event', handleEvent);
-      el.addEventListener('embedded.ready', handleReady);
-      el.addEventListener('error', handleError);
+      el.addEventListener("embedded-event", handleEvent);
+      el.addEventListener("embedded.ready", handleReady);
+      el.addEventListener("error", handleError);
       return () => {
-        el.removeEventListener('embedded-event', handleEvent);
-        el.removeEventListener('embedded.ready', handleReady);
-        el.removeEventListener('error', handleError);
+        el.removeEventListener("embedded-event", handleEvent);
+        el.removeEventListener("embedded.ready", handleReady);
+        el.removeEventListener("error", handleError);
       };
     }, []);
 
-    return React.createElement('corti-embedded', {
+    return React.createElement("corti-embedded", {
       ref: internalRef,
       baseurl: baseURL,
       ...(visibility !== undefined ? { visibility } : {}),
@@ -112,7 +112,7 @@ export const CortiEmbeddedReact = React.forwardRef<
   },
 );
 
-CortiEmbeddedReact.displayName = 'CortiEmbeddedReact';
+CortiEmbeddedReact.displayName = "CortiEmbeddedReact";
 
 export interface UseCortiEmbeddedStatusOptions {
   enabled?: boolean;
@@ -121,7 +121,7 @@ export interface UseCortiEmbeddedStatusOptions {
 }
 
 export interface UseCortiEmbeddedStatusResult {
-  status: Awaited<ReturnType<CortiEmbeddedReactRef['getStatus']>> | null;
+  status: Awaited<ReturnType<CortiEmbeddedReactRef["getStatus"]>> | null;
   isLoading: boolean;
   error: unknown;
   lastEvent: CortiEmbeddedEventDetail | null;
@@ -136,17 +136,17 @@ export function useCortiEmbeddedStatus(
     onError,
     shouldRefreshOnEvent = event => {
       const normalized = event.name.toLowerCase();
-      if (normalized.includes('getstatus')) return false;
-      if (normalized.includes('statusreturned')) return false;
+      if (normalized.includes("getstatus")) return false;
+      if (normalized.includes("statusreturned")) return false;
       return true;
     },
   } = options;
   const [status, setStatus] =
-    React.useState<UseCortiEmbeddedStatusResult['status']>(null);
+    React.useState<UseCortiEmbeddedStatusResult["status"]>(null);
   const [isLoading, setIsLoading] = React.useState(false);
   const [error, setError] = React.useState<unknown>(null);
   const [lastEvent, setLastEvent] =
-    React.useState<UseCortiEmbeddedStatusResult['lastEvent']>(null);
+    React.useState<UseCortiEmbeddedStatusResult["lastEvent"]>(null);
   const onErrorRef = React.useRef(onError);
   const shouldRefreshOnEventRef = React.useRef(shouldRefreshOnEvent);
   const isRefreshingRef = React.useRef(false);
@@ -188,8 +188,8 @@ export function useCortiEmbeddedStatus(
       refresh();
     };
 
-    target.addEventListener('embedded-event', handleEvent);
-    return () => target.removeEventListener('embedded-event', handleEvent);
+    target.addEventListener("embedded-event", handleEvent);
+    return () => target.removeEventListener("embedded-event", handleEvent);
   }, [enabled, ref, refresh]);
 
   return {
@@ -202,44 +202,44 @@ export function useCortiEmbeddedStatus(
 
 export interface UseCortiEmbeddedApiResult {
   auth: (
-    ...args: Parameters<CortiEmbeddedReactRef['auth']>
-  ) => ReturnType<CortiEmbeddedReactRef['auth']>;
+    ...args: Parameters<CortiEmbeddedReactRef["auth"]>
+  ) => ReturnType<CortiEmbeddedReactRef["auth"]>;
   createInteraction: (
-    ...args: Parameters<CortiEmbeddedReactRef['createInteraction']>
-  ) => ReturnType<CortiEmbeddedReactRef['createInteraction']>;
+    ...args: Parameters<CortiEmbeddedReactRef["createInteraction"]>
+  ) => ReturnType<CortiEmbeddedReactRef["createInteraction"]>;
   configureSession: (
-    ...args: Parameters<CortiEmbeddedReactRef['configureSession']>
-  ) => ReturnType<CortiEmbeddedReactRef['configureSession']>;
+    ...args: Parameters<CortiEmbeddedReactRef["configureSession"]>
+  ) => ReturnType<CortiEmbeddedReactRef["configureSession"]>;
   addFacts: (
-    ...args: Parameters<CortiEmbeddedReactRef['addFacts']>
-  ) => ReturnType<CortiEmbeddedReactRef['addFacts']>;
+    ...args: Parameters<CortiEmbeddedReactRef["addFacts"]>
+  ) => ReturnType<CortiEmbeddedReactRef["addFacts"]>;
   navigate: (
-    ...args: Parameters<CortiEmbeddedReactRef['navigate']>
-  ) => ReturnType<CortiEmbeddedReactRef['navigate']>;
+    ...args: Parameters<CortiEmbeddedReactRef["navigate"]>
+  ) => ReturnType<CortiEmbeddedReactRef["navigate"]>;
   startRecording: (
-    ...args: Parameters<CortiEmbeddedReactRef['startRecording']>
-  ) => ReturnType<CortiEmbeddedReactRef['startRecording']>;
+    ...args: Parameters<CortiEmbeddedReactRef["startRecording"]>
+  ) => ReturnType<CortiEmbeddedReactRef["startRecording"]>;
   stopRecording: (
-    ...args: Parameters<CortiEmbeddedReactRef['stopRecording']>
-  ) => ReturnType<CortiEmbeddedReactRef['stopRecording']>;
+    ...args: Parameters<CortiEmbeddedReactRef["stopRecording"]>
+  ) => ReturnType<CortiEmbeddedReactRef["stopRecording"]>;
   getStatus: (
-    ...args: Parameters<CortiEmbeddedReactRef['getStatus']>
-  ) => ReturnType<CortiEmbeddedReactRef['getStatus']>;
+    ...args: Parameters<CortiEmbeddedReactRef["getStatus"]>
+  ) => ReturnType<CortiEmbeddedReactRef["getStatus"]>;
   configure: (
-    ...args: Parameters<CortiEmbeddedReactRef['configure']>
-  ) => ReturnType<CortiEmbeddedReactRef['configure']>;
+    ...args: Parameters<CortiEmbeddedReactRef["configure"]>
+  ) => ReturnType<CortiEmbeddedReactRef["configure"]>;
   getTemplates: (
-    ...args: Parameters<CortiEmbeddedReactRef['getTemplates']>
-  ) => ReturnType<CortiEmbeddedReactRef['getTemplates']>;
+    ...args: Parameters<CortiEmbeddedReactRef["getTemplates"]>
+  ) => ReturnType<CortiEmbeddedReactRef["getTemplates"]>;
   setCredentials: (
-    ...args: Parameters<CortiEmbeddedReactRef['setCredentials']>
-  ) => ReturnType<CortiEmbeddedReactRef['setCredentials']>;
+    ...args: Parameters<CortiEmbeddedReactRef["setCredentials"]>
+  ) => ReturnType<CortiEmbeddedReactRef["setCredentials"]>;
   show: (
-    ...args: Parameters<CortiEmbeddedReactRef['show']>
-  ) => ReturnType<CortiEmbeddedReactRef['show']>;
+    ...args: Parameters<CortiEmbeddedReactRef["show"]>
+  ) => ReturnType<CortiEmbeddedReactRef["show"]>;
   hide: (
-    ...args: Parameters<CortiEmbeddedReactRef['hide']>
-  ) => ReturnType<CortiEmbeddedReactRef['hide']>;
+    ...args: Parameters<CortiEmbeddedReactRef["hide"]>
+  ) => ReturnType<CortiEmbeddedReactRef["hide"]>;
 }
 
 function getCortiEmbeddedInstanceFromRefOrThrow(
@@ -248,7 +248,7 @@ function getCortiEmbeddedInstanceFromRefOrThrow(
   const instance = ref.current;
   if (!instance) {
     throw new Error(
-      'No active corti-embedded instance found for this ref. Mount <CortiEmbeddedReact ref={...} /> first.',
+      "No active corti-embedded instance found for this ref. Mount <CortiEmbeddedReact ref={...} /> first.",
     );
   }
   return instance;
