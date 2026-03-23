@@ -128,8 +128,8 @@ function CortiEmbeddedDemo() {
   }, [addLogEntry]);
 
   const handleError = useCallback(
-    (detail: CortiEmbeddedErrorDetail) => {
-      addLogEntry(`Error: ${JSON.stringify(detail)}`, "error");
+    (event: CustomEvent<CortiEmbeddedErrorDetail>) => {
+      addLogEntry(`Error: ${JSON.stringify(event.detail)}`, "error");
     },
     [addLogEntry],
   );
