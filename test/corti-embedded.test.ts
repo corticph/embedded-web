@@ -288,7 +288,7 @@ describe("CortiEmbedded", () => {
     });
   });
 
-  it("forwards 'embedded.ready' raw and suppresses raw 'ready'/'loaded'", async () => {
+  it("forwards 'embedded.ready' raw and fully suppresses raw 'ready'/'loaded'", async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
@@ -306,17 +306,17 @@ describe("CortiEmbedded", () => {
 
     fired.length = 0;
 
-    // 'ready' from iframe should only fire 'event', NOT the public 'ready'
+    // 'ready' from iframe should be fully suppressed.
     (el as any).dispatchEmbeddedEvent("ready", {});
     expect(fired).to.not.include("ready");
-    expect(fired).to.include("event");
+    expect(fired).to.deep.equal([]);
 
     fired.length = 0;
 
-    // 'loaded' from iframe should only fire 'event', NOT 'loaded' raw
+    // 'loaded' from iframe should also be fully suppressed.
     (el as any).dispatchEmbeddedEvent("loaded", {});
     expect(fired).to.not.include("loaded");
-    expect(fired).to.include("event");
+    expect(fired).to.deep.equal([]);
   });
 
   it("auth throws if component not ready", async () => {
