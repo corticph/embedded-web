@@ -6,7 +6,7 @@ import type {
   SessionConfig,
   GetStatusResponse,
   KeycloakTokenResponse,
-} from '../dist';
+} from "../dist";
 
 interface CortiEmbeddedEventDetail {
   name: string;
@@ -21,22 +21,22 @@ interface CortiEmbeddedErrorDetail {
 
 // Get the component with proper typing — querySelector('corti-embedded') is
 // automatically typed as CortiEmbeddedElement via HTMLElementTagNameMap
-const component = document.querySelector('corti-embedded');
+const component = document.querySelector("corti-embedded");
 
 // Define log entry types
-type LogType = 'info' | 'success' | 'error' | 'warning';
+type LogType = "info" | "success" | "error" | "warning";
 
 // Utils
 export const clearLog = (): void => {
-  const logElement = document.getElementById('log');
+  const logElement = document.getElementById("log");
   if (!logElement) return;
   logElement.innerHTML = '<div class="log-entry log-info">Log cleared...</div>';
 };
 
-export const addLogEntry = (message: string, type: LogType = 'info'): void => {
-  const logElement = document.getElementById('log');
+export const addLogEntry = (message: string, type: LogType = "info"): void => {
+  const logElement = document.getElementById("log");
   if (!logElement) return;
-  const entry = document.createElement('div');
+  const entry = document.createElement("div");
   entry.className = `log-entry log-${type}`;
   entry.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
   logElement.appendChild(entry);
@@ -44,19 +44,19 @@ export const addLogEntry = (message: string, type: LogType = 'info'): void => {
 };
 
 export const updateStatus = (): void => {
-  const statusElement = document.getElementById('status');
+  const statusElement = document.getElementById("status");
   if (!statusElement) return;
 
   if (component) {
-    const baseURL = component.getAttribute('baseURL');
+    const baseURL = component.getAttribute("baseURL");
 
     statusElement.innerHTML = `
       <strong>Current Status:</strong><br>
       Base URL: ${baseURL}<br>
-      Component Ready: ${typeof component.show === 'function' && typeof component.hide === 'function' ? 'Yes' : 'No'}<br>
+      Component Ready: ${typeof component.show === "function" && typeof component.hide === "function" ? "Yes" : "No"}<br>
     `;
   } else {
-    statusElement.innerHTML = 'Status: Component not found';
+    statusElement.innerHTML = "Status: Component not found";
   }
 };
 
@@ -65,7 +65,7 @@ export const showCorti = (): void => {
   if (component?.show) {
     component.show();
     updateStatus();
-    addLogEntry('Corti component shown', 'info');
+    addLogEntry("Corti component shown", "info");
   }
 };
 
@@ -73,7 +73,7 @@ export const hideCorti = (): void => {
   if (component?.hide) {
     component.hide();
     updateStatus();
-    addLogEntry('Corti component hidden', 'info');
+    addLogEntry("Corti component hidden", "info");
   }
 };
 
@@ -82,7 +82,7 @@ export const testAuthentication = async (): Promise<void> => {
     try {
       // Parse the JSON from the textarea
       const authPayloadElement = document.getElementById(
-        'auth-payload',
+        "auth-payload",
       ) as HTMLTextAreaElement;
       const authPayloadText = authPayloadElement.value;
       let authPayload: KeycloakTokenResponse;
@@ -91,23 +91,23 @@ export const testAuthentication = async (): Promise<void> => {
         authPayload = JSON.parse(authPayloadText);
       } catch (jsonError) {
         const errorMessage =
-          jsonError instanceof Error ? jsonError.message : 'Unknown JSON error';
-        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, 'error');
+          jsonError instanceof Error ? jsonError.message : "Unknown JSON error";
+        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, "error");
         return;
       }
 
       addLogEntry(
         `Sending authentication request with payload: ${JSON.stringify(authPayload)}`,
-        'info',
+        "info",
       );
       await component.auth(authPayload);
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
-      console.log('Auth failed - ', errorMessage);
+        error instanceof Error ? error.message : "Unknown error";
+      console.log("Auth failed - ", errorMessage);
     }
   } else {
-    addLogEntry('Component not ready for authentication', 'error');
+    addLogEntry("Component not ready for authentication", "error");
   }
 };
 
@@ -116,7 +116,7 @@ export const configureSession = async (): Promise<void> => {
     try {
       // Parse the JSON from the textarea
       const payloadElement = document.getElementById(
-        'configure-session-payload',
+        "configure-session-payload",
       ) as HTMLTextAreaElement;
       const payloadText = payloadElement.value;
       let payload: SessionConfig;
@@ -125,23 +125,23 @@ export const configureSession = async (): Promise<void> => {
         payload = JSON.parse(payloadText) as SessionConfig;
       } catch (jsonError) {
         const errorMessage =
-          jsonError instanceof Error ? jsonError.message : 'Unknown JSON error';
-        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, 'error');
+          jsonError instanceof Error ? jsonError.message : "Unknown JSON error";
+        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, "error");
         return;
       }
 
       addLogEntry(
         `Configuring session with payload: ${JSON.stringify(payload)}`,
-        'info',
+        "info",
       );
       await component.configureSession(payload);
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       console.error(`Session configuration failed: ${errorMessage}`);
     }
   } else {
-    addLogEntry('Component not ready for configureSession', 'error');
+    addLogEntry("Component not ready for configureSession", "error");
   }
 };
 
@@ -150,7 +150,7 @@ export const addFacts = async (): Promise<void> => {
     try {
       // Parse the JSON from the textarea
       const payloadElement = document.getElementById(
-        'add-facts-payload',
+        "add-facts-payload",
       ) as HTMLTextAreaElement;
       const payloadText = payloadElement.value;
       let payload: Fact[];
@@ -159,23 +159,23 @@ export const addFacts = async (): Promise<void> => {
         payload = JSON.parse(payloadText) as Fact[];
       } catch (jsonError) {
         const errorMessage =
-          jsonError instanceof Error ? jsonError.message : 'Unknown JSON error';
-        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, 'error');
+          jsonError instanceof Error ? jsonError.message : "Unknown JSON error";
+        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, "error");
         return;
       }
 
       addLogEntry(
         `Adding facts with payload: ${JSON.stringify(payload)}`,
-        'info',
+        "info",
       );
       await component.addFacts(payload);
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       console.error(`Add facts failed: ${errorMessage}`);
     }
   } else {
-    addLogEntry('Component not ready for addFacts', 'error');
+    addLogEntry("Component not ready for addFacts", "error");
   }
 };
 
@@ -184,7 +184,7 @@ export const navigate = async (): Promise<void> => {
     try {
       // Parse the JSON from the textarea
       const payloadElement = document.getElementById(
-        'navigate-payload',
+        "navigate-payload",
       ) as HTMLTextAreaElement;
       const payloadText = payloadElement.value;
       let payload: { path: string };
@@ -193,23 +193,23 @@ export const navigate = async (): Promise<void> => {
         payload = JSON.parse(payloadText) as { path: string };
       } catch (jsonError) {
         const errorMessage =
-          jsonError instanceof Error ? jsonError.message : 'Unknown JSON error';
-        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, 'error');
+          jsonError instanceof Error ? jsonError.message : "Unknown JSON error";
+        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, "error");
         return;
       }
 
       addLogEntry(
         `Navigating with payload: ${JSON.stringify(payload)}`,
-        'info',
+        "info",
       );
       await component.navigate(payload.path);
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       console.error(`Navigation failed: ${errorMessage}`);
     }
   } else {
-    addLogEntry('Component not ready for navigate', 'error');
+    addLogEntry("Component not ready for navigate", "error");
   }
 };
 
@@ -218,7 +218,7 @@ export const createInteraction = async (): Promise<void> => {
     try {
       // Parse the JSON from the textarea
       const payloadElement = document.getElementById(
-        'create-interaction-payload',
+        "create-interaction-payload",
       ) as HTMLTextAreaElement;
       const payloadText = payloadElement.value;
       let payload: CreateInteractionPayload;
@@ -227,14 +227,14 @@ export const createInteraction = async (): Promise<void> => {
         payload = JSON.parse(payloadText);
       } catch (jsonError) {
         const errorMessage =
-          jsonError instanceof Error ? jsonError.message : 'Unknown JSON error';
-        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, 'error');
+          jsonError instanceof Error ? jsonError.message : "Unknown JSON error";
+        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, "error");
         return;
       }
 
       addLogEntry(
         `Creating interaction with payload: ${JSON.stringify(payload)}`,
-        'info',
+        "info",
       );
       const response: InteractionDetails =
         await component.createInteraction(payload);
@@ -244,102 +244,102 @@ export const createInteraction = async (): Promise<void> => {
         const interactionId = response.id;
         if (interactionId) {
           const navTextarea = document.getElementById(
-            'navigate-payload',
+            "navigate-payload",
           ) as HTMLTextAreaElement;
           if (navTextarea) {
             try {
               const navPayload = JSON.parse(navTextarea.value);
               if (
                 navPayload &&
-                typeof navPayload === 'object' &&
-                'path' in navPayload
+                typeof navPayload === "object" &&
+                "path" in navPayload
               ) {
                 navPayload.path = String(navPayload.path).replace(
-                  '{interaction_id}',
+                  "{interaction_id}",
                   interactionId,
                 );
                 navTextarea.value = JSON.stringify(navPayload, null, 2);
               } else {
                 // Fallback to string replace if unexpected structure
                 navTextarea.value = navTextarea.value.replace(
-                  '{interaction_id}',
+                  "{interaction_id}",
                   interactionId,
                 );
               }
             } catch {
               // Fallback to string replace if JSON is invalid
               navTextarea.value = navTextarea.value.replace(
-                '{interaction_id}',
+                "{interaction_id}",
                 interactionId,
               );
             }
             addLogEntry(
               `Navigate payload updated with interaction ID: ${interactionId}`,
-              'success',
+              "success",
             );
           }
         }
       } catch (updateError) {
         const errorMessage =
-          updateError instanceof Error ? updateError.message : 'Unknown error';
+          updateError instanceof Error ? updateError.message : "Unknown error";
         console.error(`Failed to update navigate payload: ${errorMessage}`);
       }
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       console.error(`Interaction creation failed: ${errorMessage}`);
     }
   } else {
-    addLogEntry('Component not ready for createInteraction', 'error');
+    addLogEntry("Component not ready for createInteraction", "error");
   }
 };
 
 export const startRecording = async (): Promise<void> => {
   if (component?.startRecording) {
     try {
-      addLogEntry('Starting recording...', 'info');
+      addLogEntry("Starting recording...", "info");
       await component.startRecording();
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       console.error(`Failed to start recording: ${errorMessage}`);
     }
   } else {
-    addLogEntry('Component not ready for startRecording', 'error');
+    addLogEntry("Component not ready for startRecording", "error");
   }
 };
 
 export const stopRecording = async (): Promise<void> => {
   if (component?.stopRecording) {
     try {
-      addLogEntry('Stopping recording...', 'info');
+      addLogEntry("Stopping recording...", "info");
       await component.stopRecording();
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       console.error(`Failed to stop recording: ${errorMessage}`);
     }
   } else {
-    addLogEntry('Component not ready for stopRecording', 'error');
+    addLogEntry("Component not ready for stopRecording", "error");
   }
 };
 
 export const getStatus = async (): Promise<void> => {
   if (component?.getStatus) {
     try {
-      addLogEntry('Getting component status...', 'info');
+      addLogEntry("Getting component status...", "info");
       const status: GetStatusResponse = await component.getStatus();
       addLogEntry(
         `Component status: ${JSON.stringify(status, null, 2)}`,
-        'success',
+        "success",
       );
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       console.error(`Failed to get status: ${errorMessage}`);
     }
   } else {
-    addLogEntry('Component not ready for getStatus', 'error');
+    addLogEntry("Component not ready for getStatus", "error");
   }
 };
 
@@ -348,7 +348,7 @@ export const configure = async (): Promise<void> => {
     try {
       // Parse the JSON from the textarea
       const payloadElement = document.getElementById(
-        'configure-payload',
+        "configure-payload",
       ) as HTMLTextAreaElement;
       const payloadText = payloadElement.value;
       let payload: ConfigureAppPayload;
@@ -357,23 +357,23 @@ export const configure = async (): Promise<void> => {
         payload = JSON.parse(payloadText) as ConfigureAppPayload;
       } catch (jsonError) {
         const errorMessage =
-          jsonError instanceof Error ? jsonError.message : 'Unknown JSON error';
-        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, 'error');
+          jsonError instanceof Error ? jsonError.message : "Unknown JSON error";
+        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, "error");
         return;
       }
 
       addLogEntry(
         `Configuring app with payload: ${JSON.stringify(payload)}`,
-        'info',
+        "info",
       );
       await component.configure(payload);
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       console.error(`App configuration failed: ${errorMessage}`);
     }
   } else {
-    addLogEntry('Component not ready for configure', 'error');
+    addLogEntry("Component not ready for configure", "error");
   }
 };
 
@@ -382,7 +382,7 @@ export const setCredentials = async (): Promise<void> => {
     try {
       // Parse the JSON from the textarea
       const payloadElement = document.getElementById(
-        'set-credentials-payload',
+        "set-credentials-payload",
       ) as HTMLTextAreaElement;
       const payloadText = payloadElement.value;
       let payload: { password: string };
@@ -391,20 +391,20 @@ export const setCredentials = async (): Promise<void> => {
         payload = JSON.parse(payloadText) as { password: string };
       } catch (jsonError) {
         const errorMessage =
-          jsonError instanceof Error ? jsonError.message : 'Unknown JSON error';
-        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, 'error');
+          jsonError instanceof Error ? jsonError.message : "Unknown JSON error";
+        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, "error");
         return;
       }
 
-      addLogEntry('Setting credentials...', 'info');
+      addLogEntry("Setting credentials...", "info");
       await component.setCredentials(payload);
     } catch (error) {
       const errorMessage =
-        error instanceof Error ? error.message : 'Unknown error';
+        error instanceof Error ? error.message : "Unknown error";
       console.error(`Failed to set credentials: ${errorMessage}`);
     }
   } else {
-    addLogEntry('Component not ready for setCredentials', 'error');
+    addLogEntry("Component not ready for setCredentials", "error");
   }
 };
 
@@ -449,10 +449,10 @@ Object.assign(window, {
 });
 
 // Initialize demo when DOM is ready
-document.addEventListener('DOMContentLoaded', () => {
+document.addEventListener("DOMContentLoaded", () => {
   // Populate create-interaction-payload with current date
   const createInteractionPayload = document.getElementById(
-    'create-interaction-payload',
+    "create-interaction-payload",
   ) as HTMLTextAreaElement;
   if (createInteractionPayload) {
     const currentDate = new Date().toISOString();
@@ -461,12 +461,12 @@ document.addEventListener('DOMContentLoaded', () => {
     const payload = {
       encounter: {
         identifier: randomId,
-        status: 'planned',
-        type: 'first_consultation',
+        status: "planned",
+        type: "first_consultation",
         period: {
           startedAt: currentDate,
         },
-        title: 'Initial Consultation',
+        title: "Initial Consultation",
       },
     };
 
@@ -474,52 +474,52 @@ document.addEventListener('DOMContentLoaded', () => {
   }
 
   // Add event listeners to buttons
-  document.getElementById('show-btn')?.addEventListener('click', showCorti);
-  document.getElementById('hide-btn')?.addEventListener('click', hideCorti);
+  document.getElementById("show-btn")?.addEventListener("click", showCorti);
+  document.getElementById("hide-btn")?.addEventListener("click", hideCorti);
   document
-    .getElementById('auth-btn')
-    ?.addEventListener('click', testAuthentication);
-  document.getElementById('clear-log-btn')?.addEventListener('click', clearLog);
+    .getElementById("auth-btn")
+    ?.addEventListener("click", testAuthentication);
+  document.getElementById("clear-log-btn")?.addEventListener("click", clearLog);
   document
-    .getElementById('create-interaction-btn')
-    ?.addEventListener('click', createInteraction);
+    .getElementById("create-interaction-btn")
+    ?.addEventListener("click", createInteraction);
   document
-    .getElementById('configure-session-btn')
-    ?.addEventListener('click', configureSession);
-  document.getElementById('add-facts-btn')?.addEventListener('click', addFacts);
-  document.getElementById('navigate-btn')?.addEventListener('click', navigate);
+    .getElementById("configure-session-btn")
+    ?.addEventListener("click", configureSession);
+  document.getElementById("add-facts-btn")?.addEventListener("click", addFacts);
+  document.getElementById("navigate-btn")?.addEventListener("click", navigate);
   document
-    .getElementById('start-recording-btn')
-    ?.addEventListener('click', startRecording);
+    .getElementById("start-recording-btn")
+    ?.addEventListener("click", startRecording);
   document
-    .getElementById('stop-recording-btn')
-    ?.addEventListener('click', stopRecording);
+    .getElementById("stop-recording-btn")
+    ?.addEventListener("click", stopRecording);
   document
-    .getElementById('get-status-btn')
-    ?.addEventListener('click', getStatus);
+    .getElementById("get-status-btn")
+    ?.addEventListener("click", getStatus);
   document
-    .getElementById('configure-btn')
-    ?.addEventListener('click', configure);
+    .getElementById("configure-btn")
+    ?.addEventListener("click", configure);
   document
-    .getElementById('set-credentials-btn')
-    ?.addEventListener('click', setCredentials);
+    .getElementById("set-credentials-btn")
+    ?.addEventListener("click", setCredentials);
 });
 
 // Initialize when component is defined
-customElements.whenDefined('corti-embedded').then(() => {
+customElements.whenDefined("corti-embedded").then(() => {
   updateStatus();
-  addLogEntry('Corti component loaded and ready', 'success');
+  addLogEntry("Corti component loaded and ready", "success");
 
-  component?.addEventListener('embedded-event', (event: Event) => {
+  component?.addEventListener("event", (event: Event) => {
     const { detail } = event as CustomEvent<CortiEmbeddedEventDetail>;
-    if (detail.name === 'ready') return;
+    if (detail.name === "ready") return;
     addLogEntry(
       `[EMBEDDED-EVENT] - ${detail.name}: ${JSON.stringify(detail.payload)}`,
-      'info',
+      "info",
     );
   });
-  component?.addEventListener('error', (event: Event) => {
+  component?.addEventListener("error", (event: Event) => {
     const { detail } = event as CustomEvent<CortiEmbeddedErrorDetail>;
-    addLogEntry(`[ERROR] - ${JSON.stringify(detail)}`, 'error');
+    addLogEntry(`[ERROR] - ${JSON.stringify(detail)}`, "error");
   });
 });

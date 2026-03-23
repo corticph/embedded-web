@@ -8,6 +8,8 @@ export interface CortiEmbeddedEventDetail {
   payload: unknown;
 }
 
+export type CortiEmbeddedEvent = CustomEvent<CortiEmbeddedEventDetail>;
+
 export interface CortiEmbeddedErrorDetail {
   message: string;
   code?: string;
@@ -19,8 +21,8 @@ export interface CortiEmbeddedReactProps {
   baseURL: string;
   visibility?: "visible" | "hidden";
 
-  // Event handlers receive the unwrapped detail, not the raw CustomEvent
-  onEvent?: (detail: CortiEmbeddedEventDetail) => void;
+  // Event handlers receive the raw CustomEvent emitted by the custom element.
+  onEvent?: (event: CortiEmbeddedEvent) => void;
   onReady?: (detail: unknown) => void;
   onError?: (detail: CortiEmbeddedErrorDetail) => void;
 
@@ -79,9 +81,7 @@ export const CortiEmbeddedReact = React.forwardRef<
       if (!el) return undefined;
 
       const handleEvent = (e: Event) =>
-        onEventRef.current?.(
-          (e as CustomEvent<CortiEmbeddedEventDetail>).detail,
-        );
+        onEventRef.current?.(e as CortiEmbeddedEvent);
       const handleReady = (e: Event) => {
         if (hasEmittedReadyRef.current) return;
         hasEmittedReadyRef.current = true;
@@ -92,11 +92,11 @@ export const CortiEmbeddedReact = React.forwardRef<
           (e as CustomEvent<CortiEmbeddedErrorDetail>).detail,
         );
 
-      el.addEventListener("embedded-event", handleEvent);
+      el.addEventListener("event", handleEvent);
       el.addEventListener("embedded.ready", handleReady);
       el.addEventListener("error", handleError);
       return () => {
-        el.removeEventListener("embedded-event", handleEvent);
+        el.removeEventListener("event", handleEvent);
         el.removeEventListener("embedded.ready", handleReady);
         el.removeEventListener("error", handleError);
       };
@@ -188,8 +188,8 @@ export function useCortiEmbeddedStatus(
       refresh();
     };
 
-    target.addEventListener("embedded-event", handleEvent);
-    return () => target.removeEventListener("embedded-event", handleEvent);
+    target.addEventListener("event", handleEvent);
+    return () => target.removeEventListener("event", handleEvent);
   }, [enabled, ref, refresh]);
 
   return {

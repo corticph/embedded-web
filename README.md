@@ -51,14 +51,14 @@ await myComponent.show()
 
 #### Generic Event Listener (Web Component)
 
-Use `embedded-event` as the canonical event stream for web component integrations.
+Use `event` as the canonical event stream for web component integrations.
 
 - Event detail shape is `{ name: string; payload: unknown }`.
 - Full event catalog and payload details are documented at:
   - https://docs.corti.ai/assistant/events
 
 ```js
-myComponent.addEventListener('embedded-event', event => {
+myComponent.addEventListener("event", event => {
   const { detail } = event;
   console.log(detail.name, detail.payload);
 });
@@ -67,13 +67,13 @@ myComponent.addEventListener('embedded-event', event => {
 ### React Component
 
 ```tsx
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 import {
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
   useCortiEmbeddedApi,
   useCortiEmbeddedStatus,
-} from '@corti/embedded-web/react';
+} from "@corti/embedded-web/react";
 
 function App() {
   const cortiRef = useRef<CortiEmbeddedReactRef>(null);
@@ -81,39 +81,39 @@ function App() {
   const { status } = useCortiEmbeddedStatus(cortiRef);
 
   const handleReady = () => {
-    console.log('Corti component is ready!');
+    console.log("Corti component is ready!");
   };
 
   const handleEvent = (detail: { name: string; payload: unknown }) => {
-    console.log('Event name:', detail.name);
-    console.log('Event payload:', detail.payload);
+    console.log("Event name:", detail.name);
+    console.log("Event payload:", detail.payload);
   };
 
   const handleAuth = async () => {
     try {
       const user = await api.auth({
-        access_token: 'your-token',
-        token_type: 'Bearer',
+        access_token: "your-token",
+        token_type: "Bearer",
         // ... rest of the token response
       });
-      console.log('Authenticated:', user);
+      console.log("Authenticated:", user);
 
-      await api.configureSession({ defaultTemplateKey: 'soap_note' });
+      await api.configureSession({ defaultTemplateKey: "soap_note" });
       await api.createInteraction({
         encounter: {
           identifier: `encounter-${Date.now()}`,
-          status: 'planned',
-          type: 'first_consultation',
+          status: "planned",
+          type: "first_consultation",
           period: { startedAt: new Date().toISOString() },
         },
       });
     } catch (error) {
-      console.error('Auth failed:', error);
+      console.error("Auth failed:", error);
     }
   };
 
   return (
-    <div style={{ height: '100vh' }}>
+    <div style={{ height: "100vh" }}>
       <button onClick={handleAuth}>Authenticate</button>
 
       <CortiEmbeddedReact
@@ -122,8 +122,8 @@ function App() {
         visibility="visible"
         onReady={handleReady}
         onEvent={handleEvent}
-        onError={detail => console.error('Embedded error:', detail)}
-        style={{ width: '100%', height: '500px' }}
+        onError={detail => console.error("Embedded error:", detail)}
+        style={{ width: "100%", height: "500px" }}
       />
 
       <pre>{JSON.stringify(status, null, 2)}</pre>
@@ -135,7 +135,7 @@ function App() {
 ### Show/Hide the Component
 
 ```javascript
-const component = document.getElementById('corti-component');
+const component = document.getElementById("corti-component");
 
 // Show the chat interface
 component.show();
@@ -174,10 +174,10 @@ const authResponse = await component.auth({
 
 ```javascript
 await component.configureSession({
-  defaultLanguage: 'en',
-  defaultOutputLanguage: 'en',
-  defaultTemplateKey: 'discharge-summary',
-  defaultMode: 'virtual',
+  defaultLanguage: "en",
+  defaultOutputLanguage: "en",
+  defaultTemplateKey: "discharge-summary",
+  defaultMode: "virtual",
 });
 ```
 
@@ -193,7 +193,7 @@ await component.addFacts([
 #### navigate
 
 ```javascript
-await component.navigate('/interactions/123');
+await component.navigate("/interactions/123");
 ```
 
 #### createInteraction
@@ -202,14 +202,14 @@ await component.navigate('/interactions/123');
 const created = await component.createInteraction({
   assignedUserId: null,
   encounter: {
-    identifier: 'enc-123',
-    status: 'in-progress',
-    type: 'consult',
+    identifier: "enc-123",
+    status: "in-progress",
+    type: "consult",
     period: { startedAt: new Date().toISOString() },
-    title: 'Visit for cough',
+    title: "Visit for cough",
   },
   patient: {
-    identifier: 'pat-456',
+    identifier: "pat-456",
   },
 });
 ```
@@ -242,7 +242,7 @@ The component uses a `PostMessageHandler` utility class that:
 The React component (`CortiEmbeddedReact`) is available as an additional export and provides:
 
 - **Hook-based API access**: `useCortiEmbeddedApi(ref)` exposes instance-bound methods (`auth`, `navigate`, `createInteraction`, etc.)
-- **Generic event stream**: `onEvent` receives all embedded events as `{ name, payload }`
+- **Generic event stream**: `onEvent` receives all embedded events as `CustomEvent<{ name, payload }>`
 - **Status hook**: `useCortiEmbeddedStatus(ref)` keeps latest status/reactive state
 - **Multi-instance safety**: API methods are scoped to the ref you pass
 - **React Props**: Standard React props like `className`, `style`, etc.
@@ -256,28 +256,27 @@ import {
   type CortiEmbeddedReactRef,
   useCortiEmbeddedApi,
   useCortiEmbeddedStatus,
-} from '@corti/embedded-web/react';
+} from "@corti/embedded-web/react";
 ```
 
 ### Event Listener Setup
 
 - Use `onEvent` for all embedded events.
-- Event detail shape is `{ name: string; payload: unknown }`.
+- Event detail shape is `CustomEvent<{ name: string; payload: unknown }>` via `event.detail`.
 - `onReady` fires when the raw `embedded.ready` event is received.
-- `onEvent` receives the generic `embedded-event` stream.
+- `onEvent` receives the raw generic `event` stream.
 - Full event catalog and payload details are documented at:
   - https://docs.corti.ai/assistant/events
-- The event listeners for `onEvent`, `onError` and `onReady` are unwrapping the CustomEvent emitted by the Lit component and cleanly return the "detail"
-  that contains the payload of the event. This makes it easier to work with the events in React without having to deal with the CustomEvent wrapper.
+- `onEvent` passes through the raw `CustomEvent`, while `onError` and `onReady` still receive the event detail directly.
 
 ```tsx
 <CortiEmbeddedReact
   baseURL="https://assistant.eu.corti.app"
-  onEvent={detail => {
-    if (detail.name === 'ready' || detail.name === 'loaded') return;
-    console.log(detail.name, detail.payload);
+  onEvent={event => {
+    if (event.detail.name === "ready" || event.detail.name === "loaded") return;
+    console.log(event.detail.name, event.detail.payload);
   }}
-  onReady={() => console.log('Ready')}
+  onReady={() => console.log("Ready")}
   onError={detail => console.error(detail)}
 />
 ```
