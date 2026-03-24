@@ -15,6 +15,7 @@ import React, { useRef } from "react";
 import {
   CortiEmbeddedReact,
   type CortiEmbeddedEvent,
+  type CortiEmbeddedReadyEvent,
   type CortiEmbeddedReactRef,
   type CortiEmbeddedErrorDetail,
 } from "@corti/embedded-web/react";
@@ -30,12 +31,16 @@ function App() {
     console.error("Embedded error:", event.detail);
   };
 
+  const handleReady = (event: CortiEmbeddedReadyEvent) => {
+    console.log("Corti embedded is ready", event.detail);
+  };
+
   return (
     <CortiEmbeddedReact
       ref={cortiRef}
       baseURL="https://assistant.eu.corti.app"
       visibility="visible"
-      onReady={event => console.log("Corti embedded is ready", event.detail)}
+      onReady={handleReady}
       onEvent={handleEvent}
       onError={handleError}
       style={{ width: "100%", height: "600px" }}

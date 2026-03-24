@@ -51,7 +51,7 @@ await myComponent.show()
 
 #### Generic Event Listener (Web Component)
 
-Use `event` as the canonical event stream for web component integrations.
+Use `event` as the canonical event stream for web component integrations (formerly `embedded-event`).
 
 - Event detail shape is `{ name: string; payload: unknown }`.
 - Full event catalog and payload details are documented at:
@@ -72,6 +72,7 @@ import {
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
   type CortiEmbeddedEvent,
+  type CortiEmbeddedReadyEvent,
   useCortiEmbeddedApi,
   useCortiEmbeddedStatus,
 } from "@corti/embedded-web/react";
@@ -81,7 +82,7 @@ function App() {
   const api = useCortiEmbeddedApi(cortiRef);
   const { status } = useCortiEmbeddedStatus(cortiRef);
 
-  const handleReady = (event: CustomEvent<unknown>) => {
+  const handleReady = (event: CortiEmbeddedReadyEvent) => {
     console.log("Corti component is ready!", event.detail);
   };
 
@@ -263,7 +264,7 @@ import {
 ### Event Listener Setup
 
 - Use `onEvent` as the catch-all listener for the wrapper's generic `event` stream.
-- `onEvent` receives the raw `event` `CustomEvent`, and `event.detail` has shape the following shape: `{ name: string; payload: unknown }`.
+- `onEvent` receives the raw `event` `CustomEvent`, and `event.detail` has the following shape: `{ name: string; payload: unknown }`.
 - That generic stream includes `embedded.ready` and other forwarded embedded events listed in our documentation.
 - `onReady` is a convenience listener for the raw `embedded.ready` `CustomEvent`.
 - Raw `ready`, `loaded`, and `error.triggered` are not forwarded through `onEvent`.

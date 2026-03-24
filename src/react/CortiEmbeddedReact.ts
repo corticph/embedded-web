@@ -9,6 +9,7 @@ export interface CortiEmbeddedEventDetail {
 }
 
 export type CortiEmbeddedEvent = CustomEvent<CortiEmbeddedEventDetail>;
+export type CortiEmbeddedReadyEvent = CustomEvent<Record<string, unknown>>;
 
 export interface CortiEmbeddedErrorDetail {
   message: string;
@@ -23,7 +24,7 @@ export interface CortiEmbeddedReactProps {
 
   // Event handlers receive the raw CustomEvent emitted by the custom element.
   onEvent?: (event: CortiEmbeddedEvent) => void;
-  onReady?: (event: CortiEmbeddedEvent) => void;
+  onReady?: (event: CortiEmbeddedReadyEvent) => void;
   onError?: (event: CustomEvent<CortiEmbeddedErrorDetail>) => void;
 
   // Additional props
@@ -85,7 +86,7 @@ export const CortiEmbeddedReact = React.forwardRef<
       const handleReady = (e: Event) => {
         if (hasEmittedReadyRef.current) return;
         hasEmittedReadyRef.current = true;
-        onReadyRef.current?.(e as CortiEmbeddedEvent);
+        onReadyRef.current?.(e as CortiEmbeddedReadyEvent);
       };
       const handleError = (e: Event) =>
         onErrorRef.current?.(e as CustomEvent<CortiEmbeddedErrorDetail>);

@@ -133,6 +133,14 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       name: rawEventName,
       payload,
     });
+
+    // Also emit the legacy 'embedded-event' stream for backward compatibility.
+    // This allows existing integrations listening for 'embedded-event' to continue
+    // working while newer consumers can use the 'event' stream.
+    this.dispatchPublicEvent("embedded-event", {
+      name: rawEventName,
+      payload,
+    });
   }
 
   private dispatchErrorEvent(error: {
