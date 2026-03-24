@@ -46,15 +46,15 @@ describe('CortiEmbeddedReact', () => {
   });
 
   it('fires onReady only once per mounted component instance', async () => {
-    const readyCalls: unknown[] = [];
+    const readyCalls: Array<CustomEvent<unknown>> = [];
     const ref = React.createRef<CortiEmbeddedReactRef>();
 
     root!.render(
       React.createElement(CortiEmbeddedReact, {
         ref,
         baseURL: 'https://assistant.eu.corti.app',
-        onReady: detail => {
-          readyCalls.push(detail);
+        onReady: event => {
+          readyCalls.push(event);
         },
       }),
     );
@@ -66,6 +66,7 @@ describe('CortiEmbeddedReact', () => {
     el.dispatchEvent(new CustomEvent('embedded.ready', { detail: { a: 1 } }));
     el.dispatchEvent(new CustomEvent('embedded.ready', { detail: { a: 2 } }));
 
-    expect(readyCalls).to.deep.equal([{ a: 1 }]);
+    expect(readyCalls).to.have.length(1);
+    expect(readyCalls[0].detail).to.deep.equal({ a: 1 });
   });
 });

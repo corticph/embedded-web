@@ -26,8 +26,8 @@ function App() {
     console.log(event.detail.name, event.detail.payload);
   };
 
-  const handleError = (detail: CortiEmbeddedErrorDetail) => {
-    console.error("Embedded error:", detail);
+  const handleError = (event: CustomEvent<CortiEmbeddedErrorDetail>) => {
+    console.error("Embedded error:", event.detail);
   };
 
   return (
@@ -35,7 +35,7 @@ function App() {
       ref={cortiRef}
       baseURL="https://assistant.eu.corti.app"
       visibility="visible"
-      onReady={() => console.log("Corti embedded is ready")}
+      onReady={event => console.log("Corti embedded is ready", event.detail)}
       onEvent={handleEvent}
       onError={handleError}
       style={{ width: "100%", height: "600px" }}
@@ -49,9 +49,11 @@ function App() {
 Use `onEvent` as the canonical event listener.
 
 - Event shape: `CustomEvent<{ name: string; payload: unknown }>`
-- This receives all embedded events
-- `onReady` is triggered by the raw `embedded.ready` event
+- This receives the generic embedded `event` stream
+- `onReady` is triggered by the raw `embedded.ready` event and receives the raw `CustomEvent`
 - `onEvent` receives the raw `event` `CustomEvent`
+- Raw `ready`, `loaded`, and `error.triggered` are not forwarded through `onEvent`
+- `onError` receives the raw `CustomEvent`, so use `event.detail`
 - Event names and payload contracts are documented publicly at:
   - https://docs.corti.ai/assistant/events
 

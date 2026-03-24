@@ -71,6 +71,7 @@ import React, { useRef } from "react";
 import {
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
+  type CortiEmbeddedEvent,
   useCortiEmbeddedApi,
   useCortiEmbeddedStatus,
 } from "@corti/embedded-web/react";
@@ -80,13 +81,13 @@ function App() {
   const api = useCortiEmbeddedApi(cortiRef);
   const { status } = useCortiEmbeddedStatus(cortiRef);
 
-  const handleReady = () => {
-    console.log("Corti component is ready!");
+  const handleReady = (event: CustomEvent<unknown>) => {
+    console.log("Corti component is ready!", event.detail);
   };
 
-  const handleEvent = (detail: { name: string; payload: unknown }) => {
-    console.log("Event name:", detail.name);
-    console.log("Event payload:", detail.payload);
+  const handleEvent = (event: CortiEmbeddedEvent) => {
+    console.log("Event name:", event.detail.name);
+    console.log("Event payload:", event.detail.payload);
   };
 
   const handleAuth = async () => {
@@ -122,7 +123,7 @@ function App() {
         visibility="visible"
         onReady={handleReady}
         onEvent={handleEvent}
-        onError={detail => console.error("Embedded error:", detail)}
+        onError={event => console.error("Embedded error:", event.detail)}
         style={{ width: "100%", height: "500px" }}
       />
 
@@ -242,7 +243,7 @@ The component uses a `PostMessageHandler` utility class that:
 The React component (`CortiEmbeddedReact`) is available as an additional export and provides:
 
 - **Hook-based API access**: `useCortiEmbeddedApi(ref)` exposes instance-bound methods (`auth`, `navigate`, `createInteraction`, etc.)
-- **Generic event stream**: `onEvent` receives all embedded events as `CustomEvent<{ name, payload }>`
+- **Generic event stream**: `onEvent` receives the generic `event` stream as `CustomEvent<{ name, payload }>`
 - **Status hook**: `useCortiEmbeddedStatus(ref)` keeps latest status/reactive state
 - **Multi-instance safety**: API methods are scoped to the ref you pass
 - **React Props**: Standard React props like `className`, `style`, etc.
@@ -265,19 +266,19 @@ import {
 - Event detail shape is `CustomEvent<{ name: string; payload: unknown }>` via `event.detail`.
 - `onReady` fires when the raw `embedded.ready` event is received.
 - `onEvent` receives the raw generic `event` stream.
+- Raw `ready`, `loaded`, and `error.triggered` are not forwarded through `onEvent`.
 - Full event catalog and payload details are documented at:
   - https://docs.corti.ai/assistant/events
-- `onEvent` passes through the raw `CustomEvent`, while `onError` and `onReady` still receive the event detail directly.
+- `onEvent`, `onReady`, and `onError` pass through the raw `CustomEvent`.
 
 ```tsx
 <CortiEmbeddedReact
   baseURL="https://assistant.eu.corti.app"
   onEvent={event => {
-    if (event.detail.name === "ready" || event.detail.name === "loaded") return;
     console.log(event.detail.name, event.detail.payload);
   }}
-  onReady={() => console.log("Ready")}
-  onError={detail => console.error(detail)}
+  onReady={event => console.log("Ready", event.detail)}
+  onError={event => console.error(event.detail)}
 />
 ```
 
