@@ -243,7 +243,7 @@ The component uses a `PostMessageHandler` utility class that:
 The React component (`CortiEmbeddedReact`) is available as an additional export and provides:
 
 - **Hook-based API access**: `useCortiEmbeddedApi(ref)` exposes instance-bound methods (`auth`, `navigate`, `createInteraction`, etc.)
-- **Generic event stream**: `onEvent` receives the generic `event` stream as `CustomEvent<{ name, payload }>`
+- **Generic event stream**: `onEvent` receives the wrapper's `event` `CustomEvent`, with `event.detail` shaped as `{ name, payload }`
 - **Status hook**: `useCortiEmbeddedStatus(ref)` keeps latest status/reactive state
 - **Multi-instance safety**: API methods are scoped to the ref you pass
 - **React Props**: Standard React props like `className`, `style`, etc.
@@ -262,10 +262,10 @@ import {
 
 ### Event Listener Setup
 
-- Use `onEvent` for all embedded events.
-- Event detail shape is `CustomEvent<{ name: string; payload: unknown }>` via `event.detail`.
-- `onReady` fires when the raw `embedded.ready` event is received.
-- `onEvent` receives the raw generic `event` stream.
+- Use `onEvent` as the catch-all listener for the wrapper's generic `event` stream.
+- `onEvent` receives the raw `event` `CustomEvent`, and `event.detail` has shape the following shape: `{ name: string; payload: unknown }`.
+- That generic stream includes `embedded.ready` and other forwarded embedded events listed in our documentation.
+- `onReady` is a convenience listener for the raw `embedded.ready` `CustomEvent`.
 - Raw `ready`, `loaded`, and `error.triggered` are not forwarded through `onEvent`.
 - Full event catalog and payload details are documented at:
   - https://docs.corti.ai/assistant/events

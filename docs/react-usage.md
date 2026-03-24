@@ -49,9 +49,9 @@ function App() {
 Use `onEvent` as the canonical event listener.
 
 - Event shape: `CustomEvent<{ name: string; payload: unknown }>`
-- This receives the generic embedded `event` stream
-- `onReady` is triggered by the raw `embedded.ready` event and receives the raw `CustomEvent`
-- `onEvent` receives the raw `event` `CustomEvent`
+- `onEvent` receives the wrapper's generic `event` `CustomEvent`
+- That generic stream includes `embedded.ready` and other forwarded embedded events
+- `onReady` listens to the raw `embedded.ready` `CustomEvent`
 - Raw `ready`, `loaded`, and `error.triggered` are not forwarded through `onEvent`
 - `onError` receives the raw `CustomEvent`, so use `event.detail`
 - Event names and payload contracts are documented publicly at:
