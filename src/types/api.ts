@@ -77,9 +77,7 @@ export interface EmbeddedEventData {
 // Window API Types
 export interface CortiEmbeddedV1API {
   auth(payload: KeycloakTokenResponse): Promise<AuthResponse>;
-  createInteraction(
-    payload: CreateInteractionPayload,
-  ): Promise<CreateInteractionResponse>;
+  createInteraction(payload: CreateInteractionPayload): Promise<CreateInteractionResponse>;
   addFacts(payload: AddFactsPayload): Promise<void>;
   configureSession(payload: ConfigureSessionPayload): Promise<void>;
   configure(payload: ConfigureAppPayload): Promise<ConfigureAppResponse>;
@@ -92,6 +90,13 @@ export interface CortiEmbeddedV1API {
 }
 export interface CortiEmbeddedWindowAPI {
   v1: CortiEmbeddedV1API;
+}
+
+// Extend Window interface
+declare global {
+  interface Window {
+    CortiEmbedded?: CortiEmbeddedWindowAPI;
+  }
 }
 
 /**
@@ -115,9 +120,7 @@ export interface CortiEmbeddedAPI {
    * @param encounter Encounter request data
    * @returns Promise resolving to interaction details
    */
-  createInteraction(
-    encounter: CreateInteractionPayload,
-  ): Promise<InteractionDetails>;
+  createInteraction(encounter: CreateInteractionPayload): Promise<InteractionDetails>;
 
   /**
    * Configure the current session
@@ -176,7 +179,7 @@ export interface CortiEmbeddedAPI {
    * @param credentials Authentication credentials to store
    * @returns Promise that resolves when credentials are set
    */
-  setCredentials(credentials: SetCredentialsPayload): Promise<void>;
+  setCredentials(credentials: { password: string }): Promise<void>;
 
   /**
    * Show the embedded UI
