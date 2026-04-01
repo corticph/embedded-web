@@ -271,6 +271,7 @@ describe("CortiEmbedded", () => {
     );
     let rawDetail: unknown;
     let embeddedDetail: unknown;
+    let legacyDetail: unknown;
 
     el.addEventListener("embedded.navigated", (event: Event) => {
       rawDetail = (event as CustomEvent).detail;
@@ -278,11 +279,18 @@ describe("CortiEmbedded", () => {
     el.addEventListener("event", (event: Event) => {
       embeddedDetail = (event as CustomEvent).detail;
     });
+    el.addEventListener("embedded-event", (event: Event) => {
+      legacyDetail = (event as CustomEvent).detail;
+    });
 
     (el as any).dispatchEmbeddedEvent("embedded.navigated", { path: "/test" });
 
     expect(rawDetail).to.deep.equal({ path: "/test" });
     expect(embeddedDetail).to.deep.equal({
+      name: "embedded.navigated",
+      payload: { path: "/test" },
+    });
+    expect(legacyDetail).to.deep.equal({
       name: "embedded.navigated",
       payload: { path: "/test" },
     });
