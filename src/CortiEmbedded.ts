@@ -123,13 +123,20 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   }
 
   private dispatchEmbeddedEvent(rawEventName: string, payload: unknown) {
-    if (rawEventName !== "ready" && rawEventName !== "loaded") {
-      // Pass all other events through as raw DOM events for direct listeners.
-      this.dispatchPublicEvent(rawEventName, payload);
-    }
+    if (rawEventName === "ready" || rawEventName === "loaded") return;
+    // Pass all other events through as raw DOM events for direct listeners.
+    this.dispatchPublicEvent(rawEventName, payload);
 
-    // Always forward through the generic 'embedded-event' stream so consumers
-    // can observe the full event feed regardless of event name.
+    // Forward supported embedded events through the generic 'event' stream so
+    // consumers can observe them without subscribing to each raw event name.
+    this.dispatchPublicEvent("event", {
+      name: rawEventName,
+      payload,
+    });
+
+    // Also emit the legacy 'embedded-event' stream for backward compatibility.
+    // This allows existing integrations listening for 'embedded-event' to continue
+    // working while newer consumers can use the 'event' stream.
     this.dispatchPublicEvent("embedded-event", {
       name: rawEventName,
       payload,

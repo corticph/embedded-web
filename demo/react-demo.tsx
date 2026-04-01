@@ -1,8 +1,8 @@
-import { useCallback, useRef, useState } from 'react';
-import { createRoot } from 'react-dom/client';
+import { useCallback, useRef, useState } from "react";
+import { createRoot } from "react-dom/client";
 import {
   type KeycloakTokenResponse,
-  type CortiEmbeddedEventDetail,
+  type CortiEmbeddedEvent,
   type CortiEmbeddedErrorDetail,
   type ConfigureAppPayload,
   CortiEmbeddedReact,
@@ -11,7 +11,7 @@ import {
   type SessionConfig,
   useCortiEmbeddedApi,
   useCortiEmbeddedStatus,
-} from '../dist/index.js';
+} from "../dist/index.js";
 
 function CortiEmbeddedDemo() {
   const componentRef = useRef<CortiEmbeddedReactRef>(null);
@@ -20,14 +20,14 @@ function CortiEmbeddedDemo() {
     Array<{ time: string; message: string; type: string }>
   >([]);
   const [isReady, setIsReady] = useState(false);
-  const baseURL = 'https://assistant.eu.corti.app';
+  const baseURL = "https://assistant.eu.corti.app";
 
   // Form states
   const [authPayload, setAuthPayload] = useState<string>(
     JSON.stringify(
       {
-        token: 'test-token-123',
-        userId: 'demo-user',
+        token: "test-token-123",
+        userId: "demo-user",
       },
       null,
       2,
@@ -53,12 +53,12 @@ function CortiEmbeddedDemo() {
         {
           encounter: {
             identifier: `encounter-${Date.now()}`,
-            status: 'planned',
-            type: 'inpatient',
+            status: "planned",
+            type: "inpatient",
             period: {
               startedAt: new Date().toISOString(),
             },
-            title: 'New Encounter',
+            title: "New Encounter",
           },
         },
         null,
@@ -70,10 +70,10 @@ function CortiEmbeddedDemo() {
     useState<string>(
       JSON.stringify(
         {
-          defaultLanguage: 'en',
-          defaultOutputLanguage: 'en',
-          defaultTemplateKey: 'soap_note',
-          defaultMode: 'virtual',
+          defaultLanguage: "en",
+          defaultOutputLanguage: "en",
+          defaultTemplateKey: "soap_note",
+          defaultMode: "virtual",
         },
         null,
         2,
@@ -83,11 +83,11 @@ function CortiEmbeddedDemo() {
   const [addFactsPayload, setAddFactsPayload] = useState<string>(
     JSON.stringify(
       [
-        { text: 'Chest pain', group: 'other' },
-        { text: 'Shortness of breath', group: 'other' },
-        { text: 'Fatigue', group: 'other' },
-        { text: 'Dizziness', group: 'other' },
-        { text: 'Nausea', group: 'other' },
+        { text: "Chest pain", group: "other" },
+        { text: "Shortness of breath", group: "other" },
+        { text: "Fatigue", group: "other" },
+        { text: "Dizziness", group: "other" },
+        { text: "Nausea", group: "other" },
       ],
       null,
       2,
@@ -95,12 +95,12 @@ function CortiEmbeddedDemo() {
   );
 
   const [navigatePayload, setNavigatePayload] = useState<string>(
-    '/session/{interaction_id}',
+    "/session/{interaction_id}",
   );
 
   // Helper to add log entries
   const addLogEntry = useCallback(
-    (message: string, type: 'info' | 'success' | 'error' = 'info') => {
+    (message: string, type: "info" | "success" | "error" = "info") => {
       const time = new Date().toLocaleTimeString();
       setLog(prev => [...prev, { time, message, type }]);
     },
@@ -116,7 +116,7 @@ function CortiEmbeddedDemo() {
     onError: error => {
       addLogEntry(
         `Status refresh failed: ${error instanceof Error ? error.message : String(error)}`,
-        'error',
+        "error",
       );
     },
   });
@@ -124,25 +124,25 @@ function CortiEmbeddedDemo() {
   // Event handlers
   const handleReady = useCallback(() => {
     setIsReady(true);
-    addLogEntry('Corti component loaded and ready', 'success');
+    addLogEntry("Corti component loaded and ready", "success");
   }, [addLogEntry]);
 
   const handleError = useCallback(
-    (detail: CortiEmbeddedErrorDetail) => {
-      addLogEntry(`Error: ${JSON.stringify(detail)}`, 'error');
+    (event: CustomEvent<CortiEmbeddedErrorDetail>) => {
+      addLogEntry(`Error: ${JSON.stringify(event.detail)}`, "error");
     },
     [addLogEntry],
   );
 
   const handleEvent = useCallback(
-    (detail: CortiEmbeddedEventDetail) => {
-      const { name, payload } = detail;
-      addLogEntry(`Event ${name}: ${JSON.stringify(payload)}`, 'info');
+    (event: CortiEmbeddedEvent) => {
+      const { name, payload } = event.detail;
+      addLogEntry(`Event ${name}: ${JSON.stringify(payload)}`, "info");
       if (
-        name === 'embedded.interactionCreated' &&
+        name === "embedded.interactionCreated" &&
         payload &&
-        typeof payload === 'object' &&
-        'interaction' in payload
+        typeof payload === "object" &&
+        "interaction" in payload
       ) {
         const { interaction } = payload as { interaction?: { id?: string } };
         if (interaction?.id) {
@@ -157,11 +157,11 @@ function CortiEmbeddedDemo() {
   const handleShow = () => {
     try {
       api.show();
-      addLogEntry('Corti component shown', 'info');
+      addLogEntry("Corti component shown", "info");
     } catch (error) {
       addLogEntry(
         `Show failed: ${error instanceof Error ? error.message : String(error)}`,
-        'error',
+        "error",
       );
     }
   };
@@ -169,11 +169,11 @@ function CortiEmbeddedDemo() {
   const handleHide = () => {
     try {
       api.hide();
-      addLogEntry('Corti component hidden', 'info');
+      addLogEntry("Corti component hidden", "info");
     } catch (error) {
       addLogEntry(
         `Hide failed: ${error instanceof Error ? error.message : String(error)}`,
-        'error',
+        "error",
       );
     }
   };
@@ -183,17 +183,17 @@ function CortiEmbeddedDemo() {
       const payload = JSON.parse(authPayload) as KeycloakTokenResponse;
       addLogEntry(
         `Sending authentication request with payload: ${JSON.stringify(payload)}`,
-        'info',
+        "info",
       );
       const response = await api.auth(payload);
       addLogEntry(
         `Authentication successful: ${JSON.stringify(response)}`,
-        'success',
+        "success",
       );
     } catch (error) {
       console.error(
         `Authentication failed: ${error instanceof Error ? error.message : String(error)}`,
-        'error',
+        "error",
       );
     }
   };
@@ -203,14 +203,14 @@ function CortiEmbeddedDemo() {
       const payload = JSON.parse(configureAppPayload) as ConfigureAppPayload;
       addLogEntry(
         `Configuring app with payload: ${JSON.stringify(payload)}`,
-        'info',
+        "info",
       );
       await api.configure(payload);
-      addLogEntry('App configuration successful', 'success');
+      addLogEntry("App configuration successful", "success");
     } catch (error) {
       console.error(
         `App configuration failed: ${error instanceof Error ? error.message : String(error)}`,
-        'error',
+        "error",
       );
     }
   };
@@ -220,14 +220,14 @@ function CortiEmbeddedDemo() {
       const payload = JSON.parse(configureSessionPayload) as SessionConfig;
       addLogEntry(
         `Configuring session with payload: ${JSON.stringify(payload)}`,
-        'info',
+        "info",
       );
       await api.configureSession(payload);
-      addLogEntry('Session configuration successful', 'success');
+      addLogEntry("Session configuration successful", "success");
     } catch (error) {
       console.error(
         `Session configuration failed: ${error instanceof Error ? error.message : String(error)}`,
-        'error',
+        "error",
       );
     }
   };
@@ -237,26 +237,26 @@ function CortiEmbeddedDemo() {
       const payload = JSON.parse(addFactsPayload) as Fact[];
       addLogEntry(
         `Adding facts with payload: ${JSON.stringify(payload)}`,
-        'info',
+        "info",
       );
       await api.addFacts(payload);
-      addLogEntry('Add facts successful', 'success');
+      addLogEntry("Add facts successful", "success");
     } catch (error) {
       console.error(
         `Add facts failed: ${error instanceof Error ? error.message : String(error)}`,
-        'error',
+        "error",
       );
     }
   };
 
   const handleNavigate = async () => {
     try {
-      addLogEntry(`Navigating with payload: ${navigatePayload}`, 'info');
+      addLogEntry(`Navigating with payload: ${navigatePayload}`, "info");
       await api.navigate(navigatePayload);
     } catch (error) {
       console.error(
         `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
-        'error',
+        "error",
       );
     }
   };
@@ -266,7 +266,7 @@ function CortiEmbeddedDemo() {
       const payload = JSON.parse(createInteractionPayload);
       addLogEntry(
         `Creating interaction with payload: ${JSON.stringify(payload)}`,
-        'info',
+        "info",
       );
       const response = await api.createInteraction(payload);
 
@@ -275,13 +275,13 @@ function CortiEmbeddedDemo() {
         setNavigatePayload(`/session/${response.id}`);
         addLogEntry(
           `Navigate payload updated with interaction ID: ${response.id}`,
-          'success',
+          "success",
         );
       }
     } catch (error) {
       console.error(
         `Interaction creation failed: ${error instanceof Error ? error.message : String(error)}`,
-        'error',
+        "error",
       );
     }
   };
@@ -291,12 +291,12 @@ function CortiEmbeddedDemo() {
       const response = await api.getTemplates();
       addLogEntry(
         `Templates retrieved successfully: ${JSON.stringify(response)}`,
-        'success',
+        "success",
       );
     } catch (error) {
       console.error(
         `Template retrieval failed: ${error instanceof Error ? error.message : String(error)}`,
-        'error',
+        "error",
       );
     }
   };
@@ -335,20 +335,20 @@ function CortiEmbeddedDemo() {
               <br />
               Base URL: {baseURL}
               <br />
-              Component Ready: {isReady ? 'Yes' : 'No'}
+              Component Ready: {isReady ? "Yes" : "No"}
               <br />
-              Status Loading: {isStatusLoading ? 'Yes' : 'No'}
+              Status Loading: {isStatusLoading ? "Yes" : "No"}
               <br />
-              Authenticated:{' '}
-              {embeddedStatus?.auth?.isAuthenticated ? 'Yes' : 'No'}
+              Authenticated:{" "}
+              {embeddedStatus?.auth?.isAuthenticated ? "Yes" : "No"}
               <br />
-              Interaction ID: {embeddedStatus?.interaction?.id || 'N/A'}
+              Interaction ID: {embeddedStatus?.interaction?.id || "N/A"}
               <br />
-              Current URL: {embeddedStatus?.currentUrl || 'N/A'}
+              Current URL: {embeddedStatus?.currentUrl || "N/A"}
               {statusError ? (
                 <>
                   <br />
-                  Status Error:{' '}
+                  Status Error:{" "}
                   {statusError instanceof Error
                     ? statusError.message
                     : String(statusError)}
@@ -567,7 +567,7 @@ function CortiEmbeddedDemo() {
   );
 }
 
-const rootElement = document.getElementById('root');
+const rootElement = document.getElementById("root");
 if (rootElement) {
   const root = createRoot(rootElement);
   root.render(<CortiEmbeddedDemo />);

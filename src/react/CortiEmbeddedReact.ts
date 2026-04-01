@@ -8,6 +8,9 @@ export interface CortiEmbeddedEventDetail {
   payload: unknown;
 }
 
+export type CortiEmbeddedEvent = CustomEvent<CortiEmbeddedEventDetail>;
+export type CortiEmbeddedReadyEvent = CustomEvent<Record<string, unknown>>;
+
 export interface CortiEmbeddedErrorDetail {
   message: string;
   code?: string;
@@ -19,10 +22,10 @@ export interface CortiEmbeddedReactProps {
   baseURL: string;
   visibility?: "visible" | "hidden";
 
-  // Event handlers receive the unwrapped detail, not the raw CustomEvent
-  onEvent?: (detail: CortiEmbeddedEventDetail) => void;
-  onReady?: (detail: unknown) => void;
-  onError?: (detail: CortiEmbeddedErrorDetail) => void;
+  // Event handlers receive the raw CustomEvent emitted by the custom element.
+  onEvent?: (event: CortiEmbeddedEvent) => void;
+  onReady?: (event: CortiEmbeddedReadyEvent) => void;
+  onError?: (event: CustomEvent<CortiEmbeddedErrorDetail>) => void;
 
   // Additional props
   className?: string;
@@ -79,24 +82,20 @@ export const CortiEmbeddedReact = React.forwardRef<
       if (!el) return undefined;
 
       const handleEvent = (e: Event) =>
-        onEventRef.current?.(
-          (e as CustomEvent<CortiEmbeddedEventDetail>).detail,
-        );
+        onEventRef.current?.(e as CortiEmbeddedEvent);
       const handleReady = (e: Event) => {
         if (hasEmittedReadyRef.current) return;
         hasEmittedReadyRef.current = true;
-        onReadyRef.current?.((e as CustomEvent<unknown>).detail);
+        onReadyRef.current?.(e as CortiEmbeddedReadyEvent);
       };
       const handleError = (e: Event) =>
-        onErrorRef.current?.(
-          (e as CustomEvent<CortiEmbeddedErrorDetail>).detail,
-        );
+        onErrorRef.current?.(e as CustomEvent<CortiEmbeddedErrorDetail>);
 
-      el.addEventListener("embedded-event", handleEvent);
+      el.addEventListener("event", handleEvent);
       el.addEventListener("embedded.ready", handleReady);
       el.addEventListener("error", handleError);
       return () => {
-        el.removeEventListener("embedded-event", handleEvent);
+        el.removeEventListener("event", handleEvent);
         el.removeEventListener("embedded.ready", handleReady);
         el.removeEventListener("error", handleError);
       };
@@ -188,8 +187,8 @@ export function useCortiEmbeddedStatus(
       refresh();
     };
 
-    target.addEventListener("embedded-event", handleEvent);
-    return () => target.removeEventListener("embedded-event", handleEvent);
+    target.addEventListener("event", handleEvent);
+    return () => target.removeEventListener("event", handleEvent);
   }, [enabled, ref, refresh]);
 
   return {

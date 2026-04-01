@@ -11,23 +11,28 @@ npm install @corti/embedded-web
 ## Basic Usage
 
 ```tsx
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 import {
   CortiEmbeddedReact,
+  type CortiEmbeddedEvent,
+  type CortiEmbeddedReadyEvent,
   type CortiEmbeddedReactRef,
-  type CortiEmbeddedEventDetail,
   type CortiEmbeddedErrorDetail,
-} from '@corti/embedded-web/react';
+} from "@corti/embedded-web/react";
 
 function App() {
   const cortiRef = useRef<CortiEmbeddedReactRef>(null);
 
-  const handleEvent = (detail: CortiEmbeddedEventDetail) => {
-    console.log(detail.name, detail.payload);
+  const handleEvent = (event: CortiEmbeddedEvent) => {
+    console.log(event.detail.name, event.detail.payload);
   };
 
-  const handleError = (detail: CortiEmbeddedErrorDetail) => {
-    console.error('Embedded error:', detail);
+  const handleError = (event: CustomEvent<CortiEmbeddedErrorDetail>) => {
+    console.error("Embedded error:", event.detail);
+  };
+
+  const handleReady = (event: CortiEmbeddedReadyEvent) => {
+    console.log("Corti embedded is ready", event.detail);
   };
 
   return (
@@ -35,10 +40,10 @@ function App() {
       ref={cortiRef}
       baseURL="https://assistant.eu.corti.app"
       visibility="visible"
-      onReady={() => console.log('Corti embedded is ready')}
+      onReady={handleReady}
       onEvent={handleEvent}
       onError={handleError}
-      style={{ width: '100%', height: '600px' }}
+      style={{ width: "100%", height: "600px" }}
     />
   );
 }
@@ -48,10 +53,12 @@ function App() {
 
 Use `onEvent` as the canonical event listener.
 
-- Event shape: `{ name: string; payload: unknown }`
-- This receives all embedded events
-- `onReady` is triggered by the raw `embedded.ready` event
-- `onEvent` receives the generic `embedded-event` stream
+- Event shape: `CustomEvent<{ name: string; payload: unknown }>`
+- `onEvent` receives the wrapper's generic `event` `CustomEvent`
+- That generic stream includes `embedded.ready` and other forwarded embedded events
+- `onReady` listens to the raw `embedded.ready` `CustomEvent`
+- Raw `ready`, `loaded`, and `error.triggered` are not forwarded through `onEvent`
+- `onError` receives the raw `CustomEvent`, so use `event.detail`
 - Event names and payload contracts are documented publicly at:
   - https://docs.corti.ai/assistant/events
 
@@ -60,12 +67,12 @@ Use `onEvent` as the canonical event listener.
 Use `useCortiEmbeddedApi(ref)` to get stable API methods bound to your component instance.
 
 ```tsx
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 import {
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
   useCortiEmbeddedApi,
-} from '@corti/embedded-web/react';
+} from "@corti/embedded-web/react";
 
 function ApiExample() {
   const ref = useRef<CortiEmbeddedReactRef>(null);
@@ -73,26 +80,26 @@ function ApiExample() {
 
   const run = async () => {
     await api.auth({
-      access_token: '...',
-      token_type: 'Bearer',
+      access_token: "...",
+      token_type: "Bearer",
       // ... rest of the token response
     });
     const created = await api.createInteraction({
       encounter: {
         identifier: `encounter-${Date.now()}`,
-        status: 'planned',
-        type: 'first_consultation',
+        status: "planned",
+        type: "first_consultation",
         period: { startedAt: new Date().toISOString() },
       },
     });
-    await api.configureSession({ defaultTemplateKey: 'soap_note' });
-    await api.addFacts([{ text: 'Chest pain', group: 'other' }]);
+    await api.configureSession({ defaultTemplateKey: "soap_note" });
+    await api.addFacts([{ text: "Chest pain", group: "other" }]);
     await api.navigate(`/session/${created.id}`);
     await api.startRecording();
     await api.stopRecording();
     const status = await api.getStatus();
     await api.configure({ features: { aiChat: false } });
-    await api.setCredentials({ password: '...' });
+    await api.setCredentials({ password: "..." });
     api.show();
     api.hide();
     console.log(status);
@@ -123,7 +130,7 @@ The hook returns:
 How it works:
 
 - It fetches status when mounted (if enabled).
-- It listens to `embedded-event` from the mounted component and automatically refreshes status on incoming events.
+- It listens to `event` from the mounted component and automatically refreshes status on incoming events.
 - Internal filtering avoids refresh recursion from status request/response events.
 
 Suggested usage:
@@ -133,12 +140,12 @@ Suggested usage:
 - Keep event-specific logic in `onEvent` while letting the hook handle status synchronization.
 
 ```tsx
-import React, { useRef } from 'react';
+import React, { useRef } from "react";
 import {
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
   useCortiEmbeddedStatus,
-} from '@corti/embedded-web/react';
+} from "@corti/embedded-web/react";
 
 function StatusExample() {
   const ref = useRef<CortiEmbeddedReactRef>(null);
@@ -147,7 +154,7 @@ function StatusExample() {
   return (
     <div>
       <div>Loading: {String(isLoading)}</div>
-      <div>Last Event: {lastEvent?.name ?? 'none'}</div>
+      <div>Last Event: {lastEvent?.name ?? "none"}</div>
       <pre>{JSON.stringify(status, null, 2)}</pre>
       {error ? <pre>{String(error)}</pre> : null}
       <CortiEmbeddedReact ref={ref} baseURL="https://assistant.eu.corti.app" />
