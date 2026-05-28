@@ -5,8 +5,8 @@ import { property } from "lit/decorators.js";
 import type {
   AuthResponse,
   AddFactsPayload,
-  ConfigureAppPayload,
-  ConfigureAppResponse,
+  ConfigureApplicationPayload,
+  ConfigureApplicationResponse,
   ConfigurePayload,
   ConfigureResponse,
   ConfigureSessionPayload,
@@ -57,6 +57,19 @@ const DEPRECATED_EVENT_SUBSCRIPTIONS = new Set([
   "embedded-event",
 ]);
 
+type DOMEventListener =
+  | ((event: Event) => void)
+  | { handleEvent(event: Event): void };
+
+type DOMAddEventListenerOptions =
+  | boolean
+  | {
+      capture?: boolean;
+      once?: boolean;
+      passive?: boolean;
+      signal?: AbortSignal;
+    };
+
 export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   static styles = [baseStyles, containerStyles];
 
@@ -74,8 +87,8 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
   addEventListener(
     type: string,
-    callback: EventListenerOrEventListenerObject,
-    options?: boolean | AddEventListenerOptions,
+    callback: DOMEventListener,
+    options?: DOMAddEventListenerOptions,
   ): void {
     this.warnDeprecatedEventSubscription(type);
     super.addEventListener(type, callback, options);
@@ -200,7 +213,10 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     this.dispatchPublicEvent("error", error);
   }
 
-  private warnDeprecatedAPI(methodName: string, replacement: string): void {
+  private static warnDeprecatedAPI(
+    methodName: string,
+    replacement: string,
+  ): void {
     console.warn(
       `[Corti Embedded] ${methodName} is deprecated and will be removed in a future release. Use ${replacement} instead. See ${CONFIGURATION_MIGRATION_URL} and ${DEPRECATION_TIMELINE_URL}.`,
     );
@@ -359,7 +375,10 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
 
     try {
-      this.warnDeprecatedAPI("configureSession()", "setInteractionOptions()");
+      CortiEmbedded.warnDeprecatedAPI(
+        "configureSession()",
+        "setInteractionOptions()",
+      );
       const payload: ConfigureSessionPayload = {
         defaultLanguage: config.defaultLanguage,
         defaultOutputLanguage: config.defaultOutputLanguage,
@@ -511,8 +530,8 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    * @returns Promise that resolves when configuration is applied
    */
   async configureApp(
-    config: ConfigureAppPayload,
-  ): Promise<ConfigureAppResponse> {
+    config: ConfigureApplicationPayload,
+  ): Promise<ConfigureApplicationResponse> {
     if (!this.postMessageHandler) {
       throw new Error("Component not ready");
     }
@@ -526,7 +545,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       });
 
       if (response.success && response.payload) {
-        return response.payload as ConfigureAppResponse;
+        return response.payload as ConfigureApplicationResponse;
       }
       throw new Error(response.error);
     } catch (error) {
@@ -546,7 +565,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
 
     try {
-      this.warnDeprecatedAPI("configure()", "configureApp()");
+      CortiEmbedded.warnDeprecatedAPI("configure()", "configureApp()");
       const response = await this.postMessageHandler.postMessage({
         type: "CORTI_EMBEDDED",
         version: "v1",

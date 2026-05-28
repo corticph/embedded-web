@@ -4,7 +4,9 @@ import { html } from "lit";
 import { CortiEmbedded } from "../src/CortiEmbedded.js";
 import "../src/corti-embedded.js";
 import type {
+  ConfigureApplicationPayload,
   ConfigureAppPayload,
+  ConfigureAppResponse,
   ConfigurePayload,
   SetCredentialsPayload,
   SetInteractionOptionsPayload,
@@ -566,7 +568,7 @@ describe("CortiEmbedded", () => {
       ready: true,
     };
 
-    const configureAppPayload: ConfigureAppPayload = {
+    const configureAppPayload: ConfigureApplicationPayload = {
       debug: true,
       ui: { navigation: false },
       appearance: { primaryColor: "#000000" },
@@ -640,6 +642,8 @@ describe("CortiEmbedded", () => {
     const configurePayload: ConfigurePayload = {
       features: { aiChat: false },
     };
+    const legacyConfigureAppPayload: ConfigureAppPayload = configurePayload;
+    const legacyConfigureAppResponse: ConfigureAppResponse = configureResponse;
     const sessionConfig: SessionConfig = {
       defaultLanguage: "da",
       defaultOutputLanguage: "da",
@@ -652,6 +656,8 @@ describe("CortiEmbedded", () => {
       await el.configureSession(sessionConfig);
 
       expect(response).to.deep.equal(configureResponse);
+      expect(legacyConfigureAppPayload).to.deep.equal(configurePayload);
+      expect(legacyConfigureAppResponse).to.deep.equal(configureResponse);
       expect(messages).to.deep.equal([
         {
           type: "CORTI_EMBEDDED",

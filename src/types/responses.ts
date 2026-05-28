@@ -63,7 +63,12 @@ export interface ConfigureResponse {
   network: NetworkConfig;
 }
 
-export interface ConfigureAppResponse {
+/**
+ * @deprecated Use ConfigureResponse for configure() or ConfigureApplicationResponse for configureApp().
+ */
+export type ConfigureAppResponse = ConfigureResponse;
+
+export interface ConfigureApplicationResponse {
   debug?: boolean;
   appearance: AppearanceConfig;
   ui: UIConfig;

@@ -21,6 +21,11 @@ export interface ConfigureFeaturesConfig {
   templateEditor: boolean;
 }
 
+/**
+ * @deprecated Use ConfigureFeaturesConfig instead.
+ */
+export type FeaturesConfig = ConfigureFeaturesConfig;
+
 export interface LocaleConfig {
   interfaceLanguage: string;
   dictationLanguage?: string | null;
@@ -39,7 +44,12 @@ export interface ConfigurePayload {
   network?: Partial<NetworkConfig>;
 }
 
-export interface ConfigureAppPayload {
+/**
+ * @deprecated Use ConfigurePayload for configure() or ConfigureApplicationPayload for configureApp().
+ */
+export type ConfigureAppPayload = ConfigurePayload;
+
+export interface ConfigureApplicationPayload {
   debug?: boolean;
   ui?: Partial<UIConfig>;
   appearance?: Partial<AppearanceConfig>;

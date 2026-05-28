@@ -38,6 +38,8 @@ await component.configureApp({
 });
 ```
 
+For TypeScript consumers, use `ConfigureApplicationPayload` with `configureApp()`. The previously exported `ConfigureAppPayload` name remains available as a deprecated alias for the legacy `configure()` payload shape to avoid breaking existing imports.
+
 Use `setInteractionOptions()` for interaction defaults:
 
 ```js

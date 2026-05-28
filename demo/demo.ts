@@ -1,5 +1,5 @@
 import type {
-  ConfigureAppPayload,
+  ConfigureApplicationPayload,
   ConfigurePayload,
   Fact,
   InteractionDetails,
@@ -352,10 +352,10 @@ export const configureApp = async (): Promise<void> => {
         "configure-app-payload",
       ) as HTMLTextAreaElement;
       const payloadText = payloadElement.value;
-      let payload: ConfigureAppPayload;
+      let payload: ConfigureApplicationPayload;
 
       try {
-        payload = JSON.parse(payloadText) as ConfigureAppPayload;
+        payload = JSON.parse(payloadText) as ConfigureApplicationPayload;
       } catch (jsonError) {
         const errorMessage =
           jsonError instanceof Error ? jsonError.message : "Unknown JSON error";

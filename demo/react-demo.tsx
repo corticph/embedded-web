@@ -4,7 +4,7 @@ import {
   type KeycloakTokenResponse,
   type CortiEmbeddedEvent,
   type CortiEmbeddedErrorDetail,
-  type ConfigureAppPayload,
+  type ConfigureApplicationPayload,
   type ConfigurePayload,
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
@@ -241,7 +241,9 @@ function CortiEmbeddedDemo() {
 
   const handleConfigureApp = async () => {
     try {
-      const payload = JSON.parse(configureAppPayload) as ConfigureAppPayload;
+      const payload = JSON.parse(
+        configureAppPayload,
+      ) as ConfigureApplicationPayload;
       addLogEntry(
         `Configuring app with payload: ${JSON.stringify(payload)}`,
         "info",

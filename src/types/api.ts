@@ -1,6 +1,9 @@
 // Public API types for SDK consumers
 
-import type { ConfigureAppPayload, ConfigurePayload } from "./config.js";
+import type {
+  ConfigureApplicationPayload,
+  ConfigurePayload,
+} from "./config.js";
 import type {
   AuthChangedEventPayload,
   DocumentEventPayload,
@@ -22,14 +25,18 @@ import type {
 import type { DefaultMode } from "./protocol.js";
 import type {
   AuthResponse,
-  ConfigureAppResponse,
+  ConfigureApplicationResponse,
   ConfigureResponse,
   CreateInteractionResponse,
   GetStatusResponse,
   GetTemplatesResponse,
 } from "./responses.js";
 
-export type { ConfigureAppPayload, ConfigurePayload } from "./config.js";
+export type {
+  ConfigureAppPayload,
+  ConfigureApplicationPayload,
+  ConfigurePayload,
+} from "./config.js";
 // Re-export common types for public API
 export type { UserInfo } from "./responses.js";
 
@@ -83,7 +90,9 @@ export interface CortiEmbeddedV1API {
     payload: CreateInteractionPayload,
   ): Promise<CreateInteractionResponse>;
   addFacts(payload: AddFactsPayload): Promise<void>;
-  configureApp(payload: ConfigureAppPayload): Promise<ConfigureAppResponse>;
+  configureApp(
+    payload: ConfigureApplicationPayload,
+  ): Promise<ConfigureApplicationResponse>;
   configureSession(payload: ConfigureSessionPayload): Promise<void>;
   setInteractionOptions(payload: SetInteractionOptionsPayload): Promise<void>;
   configure(payload: ConfigurePayload): Promise<ConfigureResponse>;
@@ -181,7 +190,9 @@ export interface CortiEmbeddedAPI {
    * @param config Application-level configuration
    * @returns Promise that resolves when configuration is applied
    */
-  configureApp(config: ConfigureAppPayload): Promise<ConfigureAppResponse>;
+  configureApp(
+    config: ConfigureApplicationPayload,
+  ): Promise<ConfigureApplicationResponse>;
 
   /**
    * Configure the application
