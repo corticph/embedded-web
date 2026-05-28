@@ -79,7 +79,9 @@ export interface EmbeddedEventData {
 // Window API Types
 export interface CortiEmbeddedV1API {
   auth(payload: KeycloakTokenResponse): Promise<AuthResponse>;
-  createInteraction(payload: CreateInteractionPayload): Promise<CreateInteractionResponse>;
+  createInteraction(
+    payload: CreateInteractionPayload,
+  ): Promise<CreateInteractionResponse>;
   addFacts(payload: AddFactsPayload): Promise<void>;
   configureApp(payload: ConfigureAppPayload): Promise<ConfigureAppResponse>;
   configureSession(payload: ConfigureSessionPayload): Promise<void>;
@@ -124,12 +126,15 @@ export interface CortiEmbeddedAPI {
    * @param encounter Encounter request data
    * @returns Promise resolving to interaction details
    */
-  createInteraction(encounter: CreateInteractionPayload): Promise<InteractionDetails>;
+  createInteraction(
+    encounter: CreateInteractionPayload,
+  ): Promise<InteractionDetails>;
 
   /**
    * Configure the current session
    * @param config Session configuration
    * @returns Promise that resolves when configuration is complete
+   * @deprecated Use setInteractionOptions() instead. See https://docs.corti.ai/assistant/deprecation-timeline.
    */
   configureSession(config: SessionConfig): Promise<void>;
 
@@ -182,6 +187,7 @@ export interface CortiEmbeddedAPI {
    * Configure the application
    * @param config Application configuration
    * @returns Promise that resolves when configuration is applied
+   * @deprecated Use configureApp() and setInteractionOptions() instead. See https://docs.corti.ai/assistant/deprecation-timeline.
    */
   configure(config: ConfigurePayload): Promise<ConfigureResponse>;
 

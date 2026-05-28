@@ -1,9 +1,11 @@
 import type {
   ConfigureAppPayload,
+  ConfigurePayload,
   Fact,
   InteractionDetails,
   CreateInteractionPayload,
   SessionConfig,
+  SetInteractionOptionsPayload,
   GetStatusResponse,
   KeycloakTokenResponse,
 } from "../dist";
@@ -111,18 +113,18 @@ export const testAuthentication = async (): Promise<void> => {
   }
 };
 
-export const configureSession = async (): Promise<void> => {
-  if (component?.configureSession) {
+export const setInteractionOptions = async (): Promise<void> => {
+  if (component?.setInteractionOptions) {
     try {
       // Parse the JSON from the textarea
       const payloadElement = document.getElementById(
-        "configure-session-payload",
+        "interaction-options-payload",
       ) as HTMLTextAreaElement;
       const payloadText = payloadElement.value;
-      let payload: SessionConfig;
+      let payload: SetInteractionOptionsPayload;
 
       try {
-        payload = JSON.parse(payloadText) as SessionConfig;
+        payload = JSON.parse(payloadText) as SetInteractionOptionsPayload;
       } catch (jsonError) {
         const errorMessage =
           jsonError instanceof Error ? jsonError.message : "Unknown JSON error";
@@ -131,17 +133,17 @@ export const configureSession = async (): Promise<void> => {
       }
 
       addLogEntry(
-        `Configuring session with payload: ${JSON.stringify(payload)}`,
+        `Setting interaction options with payload: ${JSON.stringify(payload)}`,
         "info",
       );
-      await component.configureSession(payload);
+      await component.setInteractionOptions(payload);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
-      console.error(`Session configuration failed: ${errorMessage}`);
+      console.error(`Set interaction options failed: ${errorMessage}`);
     }
   } else {
-    addLogEntry("Component not ready for configureSession", "error");
+    addLogEntry("Component not ready for setInteractionOptions", "error");
   }
 };
 
@@ -343,12 +345,11 @@ export const getStatus = async (): Promise<void> => {
   }
 };
 
-export const configure = async (): Promise<void> => {
-  if (component?.configure) {
+export const configureApp = async (): Promise<void> => {
+  if (component?.configureApp) {
     try {
-      // Parse the JSON from the textarea
       const payloadElement = document.getElementById(
-        "configure-payload",
+        "configure-app-payload",
       ) as HTMLTextAreaElement;
       const payloadText = payloadElement.value;
       let payload: ConfigureAppPayload;
@@ -366,14 +367,80 @@ export const configure = async (): Promise<void> => {
         `Configuring app with payload: ${JSON.stringify(payload)}`,
         "info",
       );
-      await component.configure(payload);
+      await component.configureApp(payload);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";
       console.error(`App configuration failed: ${errorMessage}`);
     }
   } else {
+    addLogEntry("Component not ready for configureApp", "error");
+  }
+};
+
+export const configureLegacy = async (): Promise<void> => {
+  if (component?.configure) {
+    try {
+      const payloadElement = document.getElementById(
+        "legacy-configure-payload",
+      ) as HTMLTextAreaElement;
+      const payloadText = payloadElement.value;
+      let payload: ConfigurePayload;
+
+      try {
+        payload = JSON.parse(payloadText) as ConfigurePayload;
+      } catch (jsonError) {
+        const errorMessage =
+          jsonError instanceof Error ? jsonError.message : "Unknown JSON error";
+        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, "error");
+        return;
+      }
+
+      addLogEntry(
+        `Sending legacy configure payload: ${JSON.stringify(payload)}`,
+        "info",
+      );
+      await component.configure(payload);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error(`Legacy configure failed: ${errorMessage}`);
+    }
+  } else {
     addLogEntry("Component not ready for configure", "error");
+  }
+};
+
+export const configureSessionLegacy = async (): Promise<void> => {
+  if (component?.configureSession) {
+    try {
+      const payloadElement = document.getElementById(
+        "legacy-configure-session-payload",
+      ) as HTMLTextAreaElement;
+      const payloadText = payloadElement.value;
+      let payload: SessionConfig;
+
+      try {
+        payload = JSON.parse(payloadText) as SessionConfig;
+      } catch (jsonError) {
+        const errorMessage =
+          jsonError instanceof Error ? jsonError.message : "Unknown JSON error";
+        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, "error");
+        return;
+      }
+
+      addLogEntry(
+        `Sending legacy configureSession payload: ${JSON.stringify(payload)}`,
+        "info",
+      );
+      await component.configureSession(payload);
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error(`Legacy configureSession failed: ${errorMessage}`);
+    }
+  } else {
+    addLogEntry("Component not ready for configureSession", "error");
   }
 };
 
@@ -414,14 +481,16 @@ declare global {
     showCorti: typeof showCorti;
     hideCorti: typeof hideCorti;
     testAuthentication: typeof testAuthentication;
-    configureSession: typeof configureSession;
+    setInteractionOptions: typeof setInteractionOptions;
     addFacts: typeof addFacts;
     navigate: typeof navigate;
     createInteraction: typeof createInteraction;
     startRecording: typeof startRecording;
     stopRecording: typeof stopRecording;
     getStatus: typeof getStatus;
-    configure: typeof configure;
+    configureApp: typeof configureApp;
+    configureLegacy: typeof configureLegacy;
+    configureSessionLegacy: typeof configureSessionLegacy;
     setCredentials: typeof setCredentials;
     clearLog: typeof clearLog;
     addLogEntry: typeof addLogEntry;
@@ -434,14 +503,16 @@ Object.assign(window, {
   showCorti,
   hideCorti,
   testAuthentication,
-  configureSession,
+  setInteractionOptions,
   addFacts,
   navigate,
   createInteraction,
   startRecording,
   stopRecording,
   getStatus,
-  configure,
+  configureApp,
+  configureLegacy,
+  configureSessionLegacy,
   setCredentials,
   clearLog,
   addLogEntry,
@@ -484,8 +555,8 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("create-interaction-btn")
     ?.addEventListener("click", createInteraction);
   document
-    .getElementById("configure-session-btn")
-    ?.addEventListener("click", configureSession);
+    .getElementById("set-interaction-options-btn")
+    ?.addEventListener("click", setInteractionOptions);
   document.getElementById("add-facts-btn")?.addEventListener("click", addFacts);
   document.getElementById("navigate-btn")?.addEventListener("click", navigate);
   document
@@ -498,8 +569,14 @@ document.addEventListener("DOMContentLoaded", () => {
     .getElementById("get-status-btn")
     ?.addEventListener("click", getStatus);
   document
-    .getElementById("configure-btn")
-    ?.addEventListener("click", configure);
+    .getElementById("configure-app-btn")
+    ?.addEventListener("click", configureApp);
+  document
+    .getElementById("legacy-configure-btn")
+    ?.addEventListener("click", configureLegacy);
+  document
+    .getElementById("legacy-configure-session-btn")
+    ?.addEventListener("click", configureSessionLegacy);
   document
     .getElementById("set-credentials-btn")
     ?.addEventListener("click", setCredentials);

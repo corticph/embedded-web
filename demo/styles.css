@@ -108,6 +108,37 @@ h1 {
   margin-bottom: 12px;
 }
 
+.method-box {
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  background: white;
+  margin-bottom: 12px;
+}
+
+.legacy-methods {
+  padding: 12px;
+  border: 1px solid #facc15;
+  border-radius: 4px;
+  background: #fffbeb;
+  margin-bottom: 12px;
+}
+
+.legacy-methods > summary {
+  cursor: pointer;
+  font-weight: bold;
+  color: #92400e;
+  font-size: 14px;
+}
+
+.legacy-methods[open] > summary {
+  margin-bottom: 12px;
+}
+
+.legacy-methods .method-box:last-child {
+  margin-bottom: 0;
+}
+
 .demo-title {
   font-weight: bold;
   margin-bottom: 10px;
@@ -235,7 +266,8 @@ h1 {
   gap: 0;
 }
 
-.section-row details {
+.section-row details,
+.section-row .payload-editor {
   flex: 1;
 }
 

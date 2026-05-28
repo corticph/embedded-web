@@ -224,9 +224,15 @@ export interface UseCortiEmbeddedApiResult {
   getStatus: (
     ...args: Parameters<CortiEmbeddedReactRef["getStatus"]>
   ) => ReturnType<CortiEmbeddedReactRef["getStatus"]>;
+  configureApp: (
+    ...args: Parameters<CortiEmbeddedReactRef["configureApp"]>
+  ) => ReturnType<CortiEmbeddedReactRef["configureApp"]>;
   configure: (
     ...args: Parameters<CortiEmbeddedReactRef["configure"]>
   ) => ReturnType<CortiEmbeddedReactRef["configure"]>;
+  setInteractionOptions: (
+    ...args: Parameters<CortiEmbeddedReactRef["setInteractionOptions"]>
+  ) => ReturnType<CortiEmbeddedReactRef["setInteractionOptions"]>;
   getTemplates: (
     ...args: Parameters<CortiEmbeddedReactRef["getTemplates"]>
   ) => ReturnType<CortiEmbeddedReactRef["getTemplates"]>;
@@ -271,7 +277,10 @@ export function useCortiEmbeddedApi(
       startRecording: (...args) => getInstance().startRecording(...args),
       stopRecording: (...args) => getInstance().stopRecording(...args),
       getStatus: (...args) => getInstance().getStatus(...args),
+      configureApp: (...args) => getInstance().configureApp(...args),
       configure: (...args) => getInstance().configure(...args),
+      setInteractionOptions: (...args) =>
+        getInstance().setInteractionOptions(...args),
       getTemplates: (...args) => getInstance().getTemplates(...args),
       setCredentials: (...args) => getInstance().setCredentials(...args),
       show: (...args) => getInstance().show(...args),
