@@ -22,7 +22,7 @@ function CortiEmbeddedDemo() {
     Array<{ time: string; message: string; type: string }>
   >([]);
   const [isReady, setIsReady] = useState(false);
-  const baseURL = "https://assistant.dev-weu.corti.app";
+  const baseURL = "https://assistant.eu.corti.app";
 
   // Form states
   const [authPayload, setAuthPayload] = useState<string>(
