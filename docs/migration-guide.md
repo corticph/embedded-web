@@ -77,21 +77,21 @@ await component.setInteractionOptions({
 
 The second column shows the request shape to use in the new method call, not a response path.
 
-| Legacy field                  | New method call                                                                     |
-| ----------------------------- | ----------------------------------------------------------------------------------- |
-| `features.interactionTitle`   | `configureApp({ ui: { interactionTitle: ... } })`                                   |
-| `features.aiChat`             | `configureApp({ ui: { aiChat: ... } })`                                             |
-| `features.documentFeedback`   | `configureApp({ ui: { documentFeedback: ... } })`                                   |
-| `features.navigation`         | `configureApp({ ui: { navigation: ... } })`                                         |
-| `features.virtualMode: true`  | `setInteractionOptions({ mode: { options: ["in-person", "virtual"] } })`            |
-| `features.virtualMode: false` | `setInteractionOptions({ mode: { options: ["in-person"] } })`                       |
-| `features.syncDocumentAction` | `setInteractionOptions({ documents: { actions: { sync: ... } } })`                  |
-| `features.templateEditor`     | `setInteractionOptions({ templates: { sources: { personal: { enabled: ... } } } })` |
-| `appearance.primaryColor`     | `configureApp({ appearance: { primaryColor: ... } })`                               |
-| `locale.interfaceLanguage`    | `configureApp({ locale: { interfaceLanguage: ... } })`                              |
-| `locale.dictationLanguage`    | `configureApp({ locale: { dictationLanguage: ... } })`                              |
-| `locale.overrides`            | `configureApp({ locale: { overrides: ... } })`                                      |
-| `network.websocketBaseUrl`    | `configureApp({ network: { websocketBaseUrl: ... } })`                              |
+| Legacy field                  | New method call                                                                                 |
+| ----------------------------- | ----------------------------------------------------------------------------------------------- |
+| `features.interactionTitle`   | `configureApp({ ui: { interactionTitle: ... } })`                                               |
+| `features.aiChat`             | `configureApp({ ui: { aiChat: ... } })`                                                         |
+| `features.documentFeedback`   | `configureApp({ ui: { documentFeedback: ... } })`                                               |
+| `features.navigation`         | `configureApp({ ui: { navigation: ... } })`                                                     |
+| `features.virtualMode: true`  | `setInteractionOptions({ mode: { fallback: "in-person", options: ["in-person", "virtual"] } })` |
+| `features.virtualMode: false` | `setInteractionOptions({ mode: { fallback: "in-person", options: ["in-person"] } })`            |
+| `features.syncDocumentAction` | `setInteractionOptions({ documents: { actions: { sync: ... } } })`                              |
+| `features.templateEditor`     | `setInteractionOptions({ templates: { sources: { personal: { enabled: ... } } } })`             |
+| `appearance.primaryColor`     | `configureApp({ appearance: { primaryColor: ... } })`                                           |
+| `locale.interfaceLanguage`    | `configureApp({ locale: { interfaceLanguage: ... } })`                                          |
+| `locale.dictationLanguage`    | `configureApp({ locale: { dictationLanguage: ... } })`                                          |
+| `locale.overrides`            | `configureApp({ locale: { overrides: ... } })`                                                  |
+| `network.websocketBaseUrl`    | `configureApp({ network: { websocketBaseUrl: ... } })`                                          |
 
 ## Mapping From `configureSession()`
 
