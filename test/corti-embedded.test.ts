@@ -499,6 +499,40 @@ describe("CortiEmbedded", () => {
     // Note: configure method would normally change baseURL, but our mock doesn't handle that
   });
 
+  it("normalizes legacy string navigate input before forwarding", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    const messages: Array<{ action: string; payload?: unknown }> = [];
+
+    (el as any).postMessageHandler = {
+      postMessage: async (msg: { action: string; payload?: unknown }) => {
+        messages.push(msg);
+        return { success: true, payload: {} };
+      },
+      destroy: () => {},
+      ready: true,
+    };
+
+    await el.navigate("/legacy-path");
+    await el.navigate({ path: "/object-path" });
+
+    expect(messages).to.deep.equal([
+      {
+        type: "CORTI_EMBEDDED",
+        version: "v1",
+        action: "navigate",
+        payload: { path: "/legacy-path" },
+      },
+      {
+        type: "CORTI_EMBEDDED",
+        version: "v1",
+        action: "navigate",
+        payload: { path: "/object-path" },
+      },
+    ]);
+  });
+
   it("dispatches error event when baseURL becomes invalid (updated) without throwing", async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,

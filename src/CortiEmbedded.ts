@@ -424,20 +424,22 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
   /**
    * Navigate to a specific path within the embedded UI
-   * @param payload Navigation request payload
+   * @param payload Navigation request payload or legacy path string
    * @returns Promise that resolves when navigation is complete
    */
-  async navigate(payload: NavigatePayload): Promise<void> {
+  async navigate(payload: NavigatePayload | string): Promise<void> {
     if (!this.postMessageHandler) {
       throw new Error("Component not ready");
     }
 
     try {
+      const normalizedPayload: NavigatePayload =
+        typeof payload === "string" ? { path: payload } : payload;
       await this.postMessageHandler.postMessage({
         type: "CORTI_EMBEDDED",
         version: "v1",
         action: "navigate",
-        payload,
+        payload: normalizedPayload,
       });
     } catch (error) {
       const formattedError = formatError(error, "Failed to navigate");

@@ -155,11 +155,11 @@ export interface CortiEmbeddedAPI {
   addFacts(facts: Fact[]): Promise<void>;
 
   /**
-  * Navigate to a specific path within the embedded UI
-  * @param payload Navigation request payload
+   * Navigate to a specific path within the embedded UI
+   * @param payload Navigation request payload or legacy path string
    * @returns Promise that resolves when navigation is complete
    */
-  navigate(payload: NavigatePayload): Promise<void>;
+  navigate(payload: NavigatePayload | string): Promise<void>;
 
   /**
    * Start recording
