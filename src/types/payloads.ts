@@ -63,6 +63,49 @@ export interface ConfigureSessionPayload {
   defaultMode?: DefaultMode;
 }
 
+export interface InteractionModeOptions {
+  fallback: DefaultMode;
+  options: DefaultMode[];
+}
+
+export interface SpokenLanguageOptions {
+  fallback: string;
+}
+
+export interface InteractionTemplateReference {
+  source: "standard";
+  id: string;
+}
+
+export interface DefaultInteractionTemplateOptions {
+  behaviour: "fallback";
+  template: InteractionTemplateReference;
+}
+
+export interface InteractionTemplateSources {
+  personal?: {
+    enabled: boolean;
+  };
+}
+
+export interface InteractionTemplateOptions {
+  sources?: InteractionTemplateSources;
+  defaultTemplate?: DefaultInteractionTemplateOptions;
+}
+
+export interface InteractionDocumentOptions {
+  actions?: {
+    sync?: boolean;
+  };
+}
+
+export interface SetInteractionOptionsPayload {
+  mode?: InteractionModeOptions;
+  spokenLanguage?: SpokenLanguageOptions;
+  templates?: InteractionTemplateOptions;
+  documents?: InteractionDocumentOptions;
+}
+
 // Navigate payload
 export interface NavigatePayload {
   path: string;

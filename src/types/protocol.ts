@@ -2,10 +2,7 @@
 
 export type APIVersion = "v1";
 
-export type MessageType =
-  | "CORTI_EMBEDDED"
-  | "CORTI_EMBEDDED_RESPONSE"
-  | "CORTI_EMBEDDED_EVENT";
+export type MessageType = "CORTI_EMBEDDED" | "CORTI_EMBEDDED_RESPONSE" | "CORTI_EMBEDDED_EVENT";
 
 export type DefaultMode = "virtual" | "in-person";
 
@@ -13,7 +10,9 @@ export type EmbeddedAction =
   | "auth"
   | "createInteraction"
   | "addFacts"
+  | "configureApp"
   | "configureSession"
+  | "setInteractionOptions"
   | "navigate"
   | "startRecording"
   | "stopRecording"
@@ -90,6 +89,14 @@ export interface AddFactsRequest extends EmbeddedRequest {
 
 export interface ConfigureSessionRequest extends EmbeddedRequest {
   action: "configureSession";
+}
+
+export interface ConfigureAppRequest extends EmbeddedRequest {
+  action: "configureApp";
+}
+
+export interface SetInteractionOptionsRequest extends EmbeddedRequest {
+  action: "setInteractionOptions";
 }
 
 export interface NavigateRequest extends EmbeddedRequest {
@@ -170,9 +177,11 @@ export type AnyEmbeddedRequest =
   | AuthRequest
   | CreateInteractionRequest
   | AddFactsRequest
+  | ConfigureAppRequest
   | ConfigureSessionRequest
   | GetTemplatesRequest
   | NavigateRequest
+  | SetInteractionOptionsRequest
   | StartRecordingRequest
   | StopRecordingRequest
   | GetStatusRequest
@@ -196,7 +205,4 @@ export type AnyDeprecatedEmbeddedEvent =
 
 export type AnyEvent = EmbeddedEventMessage | AnyDeprecatedEmbeddedEvent;
 
-export type AnyEmbeddedMessage =
-  | AnyEmbeddedRequest
-  | AnyEmbeddedResponse
-  | AnyDeprecatedEmbeddedEvent;
+export type AnyEmbeddedMessage = AnyEmbeddedRequest | AnyEmbeddedResponse | AnyEvent;

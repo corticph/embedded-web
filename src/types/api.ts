@@ -1,6 +1,6 @@
 // Public API types for SDK consumers
 
-import type { ConfigureAppPayload } from "./config.js";
+import type { ConfigureAppPayload, ConfigurePayload } from "./config.js";
 import type {
   AuthChangedEventPayload,
   DocumentEventPayload,
@@ -16,18 +16,20 @@ import type {
   Fact,
   KeycloakTokenResponse,
   NavigatePayload,
+  SetInteractionOptionsPayload,
   SetCredentialsPayload,
 } from "./payloads.js";
 import type { DefaultMode } from "./protocol.js";
 import type {
   AuthResponse,
   ConfigureAppResponse,
+  ConfigureResponse,
   CreateInteractionResponse,
   GetStatusResponse,
   GetTemplatesResponse,
 } from "./responses.js";
 
-export type { ConfigureAppPayload } from "./config.js";
+export type { ConfigureAppPayload, ConfigurePayload } from "./config.js";
 // Re-export common types for public API
 export type { UserInfo } from "./responses.js";
 
@@ -77,12 +79,12 @@ export interface EmbeddedEventData {
 // Window API Types
 export interface CortiEmbeddedV1API {
   auth(payload: KeycloakTokenResponse): Promise<AuthResponse>;
-  createInteraction(
-    payload: CreateInteractionPayload,
-  ): Promise<CreateInteractionResponse>;
+  createInteraction(payload: CreateInteractionPayload): Promise<CreateInteractionResponse>;
   addFacts(payload: AddFactsPayload): Promise<void>;
+  configureApp(payload: ConfigureAppPayload): Promise<ConfigureAppResponse>;
   configureSession(payload: ConfigureSessionPayload): Promise<void>;
-  configure(payload: ConfigureAppPayload): Promise<ConfigureAppResponse>;
+  setInteractionOptions(payload: SetInteractionOptionsPayload): Promise<void>;
+  configure(payload: ConfigurePayload): Promise<ConfigureResponse>;
   navigate(payload: NavigatePayload): Promise<void>;
   startRecording(): Promise<void>;
   stopRecording(): Promise<void>;
@@ -92,6 +94,13 @@ export interface CortiEmbeddedV1API {
 }
 export interface CortiEmbeddedWindowAPI {
   v1: CortiEmbeddedV1API;
+}
+
+// Extend Window interface
+declare global {
+  interface Window {
+    CortiEmbedded?: CortiEmbeddedWindowAPI;
+  }
 }
 
 /**
@@ -115,9 +124,7 @@ export interface CortiEmbeddedAPI {
    * @param encounter Encounter request data
    * @returns Promise resolving to interaction details
    */
-  createInteraction(
-    encounter: CreateInteractionPayload,
-  ): Promise<InteractionDetails>;
+  createInteraction(encounter: CreateInteractionPayload): Promise<InteractionDetails>;
 
   /**
    * Configure the current session
@@ -165,18 +172,36 @@ export interface CortiEmbeddedAPI {
   getTemplates(): Promise<GetTemplatesResponse>;
 
   /**
+   * Configure the embedded application
+   * @param config Application-level configuration
+   * @returns Promise that resolves when configuration is applied
+   */
+  configureApp(config: ConfigureAppPayload): Promise<ConfigureAppResponse>;
+
+  /**
    * Configure the application
    * @param config Application configuration
    * @returns Promise that resolves when configuration is applied
    */
-  configure(config: ConfigureAppPayload): Promise<ConfigureAppResponse>;
+  configure(config: ConfigurePayload): Promise<ConfigureResponse>;
+
+  /**
+   * Set one-shot interaction options for the embedded instance.
+   *
+   * Each call patches the provided interaction-options branches onto the current
+   * snapshot for the embedded instance. Omitted branches preserve their existing
+   * values from previous calls.
+   * @param config Interaction/session-level options
+   * @returns Promise that resolves when options are applied
+   */
+  setInteractionOptions(config: SetInteractionOptionsPayload): Promise<void>;
 
   /**
    * Set authentication credentials without triggering auth flow
    * @param credentials Authentication credentials to store
    * @returns Promise that resolves when credentials are set
    */
-  setCredentials(credentials: SetCredentialsPayload): Promise<void>;
+  setCredentials(credentials: { password: string }): Promise<void>;
 
   /**
    * Show the embedded UI
