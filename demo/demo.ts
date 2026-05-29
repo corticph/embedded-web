@@ -8,6 +8,7 @@ import type {
   SetInteractionOptionsPayload,
   GetStatusResponse,
   KeycloakTokenResponse,
+  NavigatePayload,
 } from "../dist";
 
 interface CortiEmbeddedEventDetail {
@@ -189,10 +190,10 @@ export const navigate = async (): Promise<void> => {
         "navigate-payload",
       ) as HTMLTextAreaElement;
       const payloadText = payloadElement.value;
-      let payload: { path: string };
+      let payload: NavigatePayload;
 
       try {
-        payload = JSON.parse(payloadText) as { path: string };
+        payload = JSON.parse(payloadText) as NavigatePayload;
       } catch (jsonError) {
         const errorMessage =
           jsonError instanceof Error ? jsonError.message : "Unknown JSON error";
@@ -204,7 +205,7 @@ export const navigate = async (): Promise<void> => {
         `Navigating with payload: ${JSON.stringify(payload)}`,
         "info",
       );
-      await component.navigate(payload.path);
+      await component.navigate(payload);
     } catch (error) {
       const errorMessage =
         error instanceof Error ? error.message : "Unknown error";

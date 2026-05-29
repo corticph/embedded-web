@@ -52,7 +52,7 @@ await myComponent.setInteractionOptions({
   },
 });
 await myComponent.addFacts([{"text": "Chest pain", "group": "other"}]);
-await myComponent.navigate('/interactions/123');
+await myComponent.navigate({ path: "/interactions/123" });
 await myComponent.show()
 ```
 
@@ -232,7 +232,7 @@ await component.addFacts([
 #### navigate
 
 ```javascript
-await component.navigate("/interactions/123");
+await component.navigate({ path: "/interactions/123" });
 ```
 
 #### createInteraction
@@ -339,7 +339,7 @@ function Example() {
   const run = async () => {
     await api.auth({ access_token: '...', token_type: 'Bearer' });
     const created = await api.createInteraction({ encounter: { ... } });
-    await api.navigate(`/session/${created.id}`);
+    await api.navigate({ path: `/session/${created.id}` });
   };
 
   return (

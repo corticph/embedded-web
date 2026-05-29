@@ -488,7 +488,7 @@ describe("CortiEmbedded", () => {
 
     await el.configureSession(sessionConfig);
     await el.addFacts([{ text: "test", group: "my note" }]);
-    await el.navigate("/test");
+    await el.navigate({ path: "/test" });
     await el.startRecording();
     await el.stopRecording();
     await el.setCredentials(credentials);

@@ -9,6 +9,7 @@ import {
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
   type Fact,
+  type NavigatePayload,
   type SessionConfig,
   type SetInteractionOptionsPayload,
   useCortiEmbeddedApi,
@@ -136,7 +137,7 @@ function CortiEmbeddedDemo() {
   );
 
   const [navigatePayload, setNavigatePayload] = useState<string>(
-    "/session/{interaction_id}",
+    JSON.stringify({ path: "/session/{interaction_id}" }, null, 2),
   );
 
   // Helper to add log entries
@@ -187,7 +188,9 @@ function CortiEmbeddedDemo() {
       ) {
         const { interaction } = payload as { interaction?: { id?: string } };
         if (interaction?.id) {
-          setNavigatePayload(`/session/${interaction.id}`);
+          setNavigatePayload(
+            JSON.stringify({ path: `/session/${interaction.id}` }, null, 2),
+          );
         }
       }
     },
@@ -332,8 +335,9 @@ function CortiEmbeddedDemo() {
 
   const handleNavigate = async () => {
     try {
-      addLogEntry(`Navigating with payload: ${navigatePayload}`, "info");
-      await api.navigate(navigatePayload);
+      const payload = JSON.parse(navigatePayload) as NavigatePayload;
+      addLogEntry(`Navigating with payload: ${JSON.stringify(payload)}`, "info");
+      await api.navigate(payload);
     } catch (error) {
       console.error(
         `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -353,7 +357,9 @@ function CortiEmbeddedDemo() {
 
       // Update navigate payload with interaction ID
       if (response.id) {
-        setNavigatePayload(`/session/${response.id}`);
+        setNavigatePayload(
+          JSON.stringify({ path: `/session/${response.id}` }, null, 2),
+        );
         addLogEntry(
           `Navigate payload updated with interaction ID: ${response.id}`,
           "success",
@@ -582,7 +588,7 @@ function CortiEmbeddedDemo() {
                   id="navigate-payload"
                   value={navigatePayload}
                   onChange={e => setNavigatePayload(e.target.value)}
-                  placeholder='"/session/{interaction_id}"'
+                  placeholder='{"path": "/session/{interaction_id}"}'
                 />
               </details>
               <button

@@ -101,7 +101,7 @@ function ApiExample() {
       },
     });
     await api.addFacts([{ text: "Chest pain", group: "other" }]);
-    await api.navigate(`/session/${created.id}`);
+    await api.navigate({ path: `/session/${created.id}` });
     await api.startRecording();
     await api.stopRecording();
     const status = await api.getStatus();
