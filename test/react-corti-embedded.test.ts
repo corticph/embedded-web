@@ -12,7 +12,7 @@ import type {
   ConfigureApplicationPayload,
   ConfigureApplicationResponse,
   SetInteractionOptionsPayload,
-} from "../src/types/index.js";
+} from "../src/index.js";
 
 describe("CortiEmbeddedReact", () => {
   let container: HTMLDivElement | null = null;

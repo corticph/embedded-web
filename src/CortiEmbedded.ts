@@ -22,7 +22,7 @@ import type {
   GetStatusResponse,
   GetTemplatesResponse,
   KeycloakTokenResponse,
-} from "./types";
+} from "./public-types.js";
 import { baseStyles } from "./styles/base.js";
 import { containerStyles } from "./styles/container-styles.js";
 import { validateAndNormalizeBaseURL } from "./utils/baseUrl.js";

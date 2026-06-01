@@ -15,7 +15,7 @@ import type {
   SessionConfig,
   User,
   KeycloakTokenResponse,
-} from "../src/types";
+} from "../src/web-index.js";
 
 describe("CortiEmbedded", () => {
   const validBaseURL = "https://assistant.eu.corti.app";

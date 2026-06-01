@@ -1,7 +1,7 @@
 import * as React from "react";
 import "../corti-embedded.js";
 import type { CortiEmbedded } from "../CortiEmbedded.js";
-import type { CortiEmbeddedAPI } from "../types";
+import type { CortiEmbeddedAPI } from "../public-types.js";
 
 export interface CortiEmbeddedEventDetail {
   name: string;
@@ -35,7 +35,7 @@ export interface CortiEmbeddedReactProps {
 export type CortiEmbeddedReactRef = CortiEmbedded & CortiEmbeddedAPI;
 
 // Export public types
-export * from "../types/index.js";
+export * from "../public-types.js";
 
 // Renders the custom element directly so React sets the ref to the actual
 // CortiEmbedded DOM instance. This avoids the @lit/react wrapper chain that

@@ -1,6 +1,12 @@
-// Public API types for SDK consumers
-
-import type { ConfigureAppPayload, ConfigurePayload } from "./config.js";
+import type {
+  AppearanceConfig,
+  ConfigureAppPayload as GeneratedConfigureApplicationPayload,
+  ConfigureFeaturesConfig,
+  ConfigurePayload,
+  LocaleConfig,
+  NetworkConfig,
+  UIConfig,
+} from "./types/config.js";
 import type {
   AuthChangedEventPayload,
   DocumentEventPayload,
@@ -8,7 +14,7 @@ import type {
   InteractionCreatedEventPayload,
   NavigationChangedEventPayload,
   UsageEventPayload,
-} from "./events.js";
+} from "./types/events.js";
 import type {
   AddFactsPayload,
   ConfigureSessionPayload,
@@ -16,22 +22,88 @@ import type {
   Fact,
   KeycloakTokenResponse,
   NavigatePayload,
-  SetInteractionOptionsPayload,
   SetCredentialsPayload,
-} from "./payloads.js";
-import type { DefaultMode } from "./protocol.js";
+  SetInteractionOptionsPayload,
+} from "./types/payloads.js";
+import type { DefaultMode } from "./types/protocol.js";
 import type {
   AuthResponse,
-  ConfigureAppResponse,
+  ConfigureAppResponse as GeneratedConfigureApplicationResponse,
   ConfigureResponse,
   CreateInteractionResponse,
   GetStatusResponse,
   GetTemplatesResponse,
-} from "./responses.js";
+} from "./types/responses.js";
 
-export type { ConfigureAppPayload, ConfigurePayload } from "./config.js";
-// Re-export common types for public API
-export type { UserInfo } from "./responses.js";
+export type {
+  AppearanceConfig,
+  ConfigureFeaturesConfig,
+  ConfigurePayload,
+  LocaleConfig,
+  NetworkConfig,
+  UIConfig,
+} from "./types/config.js";
+export type {
+  AuthChangedEventPayload,
+  DocumentEventPayload,
+  ErrorEventPayload,
+  InteractionCreatedEventPayload,
+  NavigationChangedEventPayload,
+  UsageEventPayload,
+} from "./types/events.js";
+export type {
+  AddFactsPayload,
+  ConfigureSessionPayload,
+  CreateInteractionPayload,
+  Fact,
+  KeycloakTokenResponse,
+  NavigatePayload,
+  SetCredentialsPayload,
+  SetInteractionOptionsPayload,
+} from "./types/payloads.js";
+export type {
+  AnyDeprecatedEmbeddedEvent,
+  AnyEmbeddedMessage,
+  AnyEmbeddedRequest,
+  AnyEmbeddedResponse,
+  AnyEvent,
+  APIVersion,
+  BaseMessage,
+  DeprecatedEmbeddedEvent,
+  EmbeddedAction,
+  EmbeddedEventMessage,
+  EmbeddedRequest,
+  EmbeddedResponse,
+  MessageType,
+} from "./types/protocol.js";
+export type {
+  AuthResponse,
+  ConfigureResponse,
+  CreateInteractionResponse,
+  EmbeddedTemplate,
+  GetStatusResponse,
+  GetTemplatesResponse,
+  UserInfo,
+} from "./types/responses.js";
+
+/**
+ * @deprecated Use ConfigureFeaturesConfig instead.
+ */
+export type FeaturesConfig = ConfigureFeaturesConfig;
+
+/**
+ * @deprecated Use ConfigurePayload for configure() or ConfigureApplicationPayload for configureApp().
+ */
+export type ConfigureAppPayload = ConfigurePayload;
+
+export type ConfigureApplicationPayload = GeneratedConfigureApplicationPayload;
+
+/**
+ * @deprecated Use ConfigureResponse for configure() or ConfigureApplicationResponse for configureApp().
+ */
+export type ConfigureAppResponse = ConfigureResponse;
+
+export type ConfigureApplicationResponse = GeneratedConfigureApplicationResponse;
 
 /**
  * User information returned from authentication
@@ -79,9 +151,13 @@ export interface EmbeddedEventData {
 // Window API Types
 export interface CortiEmbeddedV1API {
   auth(payload: KeycloakTokenResponse): Promise<AuthResponse>;
-  createInteraction(payload: CreateInteractionPayload): Promise<CreateInteractionResponse>;
+  createInteraction(
+    payload: CreateInteractionPayload,
+  ): Promise<CreateInteractionResponse>;
   addFacts(payload: AddFactsPayload): Promise<void>;
-  configureApp(payload: ConfigureAppPayload): Promise<ConfigureAppResponse>;
+  configureApp(
+    payload: ConfigureApplicationPayload,
+  ): Promise<ConfigureApplicationResponse>;
   configureSession(payload: ConfigureSessionPayload): Promise<void>;
   setInteractionOptions(payload: SetInteractionOptionsPayload): Promise<void>;
   configure(payload: ConfigurePayload): Promise<ConfigureResponse>;
@@ -92,11 +168,11 @@ export interface CortiEmbeddedV1API {
   getStatus(): Promise<GetStatusResponse>;
   getTemplates(): Promise<GetTemplatesResponse>;
 }
+
 export interface CortiEmbeddedWindowAPI {
   v1: CortiEmbeddedV1API;
 }
 
-// Extend Window interface
 declare global {
   interface Window {
     CortiEmbedded?: CortiEmbeddedWindowAPI;
@@ -124,12 +200,15 @@ export interface CortiEmbeddedAPI {
    * @param encounter Encounter request data
    * @returns Promise resolving to interaction details
    */
-  createInteraction(encounter: CreateInteractionPayload): Promise<InteractionDetails>;
+  createInteraction(
+    encounter: CreateInteractionPayload,
+  ): Promise<InteractionDetails>;
 
   /**
    * Configure the current session
    * @param config Session configuration
    * @returns Promise that resolves when configuration is complete
+   * @deprecated Use setInteractionOptions() instead. See https://docs.corti.ai/assistant/deprecation-timeline.
    */
   configureSession(config: SessionConfig): Promise<void>;
 
@@ -142,10 +221,10 @@ export interface CortiEmbeddedAPI {
 
   /**
    * Navigate to a specific path within the embedded UI
-   * @param path Path to navigate to
+   * @param payload Navigation request payload or legacy path string
    * @returns Promise that resolves when navigation is complete
    */
-  navigate(path: string): Promise<void>;
+  navigate(payload: NavigatePayload | string): Promise<void>;
 
   /**
    * Start recording
@@ -176,21 +255,24 @@ export interface CortiEmbeddedAPI {
    * @param config Application-level configuration
    * @returns Promise that resolves when configuration is applied
    */
-  configureApp(config: ConfigureAppPayload): Promise<ConfigureAppResponse>;
+  configureApp(
+    config: ConfigureApplicationPayload,
+  ): Promise<ConfigureApplicationResponse>;
 
   /**
    * Configure the application
    * @param config Application configuration
    * @returns Promise that resolves when configuration is applied
+   * @deprecated Use configureApp() and setInteractionOptions() instead. See https://docs.corti.ai/assistant/deprecation-timeline.
    */
   configure(config: ConfigurePayload): Promise<ConfigureResponse>;
 
   /**
    * Set one-shot interaction options for the embedded instance.
    *
-   * Each call patches the provided interaction-options branches onto the current
-   * snapshot for the embedded instance. Omitted branches preserve their existing
-   * values from previous calls.
+   * Each call replaces the full interaction-options snapshot for the embedded
+   * instance. Omitted branches reset to their defaults rather than preserving
+   * values from a previous call.
    * @param config Interaction/session-level options
    * @returns Promise that resolves when options are applied
    */
