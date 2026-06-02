@@ -1,6 +1,12 @@
 // Response types for embedded API
 
-import type { AppearanceConfig, FeaturesConfig, LocaleConfig, NetworkConfig } from "./config.js";
+import type {
+  AppearanceConfig,
+  ConfigureFeaturesConfig,
+  LocaleConfig,
+  NetworkConfig,
+  UIConfig,
+} from "./config.js";
 import type { EmbeddedInterviewDetails } from "./generated/interview-details.js";
 
 export interface UserInfo {
@@ -49,9 +55,18 @@ export interface GetTemplatesResponse {
   templates: EmbeddedTemplate[];
 }
 
-export interface ConfigureAppResponse {
+export interface ConfigureResponse {
+  debug?: boolean;
   appearance: AppearanceConfig;
-  features: FeaturesConfig;
+  features: ConfigureFeaturesConfig;
+  locale: LocaleConfig;
+  network: NetworkConfig;
+}
+
+export interface ConfigureAppResponse {
+  debug?: boolean;
+  appearance: AppearanceConfig;
+  ui: UIConfig;
   locale: LocaleConfig;
   network: NetworkConfig;
 }

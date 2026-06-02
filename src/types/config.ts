@@ -4,7 +4,14 @@ export interface AppearanceConfig {
   primaryColor: string | null;
 }
 
-export interface FeaturesConfig {
+export interface UIConfig {
+  interactionTitle: boolean;
+  aiChat: boolean;
+  documentFeedback: boolean;
+  navigation: boolean;
+}
+
+export interface ConfigureFeaturesConfig {
   interactionTitle: boolean;
   aiChat: boolean;
   documentFeedback: boolean;
@@ -24,9 +31,18 @@ export interface NetworkConfig {
   websocketBaseUrl?: string | null;
 }
 
-export interface ConfigureAppPayload {
+export interface ConfigurePayload {
+  debug?: boolean;
   appearance?: Partial<AppearanceConfig>;
-  features?: Partial<FeaturesConfig>;
+  features?: Partial<ConfigureFeaturesConfig>;
+  locale?: Partial<LocaleConfig>;
+  network?: Partial<NetworkConfig>;
+}
+
+export interface ConfigureAppPayload {
+  debug?: boolean;
+  ui?: Partial<UIConfig>;
+  appearance?: Partial<AppearanceConfig>;
   locale?: Partial<LocaleConfig>;
   network?: Partial<NetworkConfig>;
 }

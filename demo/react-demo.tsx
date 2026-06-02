@@ -4,11 +4,14 @@ import {
   type KeycloakTokenResponse,
   type CortiEmbeddedEvent,
   type CortiEmbeddedErrorDetail,
-  type ConfigureAppPayload,
+  type ConfigureApplicationPayload,
+  type ConfigurePayload,
   CortiEmbeddedReact,
   type CortiEmbeddedReactRef,
   type Fact,
+  type NavigatePayload,
   type SessionConfig,
+  type SetInteractionOptionsPayload,
   useCortiEmbeddedApi,
   useCortiEmbeddedStatus,
 } from "../dist/index.js";
@@ -37,9 +40,9 @@ function CortiEmbeddedDemo() {
   const [configureAppPayload, setConfigureAppPayload] = useState<string>(
     JSON.stringify(
       {
-        features: {
+        ui: {
           aiChat: false,
-          syncDocumentAction: true,
+          navigation: true,
         },
       },
       null,
@@ -66,7 +69,46 @@ function CortiEmbeddedDemo() {
       ),
     );
 
-  const [configureSessionPayload, setConfigureSessionPayload] =
+  const [interactionOptionsPayload, setInteractionOptionsPayload] =
+    useState<string>(
+      JSON.stringify(
+        {
+          mode: {
+            fallback: "virtual",
+            options: ["in-person", "virtual"],
+          },
+          spokenLanguage: {
+            fallback: "en",
+          },
+          templates: {
+            defaultTemplate: {
+              behaviour: "fallback",
+              template: {
+                source: "standard",
+                id: "soap_note-en",
+              },
+            },
+          },
+        },
+        null,
+        2,
+      ),
+    );
+
+  const [legacyConfigurePayload, setLegacyConfigurePayload] = useState<string>(
+    JSON.stringify(
+      {
+        features: {
+          aiChat: false,
+          syncDocumentAction: true,
+        },
+      },
+      null,
+      2,
+    ),
+  );
+
+  const [legacyConfigureSessionPayload, setLegacyConfigureSessionPayload] =
     useState<string>(
       JSON.stringify(
         {
@@ -95,7 +137,7 @@ function CortiEmbeddedDemo() {
   );
 
   const [navigatePayload, setNavigatePayload] = useState<string>(
-    "/session/{interaction_id}",
+    JSON.stringify({ path: "/session/{interaction_id}" }, null, 2),
   );
 
   // Helper to add log entries
@@ -146,7 +188,9 @@ function CortiEmbeddedDemo() {
       ) {
         const { interaction } = payload as { interaction?: { id?: string } };
         if (interaction?.id) {
-          setNavigatePayload(`/session/${interaction.id}`);
+          setNavigatePayload(
+            JSON.stringify({ path: `/session/${interaction.id}` }, null, 2),
+          );
         }
       }
     },
@@ -200,12 +244,14 @@ function CortiEmbeddedDemo() {
 
   const handleConfigureApp = async () => {
     try {
-      const payload = JSON.parse(configureAppPayload) as ConfigureAppPayload;
+      const payload = JSON.parse(
+        configureAppPayload,
+      ) as ConfigureApplicationPayload;
       addLogEntry(
         `Configuring app with payload: ${JSON.stringify(payload)}`,
         "info",
       );
-      await api.configure(payload);
+      await api.configureApp(payload);
       addLogEntry("App configuration successful", "success");
     } catch (error) {
       console.error(
@@ -215,18 +261,56 @@ function CortiEmbeddedDemo() {
     }
   };
 
-  const handleConfigureSession = async () => {
+  const handleSetInteractionOptions = async () => {
     try {
-      const payload = JSON.parse(configureSessionPayload) as SessionConfig;
+      const payload = JSON.parse(
+        interactionOptionsPayload,
+      ) as SetInteractionOptionsPayload;
       addLogEntry(
-        `Configuring session with payload: ${JSON.stringify(payload)}`,
+        `Setting interaction options with payload: ${JSON.stringify(payload)}`,
+        "info",
+      );
+      await api.setInteractionOptions(payload);
+      addLogEntry("Interaction options set successfully", "success");
+    } catch (error) {
+      console.error(
+        `Set interaction options failed: ${error instanceof Error ? error.message : String(error)}`,
+        "error",
+      );
+    }
+  };
+
+  const handleLegacyConfigure = async () => {
+    try {
+      const payload = JSON.parse(legacyConfigurePayload) as ConfigurePayload;
+      addLogEntry(
+        `Sending legacy configure payload: ${JSON.stringify(payload)}`,
+        "info",
+      );
+      await api.configure(payload);
+      addLogEntry("Legacy configure successful", "success");
+    } catch (error) {
+      console.error(
+        `Legacy configure failed: ${error instanceof Error ? error.message : String(error)}`,
+        "error",
+      );
+    }
+  };
+
+  const handleLegacyConfigureSession = async () => {
+    try {
+      const payload = JSON.parse(
+        legacyConfigureSessionPayload,
+      ) as SessionConfig;
+      addLogEntry(
+        `Sending legacy configureSession payload: ${JSON.stringify(payload)}`,
         "info",
       );
       await api.configureSession(payload);
-      addLogEntry("Session configuration successful", "success");
+      addLogEntry("Legacy configureSession successful", "success");
     } catch (error) {
       console.error(
-        `Session configuration failed: ${error instanceof Error ? error.message : String(error)}`,
+        `Legacy configureSession failed: ${error instanceof Error ? error.message : String(error)}`,
         "error",
       );
     }
@@ -251,8 +335,9 @@ function CortiEmbeddedDemo() {
 
   const handleNavigate = async () => {
     try {
-      addLogEntry(`Navigating with payload: ${navigatePayload}`, "info");
-      await api.navigate(navigatePayload);
+      const payload = JSON.parse(navigatePayload) as NavigatePayload;
+      addLogEntry(`Navigating with payload: ${JSON.stringify(payload)}`, "info");
+      await api.navigate(payload);
     } catch (error) {
       console.error(
         `Navigation failed: ${error instanceof Error ? error.message : String(error)}`,
@@ -272,7 +357,9 @@ function CortiEmbeddedDemo() {
 
       // Update navigate payload with interaction ID
       if (response.id) {
-        setNavigatePayload(`/session/${response.id}`);
+        setNavigatePayload(
+          JSON.stringify({ path: `/session/${response.id}` }, null, 2),
+        );
         addLogEntry(
           `Navigate payload updated with interaction ID: ${response.id}`,
           "success",
@@ -376,7 +463,7 @@ function CortiEmbeddedDemo() {
             </div>
           </div>
 
-          <div className="demo-section">
+          <div className="method-box">
             <div className="demo-title">Authentication</div>
             <div className="section-row">
               <details className="auth-payload-section">
@@ -399,7 +486,7 @@ function CortiEmbeddedDemo() {
             </div>
           </div>
 
-          <div className="demo-section">
+          <div className="method-box">
             <div className="demo-title">Configure App</div>
             <div className="section-row">
               <details className="auth-payload-section">
@@ -409,7 +496,7 @@ function CortiEmbeddedDemo() {
                   id="configure-app-payload"
                   value={configureAppPayload}
                   onChange={e => setConfigureAppPayload(e.target.value)}
-                  placeholder='{"features": {"aiChat": false}}'
+                  placeholder='{"ui": {"aiChat": false}}'
                 />
               </details>
               <button
@@ -422,8 +509,8 @@ function CortiEmbeddedDemo() {
             </div>
           </div>
 
-          <div className="demo-section">
-            <div className="demo-title">1. Create Interaction</div>
+          <div className="method-box">
+            <div className="demo-title">Create Interaction</div>
             <div className="section-row">
               <details className="auth-payload-section">
                 <summary>⚙️ Settings</summary>
@@ -445,31 +532,31 @@ function CortiEmbeddedDemo() {
             </div>
           </div>
 
-          <div className="demo-section">
-            <div className="demo-title">2. Configure Session</div>
+          <div className="method-box">
+            <div className="demo-title">Set Interaction Options</div>
             <div className="section-row">
               <details className="auth-payload-section">
                 <summary>⚙️ Settings</summary>
-                <label htmlFor="configure-session-payload">Payload:</label>
+                <label htmlFor="interaction-options-payload">Payload:</label>
                 <textarea
-                  id="configure-session-payload"
-                  value={configureSessionPayload}
-                  onChange={e => setConfigureSessionPayload(e.target.value)}
-                  placeholder='{"defaultLanguage": "en", "defaultOutputLanguage": "en", "defaultTemplateKey": "soap_note", "defaultMode": "virtual"}'
+                  id="interaction-options-payload"
+                  value={interactionOptionsPayload}
+                  onChange={e => setInteractionOptionsPayload(e.target.value)}
+                  placeholder='{"mode": {"fallback": "virtual", "options": ["in-person", "virtual"]}}'
                 />
               </details>
               <button
                 type="button"
                 className="postmessage-btn"
-                onClick={handleConfigureSession}
+                onClick={handleSetInteractionOptions}
               >
                 Send
               </button>
             </div>
           </div>
 
-          <div className="demo-section">
-            <div className="demo-title">3. Add Facts</div>
+          <div className="method-box">
+            <div className="demo-title">Add Facts</div>
             <div className="section-row">
               <details className="auth-payload-section">
                 <summary>⚙️ Settings</summary>
@@ -491,8 +578,8 @@ function CortiEmbeddedDemo() {
             </div>
           </div>
 
-          <div className="demo-section">
-            <div className="demo-title">4. Navigate</div>
+          <div className="method-box">
+            <div className="demo-title">Navigate</div>
             <div className="section-row">
               <details className="auth-payload-section">
                 <summary>⚙️ Settings</summary>
@@ -501,7 +588,7 @@ function CortiEmbeddedDemo() {
                   id="navigate-payload"
                   value={navigatePayload}
                   onChange={e => setNavigatePayload(e.target.value)}
-                  placeholder='"/session/{interaction_id}"'
+                  placeholder='{"path": "/session/{interaction_id}"}'
                 />
               </details>
               <button
@@ -513,6 +600,60 @@ function CortiEmbeddedDemo() {
               </button>
             </div>
           </div>
+
+          <details className="legacy-methods">
+            <summary>Legacy Configuration Methods</summary>
+
+            <div className="method-box">
+              <div className="demo-title">configure()</div>
+              <div className="section-row">
+                <details className="auth-payload-section">
+                  <summary>⚙️ Settings</summary>
+                  <label htmlFor="legacy-configure-payload">Payload:</label>
+                  <textarea
+                    id="legacy-configure-payload"
+                    value={legacyConfigurePayload}
+                    onChange={e => setLegacyConfigurePayload(e.target.value)}
+                    placeholder='{"features": {"aiChat": false}}'
+                  />
+                </details>
+                <button
+                  type="button"
+                  className="postmessage-btn"
+                  onClick={handleLegacyConfigure}
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+
+            <div className="method-box">
+              <div className="demo-title">configureSession()</div>
+              <div className="section-row">
+                <details className="auth-payload-section">
+                  <summary>⚙️ Settings</summary>
+                  <label htmlFor="legacy-configure-session-payload">
+                    Payload:
+                  </label>
+                  <textarea
+                    id="legacy-configure-session-payload"
+                    value={legacyConfigureSessionPayload}
+                    onChange={e =>
+                      setLegacyConfigureSessionPayload(e.target.value)
+                    }
+                    placeholder='{"defaultLanguage": "en", "defaultTemplateKey": "soap_note"}'
+                  />
+                </details>
+                <button
+                  type="button"
+                  className="postmessage-btn"
+                  onClick={handleLegacyConfigureSession}
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </details>
         </div>
 
         {/* Center Panel - Web Component */}

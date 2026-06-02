@@ -4,8 +4,15 @@ import {
   createRoot,
   type Root,
   CortiEmbeddedReact,
+  useCortiEmbeddedApi,
   type CortiEmbeddedReactRef,
+  type UseCortiEmbeddedApiResult,
 } from "./vendor/react-test-bundle.js";
+import type {
+  ConfigureApplicationPayload,
+  ConfigureApplicationResponse,
+  SetInteractionOptionsPayload,
+} from "../src/index.js";
 
 describe("CortiEmbeddedReact", () => {
   let container: HTMLDivElement | null = null;
@@ -99,5 +106,54 @@ describe("CortiEmbeddedReact", () => {
       name: "embedded.ready",
       payload: { version: "1.0.0" },
     });
+  });
+
+  it("passes configureApp and setInteractionOptions through the API hook", async () => {
+    const ref = React.createRef<CortiEmbeddedReactRef>();
+    let api: UseCortiEmbeddedApiResult | null = null;
+
+    function HookConsumer() {
+      api = useCortiEmbeddedApi(ref);
+      return React.createElement(CortiEmbeddedReact, {
+        ref,
+        baseURL: "https://assistant.eu.corti.app",
+      });
+    }
+
+    root!.render(React.createElement(HookConsumer));
+
+    const el = await waitForRef(ref);
+    const configureAppCalls: ConfigureApplicationPayload[] = [];
+    const setInteractionOptionsCalls: SetInteractionOptionsPayload[] = [];
+    const configureAppResponse = {
+      debug: false,
+    } as ConfigureApplicationResponse;
+
+    el.configureApp = async config => {
+      configureAppCalls.push(config);
+      return configureAppResponse;
+    };
+    el.setInteractionOptions = async config => {
+      setInteractionOptionsCalls.push(config);
+    };
+
+    const configureAppPayload: ConfigureApplicationPayload = {
+      ui: { navigation: false },
+    };
+    const interactionOptionsPayload: SetInteractionOptionsPayload = {
+      mode: {
+        fallback: "virtual",
+        options: ["virtual"],
+      },
+    };
+
+    const response = await api!.configureApp(configureAppPayload);
+    await api!.setInteractionOptions(interactionOptionsPayload);
+
+    expect(response).to.equal(configureAppResponse);
+    expect(configureAppCalls).to.deep.equal([configureAppPayload]);
+    expect(setInteractionOptionsCalls).to.deep.equal([
+      interactionOptionsPayload,
+    ]);
   });
 });

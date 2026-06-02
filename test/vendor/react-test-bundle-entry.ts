@@ -3,6 +3,7 @@ import { createRoot } from 'react-dom/client';
 import { CortiEmbedded } from '../../src/CortiEmbedded.js';
 import {
   CortiEmbeddedReact,
+  useCortiEmbeddedApi,
   type CortiEmbeddedReactRef,
 } from '../../src/react/CortiEmbeddedReact.js';
 
@@ -12,5 +13,5 @@ if (!customElements.get('corti-embedded')) {
 
 export type Root = import('react-dom/client').Root;
 
-export { React, createRoot, CortiEmbeddedReact };
+export { React, createRoot, CortiEmbeddedReact, useCortiEmbeddedApi };
 export type { CortiEmbeddedReactRef };

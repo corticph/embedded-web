@@ -47,7 +47,7 @@
             </div>
           </div>
 
-          <div class="demo-section">
+          <div class="method-box">
             <div class="demo-title">Authentication</div>
             <div class="section-row">
               <details class="auth-payload-section">
@@ -74,7 +74,7 @@
             </div>
           </div>
 
-          <div class="demo-section">
+          <div class="method-box">
             <div class="demo-title">Set Credentials</div>
             <div class="section-row">
               <details class="auth-payload-section">
@@ -93,26 +93,25 @@
             </div>
           </div>
 
-          <div class="demo-section">
+          <div class="method-box">
             <div class="demo-title">Configure App</div>
             <div class="section-row">
               <details class="auth-payload-section">
                 <summary>⚙️ Settings</summary>
-                <label for="configure-payload">Payload:</label>
+                <label for="configure-app-payload">Payload:</label>
                 <textarea
-                  id="configure-payload"
-                  placeholder='{"appearance": {"primaryColor": "#0066cc"}, "ui": {"title": true, "chat": true}}'
+                  id="configure-app-payload"
+                  placeholder='{"appearance": {"primaryColor": "#0066cc"}, "ui": {"interactionTitle": true, "aiChat": true}}'
                 >
                 {
                   "appearance": {
                     "primaryColor": "#0066cc"
                   },
-                  "features": {
+                  "ui": {
                     "interactionTitle": true,
                     "aiChat": true,
                     "documentFeedback": true,
-                    "navigation": true,
-                    "virtualMode": true
+                    "navigation": true
                   },
                   "locale": {
                     "interfaceLanguage": "en"
@@ -120,12 +119,14 @@
                 }</textarea
                 >
               </details>
-              <button class="postmessage-btn" id="configure-btn">Send</button>
+              <button class="postmessage-btn" id="configure-app-btn">
+                Send
+              </button>
             </div>
           </div>
 
-          <div class="demo-section">
-            <div class="demo-title">1. Create Interaction</div>
+          <div class="method-box">
+            <div class="demo-title">Create Interaction</div>
             <div class="section-row">
               <details class="auth-payload-section">
                 <summary>⚙️ Settings</summary>
@@ -141,32 +142,44 @@
             </div>
           </div>
 
-          <div class="demo-section">
-            <div class="demo-title">2. Configure Session</div>
+          <div class="method-box">
+            <div class="demo-title">Set Interaction Options</div>
             <div class="section-row">
               <details class="auth-payload-section">
                 <summary>⚙️ Settings</summary>
-                <label for="configure-session-payload">Payload:</label>
+                <label for="interaction-options-payload">Payload:</label>
                 <textarea
-                  id="configure-session-payload"
-                  placeholder='{"defaultLanguage": "en", "defaultOutputLanguage": "en", "defaultTemplateKey": "soap_note", "defaultMode": "virtual"}'
+                  id="interaction-options-payload"
+                  placeholder='{"mode": {"fallback": "virtual", "options": ["in-person", "virtual"]}}'
                 >
                 {
-                  "defaultLanguage": "en",
-                  "defaultOutputLanguage": "en",
-                  "defaultTemplateKey": "soap_note",
-                  "defaultMode": "virtual"
+                  "mode": {
+                    "fallback": "virtual",
+                    "options": ["in-person", "virtual"]
+                  },
+                  "spokenLanguage": {
+                    "fallback": "en"
+                  },
+                  "templates": {
+                    "defaultTemplate": {
+                      "behaviour": "fallback",
+                      "template": {
+                        "source": "standard",
+                        "id": "soap_note-en"
+                      }
+                    }
+                  }
                 }</textarea
                 >
               </details>
-              <button class="postmessage-btn" id="configure-session-btn">
+              <button class="postmessage-btn" id="set-interaction-options-btn">
                 Send
               </button>
             </div>
           </div>
 
-          <div class="demo-section">
-            <div class="demo-title">3. Add Facts</div>
+          <div class="method-box">
+            <div class="demo-title">Add Facts</div>
             <div class="section-row">
               <details class="auth-payload-section">
                 <summary>⚙️ Settings</summary>
@@ -188,8 +201,8 @@
             </div>
           </div>
 
-          <div class="demo-section">
-            <div class="demo-title">4. Navigate</div>
+          <div class="method-box">
+            <div class="demo-title">Navigate</div>
             <div class="section-row">
               <details class="auth-payload-section">
                 <summary>⚙️ Settings</summary>
@@ -204,6 +217,59 @@
               <button class="postmessage-btn" id="navigate-btn">Send</button>
             </div>
           </div>
+
+          <details class="legacy-methods">
+            <summary>Legacy Configuration Methods</summary>
+            <div class="method-box">
+              <div class="demo-title">configure()</div>
+              <div class="section-row">
+                <details class="auth-payload-section">
+                  <summary>⚙️ Settings</summary>
+                  <label for="legacy-configure-payload">Payload:</label>
+                  <textarea
+                    id="legacy-configure-payload"
+                    placeholder='{"features": {"aiChat": false}}'
+                  >
+                  {
+                    "features": {
+                      "aiChat": false,
+                      "syncDocumentAction": true
+                    }
+                  }</textarea
+                  >
+                </details>
+                <button class="postmessage-btn" id="legacy-configure-btn">
+                  Send
+                </button>
+              </div>
+            </div>
+            <div class="method-box">
+              <div class="demo-title">configureSession()</div>
+              <div class="section-row">
+                <details class="auth-payload-section">
+                  <summary>⚙️ Settings</summary>
+                  <label for="legacy-configure-session-payload">Payload:</label>
+                  <textarea
+                    id="legacy-configure-session-payload"
+                    placeholder='{"defaultLanguage": "en", "defaultTemplateKey": "soap_note"}'
+                  >
+                  {
+                    "defaultLanguage": "en",
+                    "defaultOutputLanguage": "en",
+                    "defaultTemplateKey": "soap_note",
+                    "defaultMode": "virtual"
+                  }</textarea
+                  >
+                </details>
+                <button
+                  class="postmessage-btn"
+                  id="legacy-configure-session-btn"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+          </details>
         </div>
 
         <!-- Web Component -->
@@ -234,7 +300,7 @@
     <script type="module" src="./demo.ts"></script>
     <!-- Component Import -->
     <script type="module">
-      import '../src/web-index.ts';
+      import "../src/web-index.ts";
     </script>
   </body>
 </html>

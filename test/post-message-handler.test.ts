@@ -1,10 +1,10 @@
-import { expect } from '@open-wc/testing';
-import { PostMessageHandler } from '../src/utils/PostMessageHandler.js';
+import { expect } from "@open-wc/testing";
+import { PostMessageHandler } from "../src/utils/PostMessageHandler.js";
 
-describe('PostMessageHandler', () => {
-  function makeRealHandler(origin = 'https://assistant.eu.corti.app') {
-    const iframe = document.createElement('iframe');
-    iframe.setAttribute('src', `${origin}/embedded`);
+describe("PostMessageHandler", () => {
+  function makeRealHandler(origin = "https://assistant.eu.corti.app") {
+    const iframe = document.createElement("iframe");
+    iframe.setAttribute("src", `${origin}/embedded`);
     document.body.appendChild(iframe);
     const handler = new PostMessageHandler(iframe);
     return { handler, iframe, origin };
@@ -14,8 +14,8 @@ describe('PostMessageHandler', () => {
     const { handler, iframe, origin } = makeRealHandler();
     const readyPromise = handler.waitForReady(500);
     window.dispatchEvent(
-      new MessageEvent('message', {
-        data: { type: 'CORTI_EMBEDDED_EVENT', event: 'embedded.ready' },
+      new MessageEvent("message", {
+        data: { type: "CORTI_EMBEDDED_EVENT", event: "embedded.ready" },
         origin,
         source: iframe.contentWindow as any,
       }),
@@ -28,12 +28,12 @@ describe('PostMessageHandler', () => {
 
   it("does not set ready=true for 'ready' or 'loaded' events", async () => {
     const { handler, iframe, origin } = makeRealHandler();
-    for (const event of ['ready', 'loaded']) {
+    for (const event of ["ready", "loaded"]) {
       let timedOut = false;
       // Send the non-ready signal
       window.dispatchEvent(
-        new MessageEvent('message', {
-          data: { type: 'CORTI_EMBEDDED_EVENT', event },
+        new MessageEvent("message", {
+          data: { type: "CORTI_EMBEDDED_EVENT", event },
           origin,
           source: iframe.contentWindow as any,
         }),
@@ -52,27 +52,27 @@ describe('PostMessageHandler', () => {
     }
   });
 
-  it('stores protocol version from embedded.ready payload', async () => {
+  it("stores protocol version from embedded.ready payload", async () => {
     const { handler, iframe, origin } = makeRealHandler();
     const readyPromise = handler.waitForReady(500);
     window.dispatchEvent(
-      new MessageEvent('message', {
+      new MessageEvent("message", {
         data: {
-          type: 'CORTI_EMBEDDED_EVENT',
-          event: 'embedded.ready',
-          payload: { version: 'v1' },
+          type: "CORTI_EMBEDDED_EVENT",
+          event: "embedded.ready",
+          payload: { version: "v1" },
         },
         origin,
         source: iframe.contentWindow as any,
       }),
     );
     await readyPromise;
-    expect(handler.protocolVersion).to.equal('v1');
+    expect(handler.protocolVersion).to.equal("v1");
     handler.destroy();
     iframe.remove();
   });
 
-  it('forwards passthrough events through onEvent', async () => {
+  it("forwards passthrough events through onEvent", async () => {
     const forwarded: Array<{
       name: string;
       payload: unknown;
@@ -85,11 +85,11 @@ describe('PostMessageHandler', () => {
     });
 
     window.dispatchEvent(
-      new MessageEvent('message', {
+      new MessageEvent("message", {
         data: {
-          type: 'CORTI_EMBEDDED_EVENT',
-          event: 'embedded.navigated',
-          payload: { path: '/summary' },
+          type: "CORTI_EMBEDDED_EVENT",
+          event: "embedded.navigated",
+          payload: { path: "/summary" },
         },
         origin,
         source: iframe.contentWindow as any,
@@ -97,10 +97,10 @@ describe('PostMessageHandler', () => {
     );
 
     window.dispatchEvent(
-      new MessageEvent('message', {
+      new MessageEvent("message", {
         data: {
-          type: 'CORTI_EMBEDDED_EVENT',
-          event: 'custom.event',
+          type: "CORTI_EMBEDDED_EVENT",
+          event: "custom.event",
           payload: { a: 1 },
         },
         origin,
@@ -110,11 +110,11 @@ describe('PostMessageHandler', () => {
 
     expect(forwarded).to.have.length(2);
     expect(forwarded[0]).to.deep.equal({
-      name: 'embedded.navigated',
-      payload: { path: '/summary' },
+      name: "embedded.navigated",
+      payload: { path: "/summary" },
     });
     expect(forwarded[1]).to.deep.equal({
-      name: 'custom.event',
+      name: "custom.event",
       payload: { a: 1 },
     });
 
@@ -122,7 +122,36 @@ describe('PostMessageHandler', () => {
     iframe.remove();
   });
 
-  it('routes error.triggered to onError and does not forward via onEvent', async () => {
+  it("does not warn when deprecated event messages are dispatched", async () => {
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    const { handler, iframe, origin } = makeRealHandler();
+    console.warn = (message?: unknown) => {
+      warnings.push(String(message));
+    };
+
+    try {
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          data: {
+            type: "CORTI_EMBEDDED_EVENT",
+            event: "recordingStarted",
+            deprecated: true,
+          },
+          origin,
+          source: iframe.contentWindow as any,
+        }),
+      );
+
+      expect(warnings).to.have.length(0);
+    } finally {
+      console.warn = originalWarn;
+      handler.destroy();
+      iframe.remove();
+    }
+  });
+
+  it("routes error.triggered to onError and does not forward via onEvent", async () => {
     const forwarded: Array<{ name: string; payload: unknown }> = [];
     const errors: Array<{ message: string; code?: string; details?: unknown }> =
       [];
@@ -133,11 +162,11 @@ describe('PostMessageHandler', () => {
     });
 
     window.dispatchEvent(
-      new MessageEvent('message', {
+      new MessageEvent("message", {
         data: {
-          type: 'CORTI_EMBEDDED_EVENT',
-          event: 'error.triggered',
-          payload: { message: 'Boom', code: 'UNAUTHORIZED' },
+          type: "CORTI_EMBEDDED_EVENT",
+          event: "error.triggered",
+          payload: { message: "Boom", code: "UNAUTHORIZED" },
         },
         origin,
         source: iframe.contentWindow as any,
@@ -146,12 +175,12 @@ describe('PostMessageHandler', () => {
 
     expect(errors).to.have.length(1);
     expect(errors[0]).to.deep.equal({
-      message: 'Boom',
-      code: 'UNAUTHORIZED',
+      message: "Boom",
+      code: "UNAUTHORIZED",
       details: {
-        type: 'CORTI_EMBEDDED_EVENT',
-        event: 'error.triggered',
-        payload: { message: 'Boom', code: 'UNAUTHORIZED' },
+        type: "CORTI_EMBEDDED_EVENT",
+        event: "error.triggered",
+        payload: { message: "Boom", code: "UNAUTHORIZED" },
       },
     });
     expect(forwarded).to.have.length(0);
@@ -160,17 +189,17 @@ describe('PostMessageHandler', () => {
     iframe.remove();
   });
 
-  it('postMessage resolves on matching response from trusted origin', async () => {
+  it("postMessage resolves on matching response from trusted origin", async () => {
     const { handler } = makeRealHandler();
     // Ensure waitForReady resolves quickly
     (handler as any).isReady = true;
     try {
       const promise = handler.postMessage(
         {
-          type: 'CORTI_EMBEDDED',
-          version: 'v1',
-          action: 'navigate',
-          payload: { path: '/foo' },
+          type: "CORTI_EMBEDDED",
+          version: "v1",
+          action: "navigate",
+          payload: { path: "/foo" },
         },
         500,
       );
@@ -189,16 +218,16 @@ describe('PostMessageHandler', () => {
     }
   });
 
-  it('rejects when response indicates failure', async () => {
+  it("rejects when response indicates failure", async () => {
     const { handler } = makeRealHandler();
     (handler as any).isReady = true;
     try {
       const promise = handler.postMessage(
         {
-          type: 'CORTI_EMBEDDED',
-          version: 'v1',
-          action: 'navigate',
-          payload: { path: '/foo' },
+          type: "CORTI_EMBEDDED",
+          version: "v1",
+          action: "navigate",
+          payload: { path: "/foo" },
         },
         500,
       );
@@ -209,11 +238,11 @@ describe('PostMessageHandler', () => {
       (handler as any).handleResponse({
         requestId,
         success: false,
-        error: 'Bad request',
+        error: "Bad request",
       });
       try {
         await promise;
-        expect.fail('Expected rejection for bad response');
+        expect.fail("Expected rejection for bad response");
       } catch (e: any) {
         expect(String(e.message || e)).to.match(/Bad request/);
       }
@@ -222,7 +251,7 @@ describe('PostMessageHandler', () => {
     }
   });
 
-  it('emits onError when response indicates failure', async () => {
+  it("emits onError when response indicates failure", async () => {
     const errors: Array<{ message: string; code?: string; details?: unknown }> =
       [];
     const { handler } = makeRealHandler();
@@ -234,10 +263,10 @@ describe('PostMessageHandler', () => {
     try {
       const promise = handler.postMessage(
         {
-          type: 'CORTI_EMBEDDED',
-          version: 'v1',
-          action: 'navigate',
-          payload: { path: '/foo' },
+          type: "CORTI_EMBEDDED",
+          version: "v1",
+          action: "navigate",
+          payload: { path: "/foo" },
         },
         500,
       );
@@ -248,50 +277,50 @@ describe('PostMessageHandler', () => {
       (handler as any).handleResponse({
         requestId,
         success: false,
-        error: 'Bad request',
-        errorCode: 'BAD_REQUEST',
-        errorDetails: { field: 'path' },
+        error: "Bad request",
+        errorCode: "BAD_REQUEST",
+        errorDetails: { field: "path" },
       });
 
       await promise.catch(() => undefined);
 
       expect(errors).to.have.length(1);
       expect(errors[0]).to.deep.equal({
-        message: 'Bad request',
-        code: 'BAD_REQUEST',
-        details: { field: 'path' },
+        message: "Bad request",
+        code: "BAD_REQUEST",
+        details: { field: "path" },
       });
     } finally {
       handler.destroy();
     }
   });
 
-  it('ignores messages from wrong origin and times out', async () => {
-    const { handler, iframe } = makeRealHandler('https://trusted.example');
+  it("ignores messages from wrong origin and times out", async () => {
+    const { handler, iframe } = makeRealHandler("https://trusted.example");
     (handler as any).isReady = true;
     const origGen = (PostMessageHandler as any).generateRequestId;
-    (PostMessageHandler as any).generateRequestId = () => 'req_test';
+    (PostMessageHandler as any).generateRequestId = () => "req_test";
     try {
       const promise = handler.postMessage(
         {
-          type: 'CORTI_EMBEDDED',
-          version: 'v1',
-          action: 'navigate',
-          payload: { path: '/foo' },
+          type: "CORTI_EMBEDDED",
+          version: "v1",
+          action: "navigate",
+          payload: { path: "/foo" },
         },
         60,
       );
       // Wrong origin response should be ignored
       window.dispatchEvent(
-        new MessageEvent('message', {
-          data: { requestId: 'req_test', payload: { ok: true } },
-          origin: 'https://evil.example',
+        new MessageEvent("message", {
+          data: { requestId: "req_test", payload: { ok: true } },
+          origin: "https://evil.example",
           source: iframe.contentWindow as any,
         }),
       );
       try {
         await promise;
-        expect.fail('Expected timeout rejection');
+        expect.fail("Expected timeout rejection");
       } catch (e: any) {
         expect(String(e.message || e)).to.match(/Request timeout/);
       }
@@ -302,22 +331,22 @@ describe('PostMessageHandler', () => {
     }
   });
 
-  it('throws if iframe contentWindow not available', async () => {
+  it("throws if iframe contentWindow not available", async () => {
     const fakeIframe: any = {
       getAttribute: (n: string) =>
-        n === 'src' ? 'https://assistant.eu.corti.app/embedded' : null,
-      src: 'https://assistant.eu.corti.app/embedded',
+        n === "src" ? "https://assistant.eu.corti.app/embedded" : null,
+      src: "https://assistant.eu.corti.app/embedded",
       contentWindow: null,
     };
     const handler = new PostMessageHandler(fakeIframe);
     try {
       await handler.postMessage({
-        type: 'CORTI_EMBEDDED',
-        version: 'v1',
-        action: 'startRecording',
+        type: "CORTI_EMBEDDED",
+        version: "v1",
+        action: "startRecording",
         payload: {},
       });
-      expect.fail('Expected Iframe not ready rejection');
+      expect.fail("Expected Iframe not ready rejection");
     } catch (e: any) {
       expect(String(e.message || e)).to.match(/Iframe not ready/);
     } finally {
@@ -325,10 +354,10 @@ describe('PostMessageHandler', () => {
     }
   });
 
-  it('rejects if trusted origin cannot be derived', async () => {
+  it("rejects if trusted origin cannot be derived", async () => {
     const fakeIframe: any = {
-      getAttribute: () => '',
-      src: '',
+      getAttribute: () => "",
+      src: "",
       contentWindow: window,
     };
     const handler = new PostMessageHandler(fakeIframe);
@@ -336,12 +365,12 @@ describe('PostMessageHandler', () => {
     (handler as any).waitForReady = () => Promise.resolve();
     try {
       await handler.postMessage({
-        type: 'CORTI_EMBEDDED',
-        version: 'v1',
-        action: 'startRecording',
+        type: "CORTI_EMBEDDED",
+        version: "v1",
+        action: "startRecording",
         payload: {},
       });
-      expect.fail('Expected trusted origin rejection');
+      expect.fail("Expected trusted origin rejection");
     } catch (e: any) {
       expect(String(e.message || e)).to.match(/trusted origin/i);
     } finally {

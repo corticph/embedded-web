@@ -5,12 +5,15 @@ import { property } from "lit/decorators.js";
 import type {
   AuthResponse,
   AddFactsPayload,
-  ConfigureAppPayload,
-  ConfigureAppResponse,
+  ConfigureApplicationPayload,
+  ConfigureApplicationResponse,
+  ConfigurePayload,
+  ConfigureResponse,
   ConfigureSessionPayload,
   CreateInteractionPayload,
   CreateInteractionResponse,
   NavigatePayload,
+  SetInteractionOptionsPayload,
   SetCredentialsPayload,
   CortiEmbeddedAPI,
   InteractionDetails,
@@ -19,7 +22,7 @@ import type {
   GetStatusResponse,
   GetTemplatesResponse,
   KeycloakTokenResponse,
-} from "./types";
+} from "./public-types.js";
 import { baseStyles } from "./styles/base.js";
 import { containerStyles } from "./styles/container-styles.js";
 import { validateAndNormalizeBaseURL } from "./utils/baseUrl.js";
@@ -33,6 +36,40 @@ import {
 const IFRAME_SANDBOX_POLICY =
   "allow-forms allow-modals allow-scripts allow-same-origin";
 
+const DEPRECATION_TIMELINE_URL =
+  "https://docs.corti.ai/assistant/deprecation-timeline";
+
+const CONFIGURATION_MIGRATION_URL =
+  "https://docs.corti.ai/assistant/configuration-migration";
+
+const DEPRECATED_EVENT_SUBSCRIPTIONS = new Set([
+  "ready",
+  "loaded",
+  "recordingStarted",
+  "recordingStopped",
+  "documentGenerated",
+  "documentUpdated",
+  "documentSynced",
+  "authChanged",
+  "interactionCreated",
+  "navigationChanged",
+  "usage",
+  "embedded-event",
+]);
+
+type DOMEventListener =
+  | ((event: Event) => void)
+  | { handleEvent(event: Event): void };
+
+type DOMAddEventListenerOptions =
+  | boolean
+  | {
+      capture?: boolean;
+      once?: boolean;
+      passive?: boolean;
+      signal?: AbortSignal;
+    };
+
 export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   static styles = [baseStyles, containerStyles];
 
@@ -45,6 +82,31 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   private postMessageHandler: PostMessageHandler | null = null;
 
   private normalizedBaseURL: string | null = null;
+
+  private warnedDeprecatedEventSubscriptions = new Set<string>();
+
+  addEventListener(
+    type: string,
+    callback: DOMEventListener,
+    options?: DOMAddEventListenerOptions,
+  ): void {
+    this.warnDeprecatedEventSubscription(type);
+    super.addEventListener(type, callback, options);
+  }
+
+  private warnDeprecatedEventSubscription(eventName: string): void {
+    if (
+      !DEPRECATED_EVENT_SUBSCRIPTIONS.has(eventName) ||
+      this.warnedDeprecatedEventSubscriptions.has(eventName)
+    ) {
+      return;
+    }
+
+    this.warnedDeprecatedEventSubscriptions.add(eventName);
+    console.warn(
+      `[Corti Embedded] The '${eventName}' event subscription is deprecated and will be removed in a future release. Subscribe to the canonical 'event' stream instead. See ${DEPRECATION_TIMELINE_URL}.`,
+    );
+  }
 
   // eslint-disable-next-line class-methods-use-this
   private getIframeAllowPolicy(normalizedBaseURL?: string | null): string {
@@ -149,6 +211,15 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     details?: unknown;
   }) {
     this.dispatchPublicEvent("error", error);
+  }
+
+  private static warnDeprecatedAPI(
+    methodName: string,
+    replacement: string,
+  ): void {
+    console.warn(
+      `[Corti Embedded] ${methodName} is deprecated and will be removed in a future release. Use ${replacement} instead. See ${CONFIGURATION_MIGRATION_URL} and ${DEPRECATION_TIMELINE_URL}.`,
+    );
   }
 
   private isRealIframeLoad(iframe: HTMLIFrameElement): boolean {
@@ -304,6 +375,10 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
 
     try {
+      CortiEmbedded.warnDeprecatedAPI(
+        "configureSession()",
+        "setInteractionOptions()",
+      );
       const payload: ConfigureSessionPayload = {
         defaultLanguage: config.defaultLanguage,
         defaultOutputLanguage: config.defaultOutputLanguage,
@@ -349,21 +424,22 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
   /**
    * Navigate to a specific path within the embedded UI
-   * @param path Path to navigate to
+   * @param payload Navigation request payload or legacy path string
    * @returns Promise that resolves when navigation is complete
    */
-  async navigate(path: string): Promise<void> {
+  async navigate(payload: NavigatePayload | string): Promise<void> {
     if (!this.postMessageHandler) {
       throw new Error("Component not ready");
     }
 
     try {
-      const payload: NavigatePayload = { path };
+      const normalizedPayload: NavigatePayload =
+        typeof payload === "string" ? { path: payload } : payload;
       await this.postMessageHandler.postMessage({
         type: "CORTI_EMBEDDED",
         version: "v1",
         action: "navigate",
-        payload,
+        payload: normalizedPayload,
       });
     } catch (error) {
       const formattedError = formatError(error, "Failed to navigate");
@@ -454,7 +530,9 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    * @param config Component configuration
    * @returns Promise that resolves when configuration is applied
    */
-  async configure(config: ConfigureAppPayload): Promise<ConfigureAppResponse> {
+  async configureApp(
+    config: ConfigureApplicationPayload,
+  ): Promise<ConfigureApplicationResponse> {
     if (!this.postMessageHandler) {
       throw new Error("Component not ready");
     }
@@ -463,18 +541,79 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       const response = await this.postMessageHandler.postMessage({
         type: "CORTI_EMBEDDED",
         version: "v1",
+        action: "configureApp",
+        payload: config,
+      });
+
+      if (response.success && response.payload) {
+        return response.payload as ConfigureApplicationResponse;
+      }
+      throw new Error(response.error);
+    } catch (error) {
+      const formattedError = formatError(error, "Failed to configure app");
+      throw new Error(JSON.stringify(formattedError));
+    }
+  }
+
+  /**
+   * Configure the component
+   * @param config Component configuration
+   * @returns Promise that resolves when configuration is applied
+   */
+  async configure(config: ConfigurePayload): Promise<ConfigureResponse> {
+    if (!this.postMessageHandler) {
+      throw new Error("Component not ready");
+    }
+
+    try {
+      CortiEmbedded.warnDeprecatedAPI("configure()", "configureApp()");
+      const response = await this.postMessageHandler.postMessage({
+        type: "CORTI_EMBEDDED",
+        version: "v1",
         action: "configure",
         payload: config,
       });
 
       if (response.success && response.payload) {
-        return response.payload as ConfigureAppResponse;
+        return response.payload as ConfigureResponse;
       }
       throw new Error(response.error);
     } catch (error) {
       const formattedError = formatError(
         error,
         "Failed to configure component",
+      );
+      throw new Error(JSON.stringify(formattedError));
+    }
+  }
+
+  /**
+   * Set one-shot interaction options for the embedded instance.
+   * @param config Interaction/session-level options
+   * @returns Promise that resolves when options are applied
+   */
+  async setInteractionOptions(
+    config: SetInteractionOptionsPayload,
+  ): Promise<void> {
+    if (!this.postMessageHandler) {
+      throw new Error("Component not ready");
+    }
+
+    try {
+      const response = await this.postMessageHandler.postMessage({
+        type: "CORTI_EMBEDDED",
+        version: "v1",
+        action: "setInteractionOptions",
+        payload: config,
+      });
+
+      if (response.success === false || response.error) {
+        throw new Error(response.error);
+      }
+    } catch (error) {
+      const formattedError = formatError(
+        error,
+        "Failed to set interaction options",
       );
       throw new Error(JSON.stringify(formattedError));
     }

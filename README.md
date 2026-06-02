@@ -43,9 +43,16 @@ const interaction = await myComponent.createInteraction({
   }
 });
 
-await myComponent.configureSession({"defaultTemplateKey": "soap_note"});
+await myComponent.setInteractionOptions({
+  templates: {
+    defaultTemplate: {
+      behaviour: "fallback",
+      template: { source: "standard", id: "soap_note" },
+    },
+  },
+});
 await myComponent.addFacts([{"text": "Chest pain", "group": "other"}]);
-await myComponent.navigate('/interactions/123');
+await myComponent.navigate({ path: "/interactions/123" });
 await myComponent.show()
 ```
 
@@ -100,7 +107,14 @@ function App() {
       });
       console.log("Authenticated:", user);
 
-      await api.configureSession({ defaultTemplateKey: "soap_note" });
+      await api.setInteractionOptions({
+        templates: {
+          defaultTemplate: {
+            behaviour: "fallback",
+            template: { source: "standard", id: "soap_note" },
+          },
+        },
+      });
       await api.createInteraction({
         encounter: {
           identifier: `encounter-${Date.now()}`,
@@ -172,14 +186,37 @@ const authResponse = await component.auth({
 });
 ```
 
-#### configureSession
+#### configureApp
 
 ```javascript
-await component.configureSession({
-  defaultLanguage: "en",
-  defaultOutputLanguage: "en",
-  defaultTemplateKey: "discharge-summary",
-  defaultMode: "virtual",
+await component.configureApp({
+  ui: {
+    aiChat: true,
+    navigation: false,
+  },
+  appearance: {
+    primaryColor: "#000000",
+  },
+});
+```
+
+#### setInteractionOptions
+
+```javascript
+await component.setInteractionOptions({
+  mode: {
+    fallback: "virtual",
+    options: ["in-person", "virtual"],
+  },
+  spokenLanguage: {
+    fallback: "en",
+  },
+  templates: {
+    defaultTemplate: {
+      behaviour: "fallback",
+      template: { source: "standard", id: "discharge-summary" },
+    },
+  },
 });
 ```
 
@@ -195,7 +232,7 @@ await component.addFacts([
 #### navigate
 
 ```javascript
-await component.navigate("/interactions/123");
+await component.navigate({ path: "/interactions/123" });
 ```
 
 #### createInteraction
@@ -302,7 +339,7 @@ function Example() {
   const run = async () => {
     await api.auth({ access_token: '...', token_type: 'Bearer' });
     const created = await api.createInteraction({ encounter: { ... } });
-    await api.navigate(`/session/${created.id}`);
+    await api.navigate({ path: `/session/${created.id}` });
   };
 
   return (
@@ -315,6 +352,8 @@ function Example() {
 ```
 
 For detailed React usage examples, see [docs/react-usage.md](./docs/react-usage.md).
+
+For configuration migration details, see [docs/migration-guide.md](./docs/migration-guide.md) and [docs/deprecation-timeline.md](./docs/deprecation-timeline.md).
 
 ## Package Structure
 

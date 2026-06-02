@@ -92,13 +92,20 @@ function ApiExample() {
         period: { startedAt: new Date().toISOString() },
       },
     });
-    await api.configureSession({ defaultTemplateKey: "soap_note" });
+    await api.setInteractionOptions({
+      templates: {
+        defaultTemplate: {
+          behaviour: "fallback",
+          template: { source: "standard", id: "soap_note" },
+        },
+      },
+    });
     await api.addFacts([{ text: "Chest pain", group: "other" }]);
-    await api.navigate(`/session/${created.id}`);
+    await api.navigate({ path: `/session/${created.id}` });
     await api.startRecording();
     await api.stopRecording();
     const status = await api.getStatus();
-    await api.configure({ features: { aiChat: false } });
+    await api.configureApp({ ui: { aiChat: false } });
     await api.setCredentials({ password: "..." });
     api.show();
     api.hide();

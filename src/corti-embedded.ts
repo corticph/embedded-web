@@ -1,5 +1,8 @@
 import { CortiEmbedded } from "./CortiEmbedded.js";
-import type { CortiEmbeddedAPI, CortiEmbeddedWindowAPI } from "./types/api.js";
+import type {
+  CortiEmbeddedAPI,
+  CortiEmbeddedWindowAPI,
+} from "./public-types.js";
 
 // Register the main component
 if (!customElements.get("corti-embedded")) {

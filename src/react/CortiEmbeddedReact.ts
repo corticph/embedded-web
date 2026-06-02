@@ -1,7 +1,7 @@
 import * as React from "react";
 import "../corti-embedded.js";
 import type { CortiEmbedded } from "../CortiEmbedded.js";
-import type { CortiEmbeddedAPI } from "../types";
+import type { CortiEmbeddedAPI } from "../public-types.js";
 
 export interface CortiEmbeddedEventDetail {
   name: string;
@@ -35,7 +35,7 @@ export interface CortiEmbeddedReactProps {
 export type CortiEmbeddedReactRef = CortiEmbedded & CortiEmbeddedAPI;
 
 // Export public types
-export * from "../types/index.js";
+export * from "../public-types.js";
 
 // Renders the custom element directly so React sets the ref to the actual
 // CortiEmbedded DOM instance. This avoids the @lit/react wrapper chain that
@@ -224,9 +224,15 @@ export interface UseCortiEmbeddedApiResult {
   getStatus: (
     ...args: Parameters<CortiEmbeddedReactRef["getStatus"]>
   ) => ReturnType<CortiEmbeddedReactRef["getStatus"]>;
+  configureApp: (
+    ...args: Parameters<CortiEmbeddedReactRef["configureApp"]>
+  ) => ReturnType<CortiEmbeddedReactRef["configureApp"]>;
   configure: (
     ...args: Parameters<CortiEmbeddedReactRef["configure"]>
   ) => ReturnType<CortiEmbeddedReactRef["configure"]>;
+  setInteractionOptions: (
+    ...args: Parameters<CortiEmbeddedReactRef["setInteractionOptions"]>
+  ) => ReturnType<CortiEmbeddedReactRef["setInteractionOptions"]>;
   getTemplates: (
     ...args: Parameters<CortiEmbeddedReactRef["getTemplates"]>
   ) => ReturnType<CortiEmbeddedReactRef["getTemplates"]>;
@@ -271,7 +277,10 @@ export function useCortiEmbeddedApi(
       startRecording: (...args) => getInstance().startRecording(...args),
       stopRecording: (...args) => getInstance().stopRecording(...args),
       getStatus: (...args) => getInstance().getStatus(...args),
+      configureApp: (...args) => getInstance().configureApp(...args),
       configure: (...args) => getInstance().configure(...args),
+      setInteractionOptions: (...args) =>
+        getInstance().setInteractionOptions(...args),
       getTemplates: (...args) => getInstance().getTemplates(...args),
       setCredentials: (...args) => getInstance().setCredentials(...args),
       show: (...args) => getInstance().show(...args),

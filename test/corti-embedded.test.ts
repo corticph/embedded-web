@@ -4,13 +4,18 @@ import { html } from "lit";
 import { CortiEmbedded } from "../src/CortiEmbedded.js";
 import "../src/corti-embedded.js";
 import type {
+  ConfigureApplicationPayload,
+  ConfigureAppPayload,
+  ConfigureAppResponse,
+  ConfigurePayload,
   SetCredentialsPayload,
+  SetInteractionOptionsPayload,
   GetStatusResponse,
   InteractionDetails,
   SessionConfig,
   User,
   KeycloakTokenResponse,
-} from "../src/types";
+} from "../src/web-index.js";
 
 describe("CortiEmbedded", () => {
   const validBaseURL = "https://assistant.eu.corti.app";
@@ -296,6 +301,57 @@ describe("CortiEmbedded", () => {
     });
   });
 
+  it("warns when deprecated event names are subscribed to", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (message?: unknown) => {
+      warnings.push(String(message));
+    };
+
+    try {
+      el.addEventListener("recordingStarted", () => {});
+      el.addEventListener("recordingStarted", () => {});
+      el.addEventListener("embedded-event", () => {});
+      el.addEventListener("event", () => {});
+
+      expect(warnings).to.have.length(2);
+      expect(warnings[0]).to.contain(
+        "'recordingStarted' event subscription is deprecated",
+      );
+      expect(warnings[0]).to.contain(
+        "https://docs.corti.ai/assistant/deprecation-timeline",
+      );
+      expect(warnings[1]).to.contain(
+        "'embedded-event' event subscription is deprecated",
+      );
+    } finally {
+      console.warn = originalWarn;
+    }
+  });
+
+  it("does not warn when deprecated events are dispatched without deprecated subscriptions", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    console.warn = (message?: unknown) => {
+      warnings.push(String(message));
+    };
+
+    try {
+      el.addEventListener("event", () => {});
+      (el as any).dispatchEmbeddedEvent("recordingStarted", undefined);
+
+      expect(warnings).to.have.length(0);
+    } finally {
+      console.warn = originalWarn;
+    }
+  });
+
   it("forwards 'embedded.ready' raw and fully suppresses raw 'ready'/'loaded'", async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
@@ -432,7 +488,7 @@ describe("CortiEmbedded", () => {
 
     await el.configureSession(sessionConfig);
     await el.addFacts([{ text: "test", group: "my note" }]);
-    await el.navigate("/test");
+    await el.navigate({ path: "/test" });
     await el.startRecording();
     await el.stopRecording();
     await el.setCredentials(credentials);
@@ -441,6 +497,40 @@ describe("CortiEmbedded", () => {
     expect(status).to.deep.equal(mockStatus);
 
     // Note: configure method would normally change baseURL, but our mock doesn't handle that
+  });
+
+  it("normalizes legacy string navigate input before forwarding", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    const messages: Array<{ action: string; payload?: unknown }> = [];
+
+    (el as any).postMessageHandler = {
+      postMessage: async (msg: { action: string; payload?: unknown }) => {
+        messages.push(msg);
+        return { success: true, payload: {} };
+      },
+      destroy: () => {},
+      ready: true,
+    };
+
+    await el.navigate("/legacy-path");
+    await el.navigate({ path: "/object-path" });
+
+    expect(messages).to.deep.equal([
+      {
+        type: "CORTI_EMBEDDED",
+        version: "v1",
+        action: "navigate",
+        payload: { path: "/legacy-path" },
+      },
+      {
+        type: "CORTI_EMBEDDED",
+        version: "v1",
+        action: "navigate",
+        payload: { path: "/object-path" },
+      },
+    ]);
   });
 
   it("dispatches error event when baseURL becomes invalid (updated) without throwing", async () => {
@@ -480,5 +570,152 @@ describe("CortiEmbedded", () => {
       currentUrl: "",
       interaction: null,
     });
+  });
+
+  it("passes through configureApp and setInteractionOptions via postMessage", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    const messages: Array<{ action: string; payload?: unknown }> = [];
+    const configureAppResponse = {
+      debug: true,
+      appearance: { primaryColor: "#000000" },
+      ui: {
+        interactionTitle: true,
+        aiChat: true,
+        documentFeedback: true,
+        navigation: false,
+      },
+      locale: { interfaceLanguage: "da" },
+      network: { websocketBaseUrl: "wss://example.test" },
+    };
+
+    (el as any).postMessageHandler = {
+      postMessage: async (msg: { action: string; payload?: unknown }) => {
+        messages.push(msg);
+        return {
+          success: true,
+          payload: msg.action === "configureApp" ? configureAppResponse : {},
+        };
+      },
+      destroy: () => {},
+      ready: true,
+    };
+
+    const configureAppPayload: ConfigureApplicationPayload = {
+      debug: true,
+      ui: { navigation: false },
+      appearance: { primaryColor: "#000000" },
+    };
+    const interactionOptionsPayload: SetInteractionOptionsPayload = {
+      mode: {
+        fallback: "virtual",
+        options: ["virtual"],
+      },
+    };
+
+    const response = await el.configureApp(configureAppPayload);
+    await el.setInteractionOptions(interactionOptionsPayload);
+
+    expect(response).to.deep.equal(configureAppResponse);
+    expect(messages).to.deep.equal([
+      {
+        type: "CORTI_EMBEDDED",
+        version: "v1",
+        action: "configureApp",
+        payload: configureAppPayload,
+      },
+      {
+        type: "CORTI_EMBEDDED",
+        version: "v1",
+        action: "setInteractionOptions",
+        payload: interactionOptionsPayload,
+      },
+    ]);
+  });
+
+  it("passes through deprecated config methods and emits console warnings", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    const messages: Array<{ action: string; payload?: unknown }> = [];
+    const warnings: string[] = [];
+    const originalWarn = console.warn;
+    const configureResponse = {
+      debug: false,
+      appearance: { primaryColor: null },
+      features: {
+        interactionTitle: true,
+        aiChat: false,
+        documentFeedback: true,
+        navigation: true,
+        virtualMode: false,
+        syncDocumentAction: true,
+        templateEditor: false,
+      },
+      locale: { interfaceLanguage: "en" },
+      network: { websocketBaseUrl: null },
+    };
+
+    console.warn = (message?: unknown) => {
+      warnings.push(String(message));
+    };
+
+    (el as any).postMessageHandler = {
+      postMessage: async (msg: { action: string; payload?: unknown }) => {
+        messages.push(msg);
+        return {
+          success: true,
+          payload: msg.action === "configure" ? configureResponse : {},
+        };
+      },
+      destroy: () => {},
+      ready: true,
+    };
+
+    const configurePayload: ConfigurePayload = {
+      features: { aiChat: false },
+    };
+    const legacyConfigureAppPayload: ConfigureAppPayload = configurePayload;
+    const legacyConfigureAppResponse: ConfigureAppResponse = configureResponse;
+    const sessionConfig: SessionConfig = {
+      defaultLanguage: "da",
+      defaultOutputLanguage: "da",
+      defaultTemplateKey: "corti-soap",
+      defaultMode: "in-person",
+    };
+
+    try {
+      const response = await el.configure(configurePayload);
+      await el.configureSession(sessionConfig);
+
+      expect(response).to.deep.equal(configureResponse);
+      expect(legacyConfigureAppPayload).to.deep.equal(configurePayload);
+      expect(legacyConfigureAppResponse).to.deep.equal(configureResponse);
+      expect(messages).to.deep.equal([
+        {
+          type: "CORTI_EMBEDDED",
+          version: "v1",
+          action: "configure",
+          payload: configurePayload,
+        },
+        {
+          type: "CORTI_EMBEDDED",
+          version: "v1",
+          action: "configureSession",
+          payload: sessionConfig,
+        },
+      ]);
+      expect(warnings[0]).to.contain("configure() is deprecated");
+      expect(warnings[0]).to.contain(
+        "https://docs.corti.ai/assistant/deprecation-timeline",
+      );
+      expect(warnings[1]).to.contain("configureSession() is deprecated");
+      expect(warnings[1]).to.contain(
+        "https://docs.corti.ai/assistant/deprecation-timeline",
+      );
+    } finally {
+      console.warn = originalWarn;
+    }
   });
 });
