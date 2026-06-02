@@ -38,7 +38,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
+          node-version: '24.15.0'
           cache: 'npm'
 
       - name: Install dependencies
@@ -46,6 +46,7 @@ jobs:
 
       - name: Install Playwright browsers
         run: npx playwright install --with-deps
+        timeout-minutes: 5
 
       - name: Test
         run: npm run test
