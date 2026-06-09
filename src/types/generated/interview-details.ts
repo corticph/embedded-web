@@ -122,6 +122,50 @@ export type EmbeddedInterviewDetails = {
               creditsConsumed: number;
             }
           | undefined;
+        /** Reference to the template used */
+        templateRef: string;
+        /** Type of template used */
+        templateType: "schema-driven";
+        /** Not applicable for schema-driven templates */
+        customTemplateId: null;
+        state: "generated" | "pending" | "error" | "stale" | "missing_template";
+      }
+    | {
+        /** Unique document identifier */
+        id: string;
+        /** Document name */
+        name: string;
+        /** Language code for document output */
+        outputLanguage: string;
+        /** Whether document is streamed */
+        isStream: boolean;
+        /** Document sections */
+        sections: {
+          /** Unique identifier for the section */
+          key: string;
+          /** Display name of the section */
+          name: string;
+          /** Section content text */
+          text: string;
+          /** Sort order for displaying sections */
+          sort: number;
+          /** ISO 8601 timestamp when section was created */
+          createdAt: string;
+          /** ISO 8601 timestamp when section was last updated */
+          updatedAt: string;
+          /** Markdown formatted content */
+          markdown?: (string | null) | undefined;
+          /** HTML formatted content */
+          htmlText?: string | undefined;
+          /** Plain text content */
+          plainText?: string | undefined;
+        }[];
+        /** Usage information */
+        usageInfo?:
+          | {
+              creditsConsumed: number;
+            }
+          | undefined;
         /** Type of template used */
         templateType: "custom";
         /** Not applicable for custom templates */
