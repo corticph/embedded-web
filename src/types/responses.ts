@@ -30,12 +30,20 @@ export interface EmbeddedTemplate {
   id: string;
   name: string;
   description?: string;
+  templateType?: "built-in" | "custom" | "schema-driven";
   language: {
     code: string;
     name: string;
     locale?: string;
+    localName?: string;
   };
-  sections: Array<{
+  outputLanguages?: Array<{
+    code: string;
+    name: string;
+    locale?: string;
+    hasPreview: boolean;
+  }>;
+  sections?: Array<{
     id: string;
     title: string;
   }>;

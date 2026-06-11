@@ -86,6 +86,22 @@ export interface InteractionTemplateSources {
   personal?: {
     enabled: boolean;
   };
+  standard?: {
+    enabled?: boolean;
+    include?: {
+      regions?: string[];
+      families?: string[];
+    };
+  };
+  project?: {
+    enabled?: boolean;
+    include?: {
+      ids?: string[];
+    };
+    exclude?: {
+      ids?: string[];
+    };
+  };
 }
 
 export interface InteractionTemplateOptions {
@@ -97,6 +113,7 @@ export interface InteractionDocumentOptions {
   actions?: {
     sync?: boolean;
   };
+  allowedLanguages?: string[];
 }
 
 export interface SetInteractionOptionsPayload {
