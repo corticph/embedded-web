@@ -5,7 +5,7 @@ on:
     branches:
       - main
     tags:
-      - 'v*'
+      - "v*"
   pull_request:
     branches:
       - main
@@ -20,8 +20,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
-          cache: 'npm'
+          node-version: "lts/*"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -38,8 +38,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: '24.15.0'
-          cache: 'npm'
+          node-version: "24.15.0"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -60,6 +60,29 @@ jobs:
           if-no-files-found: ignore
           retention-days: 1
 
+  edge-integration:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout repo
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24.15.0"
+          cache: "npm"
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run Edge integration test
+        env:
+          EMBEDDED_WEB_TEST_BROWSERS: chromium
+          EMBEDDED_WEB_CHROMIUM_CHANNEL: msedge
+        run: |
+          npx tsc -p tsconfig.test.json
+          npx wtr .tmp/test-dist/test/corti-embedded.integration.test.js --coverage=false
+
   build:
     runs-on: ubuntu-latest
     steps:
@@ -69,8 +92,8 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
-          cache: 'npm'
+          node-version: "lts/*"
+          cache: "npm"
 
       - name: Install dependencies
         run: npm ci
@@ -79,7 +102,7 @@ jobs:
         run: npm run prerelease
 
   publish:
-    needs: [typecheck, test, build]
+    needs: [typecheck, test, edge-integration, build]
     if: github.event_name == 'push' && startsWith(github.ref, 'refs/tags/v')
     runs-on: ubuntu-latest
     permissions:
@@ -92,9 +115,9 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 'lts/*'
-          cache: 'npm'
-          registry-url: 'https://registry.npmjs.org'
+          node-version: "lts/*"
+          cache: "npm"
+          registry-url: "https://registry.npmjs.org"
 
       - name: Install dependencies
         run: npm ci
