@@ -53,40 +53,28 @@ const configureAppPayload: ConfigureApplicationPayload = {
 function waitForEmbeddedEvent(
   el: CortiEmbedded,
   eventName: string,
+  timeoutMs = 2000,
 ): Promise<CustomEvent<EmbeddedEventDetail>> {
-  return new Promise(resolve => {
+  return new Promise((resolve, reject) => {
+    let timeoutId: ReturnType<typeof setTimeout>;
+
     const listener = (event: Event) => {
       const customEvent = event as CustomEvent<EmbeddedEventDetail>;
       if (customEvent.detail?.name !== eventName) {
         return;
       }
 
+      clearTimeout(timeoutId);
       el.removeEventListener("event", listener);
       resolve(customEvent);
     };
 
-    el.addEventListener("event", listener);
-  });
-}
-
-async function waitForEmbeddedReady(el: CortiEmbedded): Promise<void> {
-  return new Promise((resolve, reject) => {
-    let timeoutId: ReturnType<typeof setTimeout>;
-
-    const intervalId = setInterval(() => {
-      if (!el.getDebugStatus().postMessageHandlerReady) {
-        return;
-      }
-
-      clearInterval(intervalId);
-      clearTimeout(timeoutId);
-      resolve();
-    }, 10);
-
     timeoutId = setTimeout(() => {
-      clearInterval(intervalId);
-      reject(new Error("Timed out waiting for the embedded integration frame"));
-    }, 2000);
+      el.removeEventListener("event", listener);
+      reject(new Error(`Timed out waiting for ${eventName}`));
+    }, timeoutMs);
+
+    el.addEventListener("event", listener);
   });
 }
 
@@ -95,7 +83,7 @@ async function mountEmbeddedIntegration(): Promise<CortiEmbedded> {
     html`<corti-embedded baseurl=${integrationBaseURL}></corti-embedded>`,
   );
 
-  await waitForEmbeddedReady(el);
+  await waitForEmbeddedEvent(el, "embedded.ready");
   return el;
 }
 

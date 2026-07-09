@@ -75,8 +75,20 @@ const embeddedIntegrationFrameHtml = `<!doctype html>
       const readyInterval = window.setInterval(postReady, 25);
 
       window.addEventListener('message', event => {
+        const request = event.data;
+        if (
+          event.source !== parent ||
+          !request ||
+          typeof request !== 'object' ||
+          request.type !== 'CORTI_EMBEDDED' ||
+          request.version !== 'v1' ||
+          typeof request.action !== 'string' ||
+          typeof request.requestId !== 'string'
+        ) {
+          return;
+        }
+
         window.clearInterval(readyInterval);
-        const request = event.data || {};
 
         postToParent({
           type: 'CORTI_EMBEDDED_EVENT',
