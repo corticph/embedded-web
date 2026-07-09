@@ -37,6 +37,21 @@ const embeddedIntegrationFrameHtml = `<!doctype html>
           locale: { interfaceLanguage: 'en' },
           network: { websocketBaseUrl: null }
         },
+        configure: {
+          debug: false,
+          appearance: { primaryColor: null },
+          features: {
+            interactionTitle: true,
+            aiChat: false,
+            documentFeedback: true,
+            navigation: true,
+            virtualMode: false,
+            syncDocumentAction: true,
+            templateEditor: false
+          },
+          locale: { interfaceLanguage: 'en' },
+          network: { websocketBaseUrl: null }
+        },
         getStatus: {
           auth: {
             isAuthenticated: true,

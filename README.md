@@ -56,6 +56,7 @@ npx tsc -p tsconfig.test.json && EMBEDDED_WEB_TEST_BROWSERS=chromium EMBEDDED_WE
 The integration test runs in Playwright Chromium by default and can be expanded to Firefox, WebKit, or an installed Edge channel. It validates the public web component API against a real iframe `postMessage` boundary and uses the local test runner setup, so it does not require access to the live embedded Assistant service.
 
 Pull requests also run the integration test against Microsoft Edge on a Windows GitHub Actions runner.
+The workflow uploads generated reports as the `browser-test-report` and `edge-integration-report` artifacts.
 
 ## Usage
 
