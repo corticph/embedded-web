@@ -38,25 +38,24 @@ npm run test:watch
 Run only the embedded component communication integration test:
 
 ```bash
-npx tsc -p tsconfig.test.json && npx wtr .tmp/test-dist/test/corti-embedded.integration.test.js --coverage=false
+npx tsc -p tsconfig.test.json && npx wtr .tmp/test-dist/test/corti-embedded.integration.test.js
 ```
 
 Run the integration test across Chromium, Firefox, and WebKit:
 
 ```bash
-npx tsc -p tsconfig.test.json && EMBEDDED_WEB_TEST_BROWSERS=chromium,firefox,webkit npx wtr .tmp/test-dist/test/corti-embedded.integration.test.js --coverage=false
+npx tsc -p tsconfig.test.json && EMBEDDED_WEB_TEST_BROWSERS=chromium,firefox,webkit npx wtr .tmp/test-dist/test/corti-embedded.integration.test.js
 ```
 
 Run the integration test against an installed Microsoft Edge channel:
 
 ```bash
-npx tsc -p tsconfig.test.json && EMBEDDED_WEB_TEST_BROWSERS=chromium EMBEDDED_WEB_CHROMIUM_CHANNEL=msedge npx wtr .tmp/test-dist/test/corti-embedded.integration.test.js --coverage=false
+npx tsc -p tsconfig.test.json && EMBEDDED_WEB_TEST_BROWSERS=chromium EMBEDDED_WEB_CHROMIUM_CHANNEL=msedge npx wtr .tmp/test-dist/test/corti-embedded.integration.test.js
 ```
 
 The integration test runs in Playwright Chromium by default and can be expanded to Firefox, WebKit, or an installed Edge channel. It validates the public web component API against a real iframe `postMessage` boundary and uses the local test runner setup, so it does not require access to the live embedded Assistant service.
 
 Pull requests also run the integration test against Microsoft Edge on a Windows GitHub Actions runner.
-The workflow uploads generated reports as the `browser-test-report` and `edge-integration-report` artifacts.
 
 ## Usage
 

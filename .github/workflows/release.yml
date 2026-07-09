@@ -49,16 +49,10 @@ jobs:
         timeout-minutes: 5
 
       - name: Test
-        run: npm run test
-
-      - name: Upload browser test report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: browser-test-report
-          path: coverage
-          if-no-files-found: warn
-          retention-days: 7
+        run: |
+          npx tsc -p tsconfig.test.json
+          npm run build:test-react-bundle
+          npx wtr
 
   edge-integration:
     runs-on: windows-latest
@@ -81,16 +75,7 @@ jobs:
           EMBEDDED_WEB_CHROMIUM_CHANNEL: msedge
         run: |
           npx tsc -p tsconfig.test.json
-          npx wtr .tmp/test-dist/test/corti-embedded.integration.test.js --coverage
-
-      - name: Upload Edge integration report
-        if: always()
-        uses: actions/upload-artifact@v4
-        with:
-          name: edge-integration-report
-          path: coverage
-          if-no-files-found: warn
-          retention-days: 7
+          npx wtr .tmp/test-dist/test/corti-embedded.integration.test.js
 
   build:
     runs-on: ubuntu-latest
