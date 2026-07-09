@@ -81,7 +81,7 @@ jobs:
           EMBEDDED_WEB_CHROMIUM_CHANNEL: msedge
         run: |
           npx tsc -p tsconfig.test.json
-          npx wtr .tmp/test-dist/test/corti-embedded.integration.test.js
+          npx wtr .tmp/test-dist/test/corti-embedded.integration.test.js --coverage
 
       - name: Upload Edge integration report
         if: always()
