@@ -22,6 +22,8 @@ export interface KeycloakTokenResponse {
   };
 }
 
+export type DeviceLinkTokenResponse = KeycloakTokenResponse & { refresh_token: string };
+
 // Fact structure
 export interface Fact {
   text: Corti.FactsCreateInput["text"];
@@ -64,27 +66,74 @@ export interface ConfigureSessionPayload {
 }
 
 export interface InteractionModeOptions {
-  fallback: DefaultMode;
+  fallback?: DefaultMode;
   options: DefaultMode[];
 }
 
 export interface SpokenLanguageOptions {
-  fallback: string;
+  fallback?: string;
+  options?: string[];
+}
+
+export interface InlineTemplateLabel {
+  key: string;
+  value: string;
+}
+
+export interface InlineTemplateSectionInstructions {
+  contentPrompt: string;
+  writingStylePrompt?: string;
+  miscPrompt?: string;
+}
+
+export interface InlineTemplateSection {
+  heading: string;
+  labels?: InlineTemplateLabel[];
+  instructions: InlineTemplateSectionInstructions;
+  outputSchema?: Record<string, unknown>;
+}
+
+export interface InlineTemplate {
+  id?: string;
+  name: string;
+  labels?: InlineTemplateLabel[];
+  generation: {
+    instructions: {
+      prompt: string;
+    };
+    sections: InlineTemplateSection[];
+  };
 }
 
 export interface InteractionTemplateReference {
-  source: "standard";
+  source: "standard" | "project";
   id: string;
 }
 
 export interface DefaultInteractionTemplateOptions {
-  behaviour: "fallback";
-  template: InteractionTemplateReference;
+  behaviour?: "fallback";
+  template?: InteractionTemplateReference;
+  allowUserSelection?: boolean;
+}
+
+export interface PersonalTemplateSectionFieldConfig {
+  visible?: boolean;
+  editable?: boolean;
+}
+
+export interface PersonalTemplateSectionFields {
+  heading?: { editable?: boolean };
+  description?: { editable?: boolean };
+  contentPrompt?: PersonalTemplateSectionFieldConfig;
+  writingStylePrompt?: PersonalTemplateSectionFieldConfig;
+  miscPrompt?: PersonalTemplateSectionFieldConfig;
+  outputSchema?: PersonalTemplateSectionFieldConfig;
 }
 
 export interface InteractionTemplateSources {
   personal?: {
-    enabled: boolean;
+    enabled?: boolean;
+    sectionFields?: PersonalTemplateSectionFields;
   };
   standard?: {
     enabled?: boolean;
@@ -114,6 +163,7 @@ export interface InteractionDocumentOptions {
     sync?: boolean;
   };
   allowedLanguages?: string[];
+  maxGenerated?: number | "unlimited";
 }
 
 export interface SetInteractionOptionsPayload {

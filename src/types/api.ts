@@ -13,6 +13,7 @@ import type {
   AddFactsPayload,
   ConfigureSessionPayload,
   CreateInteractionPayload,
+  DeviceLinkTokenResponse,
   Fact,
   KeycloakTokenResponse,
   NavigatePayload,
@@ -27,11 +28,12 @@ import type {
   CreateInteractionResponse,
   GetStatusResponse,
   GetTemplatesResponse,
+  ShowDeviceLinkQRResponse,
 } from "./responses.js";
 
 export type { ConfigureAppPayload, ConfigurePayload } from "./config.js";
 // Re-export common types for public API
-export type { UserInfo } from "./responses.js";
+export type { ShowDeviceLinkQRResponse, UserInfo } from "./responses.js";
 
 /**
  * User information returned from authentication
@@ -91,6 +93,7 @@ export interface CortiEmbeddedV1API {
   setCredentials(payload: SetCredentialsPayload): Promise<void>;
   getStatus(): Promise<GetStatusResponse>;
   getTemplates(): Promise<GetTemplatesResponse>;
+  showDeviceLinkQR(payload: DeviceLinkTokenResponse): Promise<ShowDeviceLinkQRResponse>;
 }
 export interface CortiEmbeddedWindowAPI {
   v1: CortiEmbeddedV1API;
@@ -212,4 +215,6 @@ export interface CortiEmbeddedAPI {
    * Hide the embedded UI
    */
   hide(): void;
+
+  showDeviceLinkQR(payload: DeviceLinkTokenResponse): Promise<ShowDeviceLinkQRResponse>;
 }

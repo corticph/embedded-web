@@ -19,7 +19,8 @@ export type EmbeddedAction =
   | "getStatus"
   | "getTemplates"
   | "configure"
-  | "setCredentials";
+  | "setCredentials"
+  | "showDeviceLinkQR";
 
 export type DeprecatedEmbeddedEvent =
   | "ready"
@@ -127,6 +128,10 @@ export interface SetCredentialsRequest extends EmbeddedRequest {
   action: "setCredentials";
 }
 
+export interface ShowDeviceLinkQRRequest extends EmbeddedRequest {
+  action: "showDeviceLinkQR";
+}
+
 // Event Types
 export interface ReadyEvent extends DeprecatedEmbeddedEventMessage {
   event: "ready";
@@ -186,7 +191,8 @@ export type AnyEmbeddedRequest =
   | StopRecordingRequest
   | GetStatusRequest
   | ConfigureRequest
-  | SetCredentialsRequest;
+  | SetCredentialsRequest
+  | ShowDeviceLinkQRRequest;
 
 export type AnyEmbeddedResponse = EmbeddedResponse;
 

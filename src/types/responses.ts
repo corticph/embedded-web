@@ -2,6 +2,7 @@
 
 import type {
   AppearanceConfig,
+  CompanionAppConfig,
   ConfigureFeaturesConfig,
   LocaleConfig,
   NetworkConfig,
@@ -75,6 +76,11 @@ export interface ConfigureAppResponse {
   debug?: boolean;
   appearance: AppearanceConfig;
   ui: UIConfig;
+  companionApp: CompanionAppConfig;
   locale: LocaleConfig;
   network: NetworkConfig;
+}
+
+export interface ShowDeviceLinkQRResponse {
+  status: "approved" | "denied" | "expired" | "dismissed";
 }
