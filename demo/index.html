@@ -129,59 +129,13 @@
         "exclude": {
           "ids": ["deprecated-template"]
         }
-      },
-      "inline": {
-        "enabled": true,
-        "templates": [
-          {
-            "id": "inline-soap-demo",
-            "name": "Embedded SOAP Demo",
-            "labels": [
-              {"key": "category", "value": "primary-care"},
-              {"key": "source", "value": "embedded-web-demo"}
-            ],
-            "generation": {
-              "instructions": {
-                "prompt": "Create a concise SOAP note for the embedded host system."
-              },
-              "sections": [
-                {
-                  "heading": "Subjective",
-                  "labels": [{"key": "field-mapping", "value": "subjective"}],
-                  "instructions": {
-                    "contentPrompt": "Summarize the patient's reported symptoms.",
-                    "miscPrompt": "Do not include objective findings."
-                  },
-                  "outputSchema": {
-                    "type": "object",
-                    "fields": [
-                      {
-                        "key": "summary",
-                        "description": "Subjective symptom summary",
-                        "value": {"type": "string"}
-                      }
-                    ]
-                  }
-                },
-                {
-                  "heading": "Plan",
-                  "labels": [{"key": "field-mapping", "value": "plan"}],
-                  "instructions": {
-                    "contentPrompt": "Summarize the agreed care plan.",
-                    "writingStylePrompt": "Use concise clinical language."
-                  }
-                }
-              ]
-            }
-          }
-        ]
       }
     },
     "defaultTemplate": {
-      "behaviour": "force-first-document",
+      "behaviour": "fallback",
       "template": {
-        "source": "inline",
-        "id": "inline-soap-demo"
+        "source": "standard",
+        "id": "soap_note-en"
       },
       "allowUserSelection": true
     }

@@ -108,12 +108,12 @@ export interface InlineTemplate {
 }
 
 export interface InteractionTemplateReference {
-  source: "standard" | "project" | "inline";
+  source: "standard" | "project";
   id: string;
 }
 
 export interface DefaultInteractionTemplateOptions {
-  behaviour?: "fallback" | "force-first-document";
+  behaviour?: "fallback";
   template?: InteractionTemplateReference;
   allowUserSelection?: boolean;
 }
@@ -152,10 +152,6 @@ export interface InteractionTemplateSources {
     exclude?: {
       ids?: string[];
     };
-  };
-  inline?: {
-    enabled?: boolean;
-    templates?: InlineTemplate[];
   };
 }
 
