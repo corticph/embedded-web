@@ -12,6 +12,7 @@ import type {
   ConfigureSessionPayload,
   CreateInteractionPayload,
   CreateInteractionResponse,
+  DeviceLinkTokenResponse,
   NavigatePayload,
   SetInteractionOptionsPayload,
   SetCredentialsPayload,
@@ -22,6 +23,7 @@ import type {
   GetStatusResponse,
   GetTemplatesResponse,
   KeycloakTokenResponse,
+  ShowDeviceLinkQRResponse,
 } from "./public-types.js";
 import { baseStyles } from "./styles/base.js";
 import { containerStyles } from "./styles/container-styles.js";
@@ -680,6 +682,34 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       throw new Error(response.error);
     } catch (error) {
       const formattedError = formatError(error, "Failed to get templates");
+      throw new Error(JSON.stringify(formattedError));
+    }
+  }
+
+  async showDeviceLinkQR(
+    payload: DeviceLinkTokenResponse,
+  ): Promise<ShowDeviceLinkQRResponse> {
+    if (!this.postMessageHandler) {
+      throw new Error("Component not ready");
+    }
+
+    try {
+      const response = await this.postMessageHandler.postMessage({
+        type: "CORTI_EMBEDDED",
+        version: "v1",
+        action: "showDeviceLinkQR",
+        payload,
+      });
+
+      if (response.success && response.payload) {
+        return response.payload as ShowDeviceLinkQRResponse;
+      }
+      throw new Error(response.error);
+    } catch (error) {
+      const formattedError = formatError(
+        error,
+        "Failed to show device link QR",
+      );
       throw new Error(JSON.stringify(formattedError));
     }
   }

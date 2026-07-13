@@ -2,7 +2,10 @@
 
 export type APIVersion = "v1";
 
-export type MessageType = "CORTI_EMBEDDED" | "CORTI_EMBEDDED_RESPONSE" | "CORTI_EMBEDDED_EVENT";
+export type MessageType =
+  | "CORTI_EMBEDDED"
+  | "CORTI_EMBEDDED_RESPONSE"
+  | "CORTI_EMBEDDED_EVENT";
 
 export type DefaultMode = "virtual" | "in-person";
 
@@ -211,4 +214,7 @@ export type AnyDeprecatedEmbeddedEvent =
 
 export type AnyEvent = EmbeddedEventMessage | AnyDeprecatedEmbeddedEvent;
 
-export type AnyEmbeddedMessage = AnyEmbeddedRequest | AnyEmbeddedResponse | AnyEvent;
+export type AnyEmbeddedMessage =
+  | AnyEmbeddedRequest
+  | AnyEmbeddedResponse
+  | AnyEvent;

@@ -16,6 +16,130 @@ import {
   useCortiEmbeddedStatus,
 } from "../dist/index.js";
 
+const configureAppDemoPayload = {
+  debug: false,
+  appearance: {
+    primaryColor: "#0066cc",
+  },
+  ui: {
+    interactionTitle: true,
+    aiChat: true,
+    documentFeedback: true,
+    navigation: true,
+  },
+  companionApp: {
+    enabled: true,
+  },
+  locale: {
+    interfaceLanguage: "en",
+    dictationLanguage: "en",
+    overrides: {
+      "assistant.header.title": "Embedded Assistant",
+    },
+  },
+} satisfies ConfigureApplicationPayload;
+
+const interactionOptionsDemoPayload = {
+  mode: {
+    fallback: "virtual",
+    options: ["in-person", "virtual"],
+  },
+  spokenLanguage: {
+    fallback: "en",
+    options: ["en", "da"],
+  },
+  templates: {
+    sources: {
+      personal: {
+        enabled: true,
+        sectionFields: {
+          heading: { editable: true },
+          description: { editable: true },
+          contentPrompt: { visible: true, editable: true },
+          writingStylePrompt: { visible: true, editable: true },
+          miscPrompt: { visible: true, editable: true },
+          outputSchema: { visible: true, editable: false },
+        },
+      },
+      standard: {
+        enabled: true,
+        include: {
+          regions: ["en"],
+          families: ["soap"],
+        },
+      },
+      project: {
+        enabled: true,
+        exclude: {
+          ids: ["deprecated-template"],
+        },
+      },
+      inline: {
+        enabled: true,
+        templates: [
+          {
+            id: "inline-soap-demo",
+            name: "Embedded SOAP Demo",
+            labels: [
+              { key: "category", value: "primary-care" },
+              { key: "source", value: "embedded-web-demo" },
+            ],
+            generation: {
+              instructions: {
+                prompt:
+                  "Create a concise SOAP note for the embedded host system.",
+              },
+              sections: [
+                {
+                  heading: "Subjective",
+                  labels: [{ key: "field-mapping", value: "subjective" }],
+                  instructions: {
+                    contentPrompt: "Summarize the patient's reported symptoms.",
+                    miscPrompt: "Do not include objective findings.",
+                  },
+                  outputSchema: {
+                    type: "object",
+                    fields: [
+                      {
+                        key: "summary",
+                        description: "Subjective symptom summary",
+                        value: { type: "string" },
+                      },
+                    ],
+                  },
+                },
+                {
+                  heading: "Plan",
+                  labels: [{ key: "field-mapping", value: "plan" }],
+                  instructions: {
+                    contentPrompt: "Summarize the agreed care plan.",
+                    writingStylePrompt: "Use concise clinical language.",
+                  },
+                },
+              ],
+            },
+          },
+        ],
+      },
+    },
+    defaultTemplate: {
+      behaviour: "force-first-document",
+      template: {
+        source: "inline",
+        id: "inline-soap-demo",
+      },
+      allowUserSelection: true,
+    },
+  },
+  documents: {
+    actions: {
+      sync: true,
+    },
+    allowedLanguages: ["en"],
+    maxGenerated: "unlimited",
+  },
+} satisfies SetInteractionOptionsPayload;
+
 function CortiEmbeddedDemo() {
   const componentRef = useRef<CortiEmbeddedReactRef>(null);
   const api = useCortiEmbeddedApi(componentRef);
@@ -38,16 +162,7 @@ function CortiEmbeddedDemo() {
   );
 
   const [configureAppPayload, setConfigureAppPayload] = useState<string>(
-    JSON.stringify(
-      {
-        ui: {
-          aiChat: false,
-          navigation: true,
-        },
-      },
-      null,
-      2,
-    ),
+    JSON.stringify(configureAppDemoPayload, null, 2),
   );
 
   const [createInteractionPayload, setCreateInteractionPayload] =
@@ -70,30 +185,7 @@ function CortiEmbeddedDemo() {
     );
 
   const [interactionOptionsPayload, setInteractionOptionsPayload] =
-    useState<string>(
-      JSON.stringify(
-        {
-          mode: {
-            fallback: "virtual",
-            options: ["in-person", "virtual"],
-          },
-          spokenLanguage: {
-            fallback: "en",
-          },
-          templates: {
-            defaultTemplate: {
-              behaviour: "fallback",
-              template: {
-                source: "standard",
-                id: "soap_note-en",
-              },
-            },
-          },
-        },
-        null,
-        2,
-      ),
-    );
+    useState<string>(JSON.stringify(interactionOptionsDemoPayload, null, 2));
 
   const [legacyConfigurePayload, setLegacyConfigurePayload] = useState<string>(
     JSON.stringify(
@@ -336,7 +428,10 @@ function CortiEmbeddedDemo() {
   const handleNavigate = async () => {
     try {
       const payload = JSON.parse(navigatePayload) as NavigatePayload;
-      addLogEntry(`Navigating with payload: ${JSON.stringify(payload)}`, "info");
+      addLogEntry(
+        `Navigating with payload: ${JSON.stringify(payload)}`,
+        "info",
+      );
       await api.navigate(payload);
     } catch (error) {
       console.error(

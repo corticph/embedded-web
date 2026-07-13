@@ -81,7 +81,9 @@ export interface EmbeddedEventData {
 // Window API Types
 export interface CortiEmbeddedV1API {
   auth(payload: KeycloakTokenResponse): Promise<AuthResponse>;
-  createInteraction(payload: CreateInteractionPayload): Promise<CreateInteractionResponse>;
+  createInteraction(
+    payload: CreateInteractionPayload,
+  ): Promise<CreateInteractionResponse>;
   addFacts(payload: AddFactsPayload): Promise<void>;
   configureApp(payload: ConfigureAppPayload): Promise<ConfigureAppResponse>;
   configureSession(payload: ConfigureSessionPayload): Promise<void>;
@@ -93,7 +95,9 @@ export interface CortiEmbeddedV1API {
   setCredentials(payload: SetCredentialsPayload): Promise<void>;
   getStatus(): Promise<GetStatusResponse>;
   getTemplates(): Promise<GetTemplatesResponse>;
-  showDeviceLinkQR(payload: DeviceLinkTokenResponse): Promise<ShowDeviceLinkQRResponse>;
+  showDeviceLinkQR(
+    payload: DeviceLinkTokenResponse,
+  ): Promise<ShowDeviceLinkQRResponse>;
 }
 export interface CortiEmbeddedWindowAPI {
   v1: CortiEmbeddedV1API;
@@ -127,7 +131,9 @@ export interface CortiEmbeddedAPI {
    * @param encounter Encounter request data
    * @returns Promise resolving to interaction details
    */
-  createInteraction(encounter: CreateInteractionPayload): Promise<InteractionDetails>;
+  createInteraction(
+    encounter: CreateInteractionPayload,
+  ): Promise<InteractionDetails>;
 
   /**
    * Configure the current session
@@ -216,5 +222,7 @@ export interface CortiEmbeddedAPI {
    */
   hide(): void;
 
-  showDeviceLinkQR(payload: DeviceLinkTokenResponse): Promise<ShowDeviceLinkQRResponse>;
+  showDeviceLinkQR(
+    payload: DeviceLinkTokenResponse,
+  ): Promise<ShowDeviceLinkQRResponse>;
 }
