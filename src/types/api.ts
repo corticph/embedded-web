@@ -222,6 +222,11 @@ export interface CortiEmbeddedAPI {
    */
   hide(): void;
 
+  /**
+   * Show the device-link QR code in the embedded UI
+   * @param payload Device-link token response to render as a QR code
+   * @returns Promise resolving to the rendered QR code state
+   */
   showDeviceLinkQR(
     payload: DeviceLinkTokenResponse,
   ): Promise<ShowDeviceLinkQRResponse>;

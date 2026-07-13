@@ -686,6 +686,11 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
   }
 
+  /**
+   * Show the device-link QR code in the embedded UI
+   * @param payload Device-link token response to render as a QR code
+   * @returns Promise resolving to the rendered QR code state
+   */
   async showDeviceLinkQR(
     payload: DeviceLinkTokenResponse,
   ): Promise<ShowDeviceLinkQRResponse> {

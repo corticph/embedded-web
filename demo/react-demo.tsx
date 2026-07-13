@@ -381,10 +381,7 @@ function CortiEmbeddedDemo() {
   const handleNavigate = async () => {
     try {
       const payload = JSON.parse(navigatePayload) as NavigatePayload;
-      addLogEntry(
-        `Navigating with payload: ${JSON.stringify(payload)}`,
-        "info",
-      );
+      addLogEntry(`Navigating to ${payload.path}`, "info");
       await api.navigate(payload);
     } catch (error) {
       console.error(
