@@ -1,11 +1,7 @@
 import type {
-  AppearanceConfig,
   ConfigureAppPayload as GeneratedConfigureApplicationPayload,
   ConfigureFeaturesConfig,
   ConfigurePayload,
-  LocaleConfig,
-  NetworkConfig,
-  UIConfig,
 } from "./types/config.js";
 import type {
   AuthChangedEventPayload,
@@ -19,6 +15,7 @@ import type {
   AddFactsPayload,
   ConfigureSessionPayload,
   CreateInteractionPayload,
+  DeviceLinkTokenResponse,
   Fact,
   KeycloakTokenResponse,
   NavigatePayload,
@@ -33,6 +30,7 @@ import type {
   CreateInteractionResponse,
   GetStatusResponse,
   GetTemplatesResponse,
+  ShowDeviceLinkQRResponse,
 } from "./types/responses.js";
 
 export type {
@@ -55,6 +53,7 @@ export type {
   AddFactsPayload,
   ConfigureSessionPayload,
   CreateInteractionPayload,
+  DeviceLinkTokenResponse,
   Fact,
   KeycloakTokenResponse,
   NavigatePayload,
@@ -83,6 +82,7 @@ export type {
   EmbeddedTemplate,
   GetStatusResponse,
   GetTemplatesResponse,
+  ShowDeviceLinkQRResponse,
   UserInfo,
 } from "./types/responses.js";
 
@@ -103,7 +103,8 @@ export type ConfigureApplicationPayload = GeneratedConfigureApplicationPayload;
  */
 export type ConfigureAppResponse = ConfigureResponse;
 
-export type ConfigureApplicationResponse = GeneratedConfigureApplicationResponse;
+export type ConfigureApplicationResponse =
+  GeneratedConfigureApplicationResponse;
 
 /**
  * User information returned from authentication
@@ -167,6 +168,9 @@ export interface CortiEmbeddedV1API {
   setCredentials(payload: SetCredentialsPayload): Promise<void>;
   getStatus(): Promise<GetStatusResponse>;
   getTemplates(): Promise<GetTemplatesResponse>;
+  showDeviceLinkQR(
+    payload: DeviceLinkTokenResponse,
+  ): Promise<ShowDeviceLinkQRResponse>;
 }
 
 export interface CortiEmbeddedWindowAPI {
@@ -270,9 +274,9 @@ export interface CortiEmbeddedAPI {
   /**
    * Set one-shot interaction options for the embedded instance.
    *
-   * Each call replaces the full interaction-options snapshot for the embedded
-   * instance. Omitted branches reset to their defaults rather than preserving
-   * values from a previous call.
+   * Each call applies the provided interaction-options branches to the current
+   * snapshot for the embedded instance. Omitted branches preserve their existing
+   * values from previous calls.
    * @param config Interaction/session-level options
    * @returns Promise that resolves when options are applied
    */
@@ -294,4 +298,13 @@ export interface CortiEmbeddedAPI {
    * Hide the embedded UI
    */
   hide(): void;
+
+  /**
+   * Show the device-link QR code in the embedded UI
+   * @param payload Device-link token response to render as a QR code
+   * @returns Promise resolving to the rendered QR code state
+   */
+  showDeviceLinkQR(
+    payload: DeviceLinkTokenResponse,
+  ): Promise<ShowDeviceLinkQRResponse>;
 }

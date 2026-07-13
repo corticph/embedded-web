@@ -322,7 +322,7 @@ The component uses a `PostMessageHandler` utility class that:
 
 The React component (`CortiEmbeddedReact`) is available as an additional export and provides:
 
-- **Hook-based API access**: `useCortiEmbeddedApi(ref)` exposes instance-bound methods (`auth`, `navigate`, `createInteraction`, etc.)
+- **Hook-based API access**: `useCortiEmbeddedApi(ref)` exposes instance-bound methods (`auth`, `navigate`, `createInteraction`, `showDeviceLinkQR`, etc.)
 - **Generic event stream**: `onEvent` receives the wrapper's `event` `CustomEvent`, with `event.detail` shaped as `{ name, payload }`
 - **Status hook**: `useCortiEmbeddedStatus(ref)` keeps latest status/reactive state
 - **Multi-instance safety**: API methods are scoped to the ref you pass

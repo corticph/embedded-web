@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
+  type DeviceLinkTokenResponse,
   type KeycloakTokenResponse,
   type CortiEmbeddedEvent,
   type CortiEmbeddedErrorDetail,
@@ -15,6 +16,90 @@ import {
   useCortiEmbeddedApi,
   useCortiEmbeddedStatus,
 } from "../dist/index.js";
+
+const configureAppDemoPayload = {
+  debug: false,
+  appearance: {
+    primaryColor: "#0066cc",
+  },
+  ui: {
+    interactionTitle: true,
+    aiChat: true,
+    documentFeedback: true,
+    navigation: true,
+  },
+  companionApp: {
+    enabled: true,
+  },
+  locale: {
+    interfaceLanguage: "en",
+    dictationLanguage: "en",
+    overrides: {
+      "assistant.header.title": "Embedded Assistant",
+    },
+  },
+} satisfies ConfigureApplicationPayload;
+
+const interactionOptionsDemoPayload = {
+  mode: {
+    fallback: "virtual",
+    options: ["in-person", "virtual"],
+  },
+  spokenLanguage: {
+    fallback: "en",
+    options: ["en", "da"],
+  },
+  templates: {
+    sources: {
+      personal: {
+        enabled: true,
+        sectionFields: {
+          heading: { editable: true },
+          description: { editable: true },
+          contentPrompt: { visible: true, editable: true },
+          writingStylePrompt: { visible: true, editable: true },
+          miscPrompt: { visible: true, editable: true },
+          outputSchema: { visible: true, editable: false },
+        },
+      },
+      standard: {
+        enabled: true,
+        include: {
+          regions: ["en"],
+          families: ["soap"],
+        },
+      },
+      project: {
+        enabled: true,
+        exclude: {
+          ids: ["deprecated-template"],
+        },
+      },
+    },
+    defaultTemplate: {
+      behaviour: "fallback",
+      template: {
+        source: "standard",
+        id: "soap_note-en",
+      },
+      allowUserSelection: true,
+    },
+  },
+  documents: {
+    actions: {
+      sync: true,
+    },
+    allowedLanguages: ["en"],
+    maxGenerated: "unlimited",
+  },
+} satisfies SetInteractionOptionsPayload;
+
+const deviceLinkQrDemoPayload = {
+  access_token: "demo-device-link-token",
+  token_type: "Bearer",
+  expires_in: 300,
+  refresh_token: "demo-device-link-refresh-token",
+} satisfies DeviceLinkTokenResponse;
 
 function CortiEmbeddedDemo() {
   const componentRef = useRef<CortiEmbeddedReactRef>(null);
@@ -37,17 +122,12 @@ function CortiEmbeddedDemo() {
     ),
   );
 
+  const [deviceLinkQrPayload, setDeviceLinkQrPayload] = useState<string>(
+    JSON.stringify(deviceLinkQrDemoPayload, null, 2),
+  );
+
   const [configureAppPayload, setConfigureAppPayload] = useState<string>(
-    JSON.stringify(
-      {
-        ui: {
-          aiChat: false,
-          navigation: true,
-        },
-      },
-      null,
-      2,
-    ),
+    JSON.stringify(configureAppDemoPayload, null, 2),
   );
 
   const [createInteractionPayload, setCreateInteractionPayload] =
@@ -70,30 +150,7 @@ function CortiEmbeddedDemo() {
     );
 
   const [interactionOptionsPayload, setInteractionOptionsPayload] =
-    useState<string>(
-      JSON.stringify(
-        {
-          mode: {
-            fallback: "virtual",
-            options: ["in-person", "virtual"],
-          },
-          spokenLanguage: {
-            fallback: "en",
-          },
-          templates: {
-            defaultTemplate: {
-              behaviour: "fallback",
-              template: {
-                source: "standard",
-                id: "soap_note-en",
-              },
-            },
-          },
-        },
-        null,
-        2,
-      ),
-    );
+    useState<string>(JSON.stringify(interactionOptionsDemoPayload, null, 2));
 
   const [legacyConfigurePayload, setLegacyConfigurePayload] = useState<string>(
     JSON.stringify(
@@ -242,6 +299,19 @@ function CortiEmbeddedDemo() {
     }
   };
 
+  const handleShowDeviceLinkQR = async () => {
+    try {
+      const payload = JSON.parse(deviceLinkQrPayload) as DeviceLinkTokenResponse;
+      addLogEntry("Showing device-link QR", "info");
+      const response = await api.showDeviceLinkQR(payload);
+      addLogEntry(`Device-link QR finished with status: ${response.status}`, "success");
+    } catch (error) {
+      console.error(
+        `Device-link QR failed: ${error instanceof Error ? error.message : String(error)}`,
+      );
+    }
+  };
+
   const handleConfigureApp = async () => {
     try {
       const payload = JSON.parse(
@@ -336,7 +406,7 @@ function CortiEmbeddedDemo() {
   const handleNavigate = async () => {
     try {
       const payload = JSON.parse(navigatePayload) as NavigatePayload;
-      addLogEntry(`Navigating with payload: ${JSON.stringify(payload)}`, "info");
+      addLogEntry(`Navigating to ${payload.path}`, "info");
       await api.navigate(payload);
     } catch (error) {
       console.error(
@@ -481,6 +551,25 @@ function CortiEmbeddedDemo() {
                 className="postmessage-btn"
                 onClick={handleAuth}
               >
+                Send
+              </button>
+            </div>
+          </div>
+
+          <div className="method-box">
+            <div className="demo-title">Device Link QR</div>
+            <div className="section-row">
+              <details className="auth-payload-section">
+                <summary>⚙️ Settings</summary>
+                <label htmlFor="device-link-qr-payload">Payload (JSON):</label>
+                <textarea
+                  id="device-link-qr-payload"
+                  value={deviceLinkQrPayload}
+                  onChange={e => setDeviceLinkQrPayload(e.target.value)}
+                  placeholder='{"access_token": "your-token", "token_type": "Bearer", "refresh_token": "your-refresh-token"}'
+                />
+              </details>
+              <button type="button" className="postmessage-btn" onClick={handleShowDeviceLinkQR}>
                 Send
               </button>
             </div>

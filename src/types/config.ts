@@ -11,6 +11,10 @@ export interface UIConfig {
   navigation: boolean;
 }
 
+export interface CompanionAppConfig {
+  enabled: boolean;
+}
+
 export interface ConfigureFeaturesConfig {
   interactionTitle: boolean;
   aiChat: boolean;
@@ -42,6 +46,7 @@ export interface ConfigurePayload {
 export interface ConfigureAppPayload {
   debug?: boolean;
   ui?: Partial<UIConfig>;
+  companionApp?: CompanionAppConfig;
   appearance?: Partial<AppearanceConfig>;
   locale?: Partial<LocaleConfig>;
   network?: Partial<NetworkConfig>;

@@ -75,6 +75,28 @@
           </div>
 
           <div class="method-box">
+            <div class="demo-title">Device Link QR</div>
+            <div class="section-row">
+              <details class="auth-payload-section">
+                <summary>⚙️ Settings</summary>
+                <label for="device-link-qr-payload">Payload:</label>
+                <textarea
+                  id="device-link-qr-payload"
+                  placeholder='{"access_token": "your-token", "token_type": "Bearer", "refresh_token": "your-refresh-token"}'
+                >
+                {
+                  "access_token": "demo-device-link-token",
+                  "token_type": "Bearer",
+                  "expires_in": 300,
+                  "refresh_token": "demo-device-link-refresh-token"
+                }</textarea
+                >
+              </details>
+              <button class="postmessage-btn" id="device-link-qr-btn">Send</button>
+            </div>
+          </div>
+
+          <div class="method-box">
             <div class="demo-title">Set Credentials</div>
             <div class="section-row">
               <details class="auth-payload-section">
@@ -104,6 +126,7 @@
                   placeholder='{"appearance": {"primaryColor": "#0066cc"}, "ui": {"interactionTitle": true, "aiChat": true}}'
                 >
                 {
+                  "debug": false,
                   "appearance": {
                     "primaryColor": "#0066cc"
                   },
@@ -113,8 +136,15 @@
                     "documentFeedback": true,
                     "navigation": true
                   },
+                  "companionApp": {
+                    "enabled": true
+                  },
                   "locale": {
-                    "interfaceLanguage": "en"
+                    "interfaceLanguage": "en",
+                    "dictationLanguage": "en",
+                    "overrides": {
+                      "assistant.header.title": "Embedded Assistant"
+                    }
                   }
                 }</textarea
                 >
@@ -158,16 +188,51 @@
                     "options": ["in-person", "virtual"]
                   },
                   "spokenLanguage": {
-                    "fallback": "en"
+                    "fallback": "en",
+                    "options": ["en", "da"]
                   },
                   "templates": {
+                    "sources": {
+                      "personal": {
+                        "enabled": true,
+                        "sectionFields": {
+                          "heading": {"editable": true},
+                          "description": {"editable": true},
+                          "contentPrompt": {"visible": true, "editable": true},
+                          "writingStylePrompt": {"visible": true, "editable": true},
+                          "miscPrompt": {"visible": true, "editable": true},
+                          "outputSchema": {"visible": true, "editable": false}
+                        }
+                      },
+                      "standard": {
+                        "enabled": true,
+                        "include": {
+                          "regions": ["en"],
+                          "families": ["soap"]
+                        }
+                      },
+                      "project": {
+                        "enabled": true,
+                        "exclude": {
+                          "ids": ["deprecated-template"]
+                        }
+                      }
+                    },
                     "defaultTemplate": {
                       "behaviour": "fallback",
                       "template": {
                         "source": "standard",
                         "id": "soap_note-en"
-                      }
+                      },
+                      "allowUserSelection": true
                     }
+                  },
+                  "documents": {
+                    "actions": {
+                      "sync": true
+                    },
+                    "allowedLanguages": ["en"],
+                    "maxGenerated": "unlimited"
                   }
                 }</textarea
                 >

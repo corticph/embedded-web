@@ -2,7 +2,10 @@
 
 export type APIVersion = "v1";
 
-export type MessageType = "CORTI_EMBEDDED" | "CORTI_EMBEDDED_RESPONSE" | "CORTI_EMBEDDED_EVENT";
+export type MessageType =
+  | "CORTI_EMBEDDED"
+  | "CORTI_EMBEDDED_RESPONSE"
+  | "CORTI_EMBEDDED_EVENT";
 
 export type DefaultMode = "virtual" | "in-person";
 
@@ -19,7 +22,8 @@ export type EmbeddedAction =
   | "getStatus"
   | "getTemplates"
   | "configure"
-  | "setCredentials";
+  | "setCredentials"
+  | "showDeviceLinkQR";
 
 export type DeprecatedEmbeddedEvent =
   | "ready"
@@ -127,6 +131,10 @@ export interface SetCredentialsRequest extends EmbeddedRequest {
   action: "setCredentials";
 }
 
+export interface ShowDeviceLinkQRRequest extends EmbeddedRequest {
+  action: "showDeviceLinkQR";
+}
+
 // Event Types
 export interface ReadyEvent extends DeprecatedEmbeddedEventMessage {
   event: "ready";
@@ -186,7 +194,8 @@ export type AnyEmbeddedRequest =
   | StopRecordingRequest
   | GetStatusRequest
   | ConfigureRequest
-  | SetCredentialsRequest;
+  | SetCredentialsRequest
+  | ShowDeviceLinkQRRequest;
 
 export type AnyEmbeddedResponse = EmbeddedResponse;
 
@@ -205,4 +214,7 @@ export type AnyDeprecatedEmbeddedEvent =
 
 export type AnyEvent = EmbeddedEventMessage | AnyDeprecatedEmbeddedEvent;
 
-export type AnyEmbeddedMessage = AnyEmbeddedRequest | AnyEmbeddedResponse | AnyEvent;
+export type AnyEmbeddedMessage =
+  | AnyEmbeddedRequest
+  | AnyEmbeddedResponse
+  | AnyEvent;
