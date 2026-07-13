@@ -274,9 +274,9 @@ export interface CortiEmbeddedAPI {
   /**
    * Set one-shot interaction options for the embedded instance.
    *
-   * Each call replaces the full interaction-options snapshot for the embedded
-   * instance. Omitted branches reset to their defaults rather than preserving
-   * values from a previous call.
+   * Each call applies the provided interaction-options branches to the current
+   * snapshot for the embedded instance. Omitted branches preserve their existing
+   * values from previous calls.
    * @param config Interaction/session-level options
    * @returns Promise that resolves when options are applied
    */

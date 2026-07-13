@@ -308,7 +308,6 @@ function CortiEmbeddedDemo() {
     } catch (error) {
       console.error(
         `Device-link QR failed: ${error instanceof Error ? error.message : String(error)}`,
-        "error",
       );
     }
   };
