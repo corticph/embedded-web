@@ -1,6 +1,7 @@
 import type {
   ConfigureApplicationPayload,
   ConfigurePayload,
+  DeviceLinkTokenResponse,
   Fact,
   InteractionDetails,
   CreateInteractionPayload,
@@ -111,6 +112,40 @@ export const testAuthentication = async (): Promise<void> => {
     }
   } else {
     addLogEntry("Component not ready for authentication", "error");
+  }
+};
+
+export const showDeviceLinkQR = async (): Promise<void> => {
+  if (component?.showDeviceLinkQR) {
+    try {
+      const payloadElement = document.getElementById(
+        "device-link-qr-payload",
+      ) as HTMLTextAreaElement;
+      const payloadText = payloadElement.value;
+      let payload: DeviceLinkTokenResponse;
+
+      try {
+        payload = JSON.parse(payloadText) as DeviceLinkTokenResponse;
+      } catch (jsonError) {
+        const errorMessage =
+          jsonError instanceof Error ? jsonError.message : "Unknown JSON error";
+        addLogEntry(`Invalid JSON in payload: ${errorMessage}`, "error");
+        return;
+      }
+
+      addLogEntry("Showing device-link QR", "info");
+      const response = await component.showDeviceLinkQR(payload);
+      addLogEntry(
+        `Device-link QR finished with status: ${response.status}`,
+        "success",
+      );
+    } catch (error) {
+      const errorMessage =
+        error instanceof Error ? error.message : "Unknown error";
+      console.error(`Device-link QR failed: ${errorMessage}`);
+    }
+  } else {
+    addLogEntry("Component not ready for showDeviceLinkQR", "error");
   }
 };
 
@@ -482,6 +517,7 @@ declare global {
     showCorti: typeof showCorti;
     hideCorti: typeof hideCorti;
     testAuthentication: typeof testAuthentication;
+    showDeviceLinkQR: typeof showDeviceLinkQR;
     setInteractionOptions: typeof setInteractionOptions;
     addFacts: typeof addFacts;
     navigate: typeof navigate;
@@ -504,6 +540,7 @@ Object.assign(window, {
   showCorti,
   hideCorti,
   testAuthentication,
+  showDeviceLinkQR,
   setInteractionOptions,
   addFacts,
   navigate,
@@ -551,6 +588,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("auth-btn")
     ?.addEventListener("click", testAuthentication);
+  document
+    .getElementById("device-link-qr-btn")
+    ?.addEventListener("click", showDeviceLinkQR);
   document.getElementById("clear-log-btn")?.addEventListener("click", clearLog);
   document
     .getElementById("create-interaction-btn")

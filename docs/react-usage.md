@@ -106,6 +106,11 @@ function ApiExample() {
     await api.stopRecording();
     const status = await api.getStatus();
     await api.configureApp({ ui: { aiChat: false } });
+    await api.showDeviceLinkQR({
+      access_token: "...",
+      token_type: "Bearer",
+      refresh_token: "...",
+    });
     await api.setCredentials({ password: "..." });
     api.show();
     api.hide();

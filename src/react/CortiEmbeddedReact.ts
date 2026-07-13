@@ -239,6 +239,9 @@ export interface UseCortiEmbeddedApiResult {
   setCredentials: (
     ...args: Parameters<CortiEmbeddedReactRef["setCredentials"]>
   ) => ReturnType<CortiEmbeddedReactRef["setCredentials"]>;
+  showDeviceLinkQR: (
+    ...args: Parameters<CortiEmbeddedReactRef["showDeviceLinkQR"]>
+  ) => ReturnType<CortiEmbeddedReactRef["showDeviceLinkQR"]>;
   show: (
     ...args: Parameters<CortiEmbeddedReactRef["show"]>
   ) => ReturnType<CortiEmbeddedReactRef["show"]>;
@@ -283,6 +286,7 @@ export function useCortiEmbeddedApi(
         getInstance().setInteractionOptions(...args),
       getTemplates: (...args) => getInstance().getTemplates(...args),
       setCredentials: (...args) => getInstance().setCredentials(...args),
+      showDeviceLinkQR: (...args) => getInstance().showDeviceLinkQR(...args),
       show: (...args) => getInstance().show(...args),
       hide: (...args) => getInstance().hide(...args),
     }),

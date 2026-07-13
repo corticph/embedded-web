@@ -1,6 +1,7 @@
 import { useCallback, useRef, useState } from "react";
 import { createRoot } from "react-dom/client";
 import {
+  type DeviceLinkTokenResponse,
   type KeycloakTokenResponse,
   type CortiEmbeddedEvent,
   type CortiEmbeddedErrorDetail,
@@ -93,6 +94,13 @@ const interactionOptionsDemoPayload = {
   },
 } satisfies SetInteractionOptionsPayload;
 
+const deviceLinkQrDemoPayload = {
+  access_token: "demo-device-link-token",
+  token_type: "Bearer",
+  expires_in: 300,
+  refresh_token: "demo-device-link-refresh-token",
+} satisfies DeviceLinkTokenResponse;
+
 function CortiEmbeddedDemo() {
   const componentRef = useRef<CortiEmbeddedReactRef>(null);
   const api = useCortiEmbeddedApi(componentRef);
@@ -112,6 +120,10 @@ function CortiEmbeddedDemo() {
       null,
       2,
     ),
+  );
+
+  const [deviceLinkQrPayload, setDeviceLinkQrPayload] = useState<string>(
+    JSON.stringify(deviceLinkQrDemoPayload, null, 2),
   );
 
   const [configureAppPayload, setConfigureAppPayload] = useState<string>(
@@ -282,6 +294,20 @@ function CortiEmbeddedDemo() {
     } catch (error) {
       console.error(
         `Authentication failed: ${error instanceof Error ? error.message : String(error)}`,
+        "error",
+      );
+    }
+  };
+
+  const handleShowDeviceLinkQR = async () => {
+    try {
+      const payload = JSON.parse(deviceLinkQrPayload) as DeviceLinkTokenResponse;
+      addLogEntry("Showing device-link QR", "info");
+      const response = await api.showDeviceLinkQR(payload);
+      addLogEntry(`Device-link QR finished with status: ${response.status}`, "success");
+    } catch (error) {
+      console.error(
+        `Device-link QR failed: ${error instanceof Error ? error.message : String(error)}`,
         "error",
       );
     }
@@ -526,6 +552,25 @@ function CortiEmbeddedDemo() {
                 className="postmessage-btn"
                 onClick={handleAuth}
               >
+                Send
+              </button>
+            </div>
+          </div>
+
+          <div className="method-box">
+            <div className="demo-title">Device Link QR</div>
+            <div className="section-row">
+              <details className="auth-payload-section">
+                <summary>⚙️ Settings</summary>
+                <label htmlFor="device-link-qr-payload">Payload (JSON):</label>
+                <textarea
+                  id="device-link-qr-payload"
+                  value={deviceLinkQrPayload}
+                  onChange={e => setDeviceLinkQrPayload(e.target.value)}
+                  placeholder='{"access_token": "your-token", "token_type": "Bearer", "refresh_token": "your-refresh-token"}'
+                />
+              </details>
+              <button type="button" className="postmessage-btn" onClick={handleShowDeviceLinkQR}>
                 Send
               </button>
             </div>

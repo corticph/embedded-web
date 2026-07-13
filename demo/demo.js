@@ -51,6 +51,37 @@ window.testAuthentication = async () => {
   }
 };
 
+window.showDeviceLinkQR = async () => {
+  if (component?.showDeviceLinkQR) {
+    try {
+      const payloadText = document.getElementById(
+        "device-link-qr-payload",
+      ).value;
+      let payload;
+      try {
+        payload = JSON.parse(payloadText);
+      } catch (jsonError) {
+        window.addLogEntry(
+          `Invalid JSON in payload: ${jsonError.message}`,
+          "error",
+        );
+        return;
+      }
+
+      window.addLogEntry("Showing device-link QR", "info");
+      const response = await component.showDeviceLinkQR(payload);
+      window.addLogEntry(
+        `Device-link QR finished with status: ${response.status}`,
+        "success",
+      );
+    } catch (error) {
+      window.addLogEntry(`Device-link QR failed: ${error.message}`, "error");
+    }
+  } else {
+    window.addLogEntry("Component not ready for showDeviceLinkQR", "error");
+  }
+};
+
 window.configureApp = async () => {
   if (component?.configureApp) {
     try {
@@ -384,6 +415,9 @@ document.addEventListener("DOMContentLoaded", () => {
   document
     .getElementById("auth-btn")
     .addEventListener("click", window.testAuthentication);
+  document
+    .getElementById("device-link-qr-btn")
+    .addEventListener("click", window.showDeviceLinkQR);
   document
     .getElementById("clear-log-btn")
     .addEventListener("click", window.clearLog);

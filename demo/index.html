@@ -46,6 +46,28 @@
           </div>
 
           <div class="method-box">
+            <div class="demo-title">Device Link QR</div>
+            <div class="section-row">
+              <details class="auth-payload-section">
+                <summary>⚙️ Settings</summary>
+                <label for="device-link-qr-payload">Payload:</label>
+                <textarea
+                  id="device-link-qr-payload"
+                  placeholder='{"access_token": "your-token", "token_type": "Bearer", "refresh_token": "your-refresh-token"}'
+                >
+{
+  "access_token": "demo-device-link-token",
+  "token_type": "Bearer",
+  "expires_in": 300,
+  "refresh_token": "demo-device-link-refresh-token"
+}</textarea
+                >
+              </details>
+              <button class="postmessage-btn" id="device-link-qr-btn">Send</button>
+            </div>
+          </div>
+
+          <div class="method-box">
             <div class="demo-title">Configure App</div>
             <div class="section-row">
               <details class="auth-payload-section">
