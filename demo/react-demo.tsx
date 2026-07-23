@@ -56,8 +56,6 @@ const interactionOptionsDemoPayload = {
         sectionFields: {
           heading: { editable: true },
           description: { editable: true },
-          contentPrompt: { visible: true, editable: true },
-          writingStylePrompt: { visible: true, editable: true },
           miscPrompt: { visible: true, editable: true },
           outputSchema: { visible: true, editable: false },
         },
