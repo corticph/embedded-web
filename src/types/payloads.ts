@@ -125,8 +125,6 @@ export interface PersonalTemplateSectionFieldConfig {
 export interface PersonalTemplateSectionFields {
   heading?: { editable?: boolean };
   description?: { editable?: boolean };
-  contentPrompt?: PersonalTemplateSectionFieldConfig;
-  writingStylePrompt?: PersonalTemplateSectionFieldConfig;
   miscPrompt?: PersonalTemplateSectionFieldConfig;
   outputSchema?: PersonalTemplateSectionFieldConfig;
 }
