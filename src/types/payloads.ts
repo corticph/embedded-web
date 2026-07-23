@@ -22,9 +22,7 @@ export interface KeycloakTokenResponse {
   };
 }
 
-export type DeviceLinkTokenResponse = KeycloakTokenResponse & {
-  refresh_token: string;
-};
+export type DeviceLinkTokenResponse = KeycloakTokenResponse & { refresh_token: string };
 
 // Fact structure
 export interface Fact {
@@ -83,10 +81,13 @@ export interface InlineTemplateLabel {
 }
 
 export interface InlineTemplateSectionInstructions {
+  contentPrompt?: string;
+  writingStylePrompt?: string;
   miscPrompt?: string;
 }
 
 export interface InlineTemplateSection {
+  inheritFromId?: string;
   heading: string;
   labels?: InlineTemplateLabel[];
   instructions: InlineTemplateSectionInstructions;
@@ -106,12 +107,12 @@ export interface InlineTemplate {
 }
 
 export interface InteractionTemplateReference {
-  source: "standard" | "project";
+  source: "standard" | "project" | "inline";
   id: string;
 }
 
 export interface DefaultInteractionTemplateOptions {
-  behaviour?: "fallback";
+  behaviour?: "fallback" | "force-first-document";
   template?: InteractionTemplateReference;
   allowUserSelection?: boolean;
 }
@@ -148,6 +149,10 @@ export interface InteractionTemplateSources {
     exclude?: {
       ids?: string[];
     };
+  };
+  inline?: {
+    enabled?: boolean;
+    templates?: InlineTemplate[];
   };
 }
 
