@@ -63,7 +63,9 @@
 }</textarea
                 >
               </details>
-              <button class="postmessage-btn" id="device-link-qr-btn">Send</button>
+              <button class="postmessage-btn" id="device-link-qr-btn">
+                Send
+              </button>
             </div>
           </div>
 
@@ -280,7 +282,7 @@
             <div class="component-container">
               <corti-embedded
                 id="corti-component"
-                baseUrl="https://assistant.eu.corti.app"
+                baseUrl="http://localhost:5173"
                 title="true"
               ></corti-embedded>
             </div>
@@ -296,13 +298,14 @@
           <div id="log"></div>
         </div>
       </div>
+    </div>
 
     <!-- External JavaScript -->
     <script src="demo.js"></script>
 
     <!-- Component Import -->
     <script type="module">
-      import '../dist/web-bundle.js';
+      import "../dist/web-bundle.js";
     </script>
   </body>
 </html>

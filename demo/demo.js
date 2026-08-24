@@ -372,11 +372,14 @@ window.updateStatus = () => {
 
   if (component) {
     const baseURL = component.getAttribute("baseURL");
+    const debugStatus = component.getDebugStatus?.();
 
     statusElement.innerHTML = `
             <strong>Current Status:</strong><br>
             Base URL: ${baseURL}<br>
-            Component Ready: ${component.show && component.hide ? "Yes" : "No"}<br>
+            Custom element loaded: ${component.show && component.hide ? "Yes" : "No"}<br>
+            Message bridge created: ${debugStatus?.postMessageHandlerExists ? "Yes" : "No"}<br>
+            Assistant ready for postMessage: ${debugStatus?.postMessageHandlerReady ? "Yes" : "No"}<br>
         `;
   } else {
     statusElement.innerHTML = "Status: Component not found";
@@ -450,7 +453,7 @@ document.addEventListener("DOMContentLoaded", () => {
 // Initialize when component is defined
 customElements.whenDefined("corti-embedded").then(() => {
   window.updateStatus();
-  window.addLogEntry("Corti component loaded and ready", "success");
+  window.addLogEntry("Corti custom element loaded", "success");
   component.addEventListener("error", event => {
     console.log(event.detail);
   });

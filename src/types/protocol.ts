@@ -2,11 +2,15 @@
 
 export type APIVersion = "v1";
 
-export type MessageType = "CORTI_EMBEDDED" | "CORTI_EMBEDDED_RESPONSE" | "CORTI_EMBEDDED_EVENT";
+export type MessageType =
+  | "CORTI_EMBEDDED"
+  | "CORTI_EMBEDDED_RESPONSE"
+  | "CORTI_EMBEDDED_EVENT";
 
 export type DefaultMode = "virtual" | "in-person";
 
 export type EmbeddedAction =
+  | "_init"
   | "auth"
   | "createInteraction"
   | "addFacts"
@@ -78,6 +82,10 @@ export interface EmbeddedEventMessage extends BaseEventMessage {
 // Specific Request Types
 export interface AuthRequest extends EmbeddedRequest {
   action: "auth";
+}
+
+export interface InitRequest extends EmbeddedRequest {
+  action: "_init";
 }
 
 export interface CreateInteractionRequest extends EmbeddedRequest {
@@ -179,6 +187,7 @@ export interface UsageEvent extends DeprecatedEmbeddedEventMessage {
 
 // Request/Response/Event type unions
 export type AnyEmbeddedRequest =
+  | InitRequest
   | AuthRequest
   | CreateInteractionRequest
   | AddFactsRequest
@@ -211,4 +220,7 @@ export type AnyDeprecatedEmbeddedEvent =
 
 export type AnyEvent = EmbeddedEventMessage | AnyDeprecatedEmbeddedEvent;
 
-export type AnyEmbeddedMessage = AnyEmbeddedRequest | AnyEmbeddedResponse | AnyEvent;
+export type AnyEmbeddedMessage =
+  | AnyEmbeddedRequest
+  | AnyEmbeddedResponse
+  | AnyEvent;

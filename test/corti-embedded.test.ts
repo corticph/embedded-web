@@ -2,6 +2,10 @@
 import { expect, fixture } from "@open-wc/testing";
 import { html } from "lit";
 import { CortiEmbedded } from "../src/CortiEmbedded.js";
+import {
+  EMBEDDED_WEB_PACKAGE_NAME,
+  EMBEDDED_WEB_PACKAGE_VERSION,
+} from "../src/packageMetadata.js";
 import "../src/corti-embedded.js";
 import type {
   ConfigureApplicationPayload,
@@ -46,6 +50,16 @@ describe("CortiEmbedded", () => {
     expect(allowAttr).to.include(`microphone ${validBaseURL}`);
     expect(allowAttr).to.include(`camera ${validBaseURL}`);
     expect(allowAttr).to.include(`clipboard-write ${validBaseURL}`);
+  });
+
+  it("allows localhost http baseURL for local development", async () => {
+    const localBaseURL = "http://localhost:5173";
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${localBaseURL}></corti-embedded>`,
+    );
+    const iframe = el.shadowRoot!.querySelector("iframe") as HTMLIFrameElement;
+    expect(iframe).to.exist;
+    expect(iframe.getAttribute("src")).to.equal(`${localBaseURL}/embedded`);
   });
 
   it("is hidden by default and toggles visibility with show/hide", async () => {
@@ -268,6 +282,54 @@ describe("CortiEmbedded", () => {
     iframe.setAttribute("src", `${validBaseURL}/embedded?x=1&y=2`);
     iframe.dispatchEvent(new Event("load"));
     expect((el as any).postMessageHandler).to.exist;
+  });
+
+  it("sends internal wrapper metadata before forwarding embedded.ready", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    const iframe = el.shadowRoot!.querySelector("iframe") as HTMLIFrameElement;
+    ensureContentWindow(iframe);
+    iframe.setAttribute("src", `${validBaseURL}/embedded`);
+    iframe.dispatchEvent(new Event("load"));
+
+    const messages: unknown[] = [];
+    const fired: string[] = [];
+    (el as any).postMessageHandler.postMessage = async (message: unknown) => {
+      messages.push(message);
+      expect(fired).to.deep.equal([]);
+      return { type: "CORTI_EMBEDDED_RESPONSE", success: true };
+    };
+    el.addEventListener("embedded.ready", () => {
+      fired.push("embedded.ready");
+    });
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          type: "CORTI_EMBEDDED_EVENT",
+          event: "embedded.ready",
+          payload: { version: "v1" },
+        },
+        origin: validBaseURL,
+        source: iframe.contentWindow as any,
+      }),
+    );
+    await Promise.resolve();
+    await Promise.resolve();
+
+    expect(messages).to.deep.equal([
+      {
+        type: "CORTI_EMBEDDED",
+        version: "v1",
+        action: "_init",
+        payload: {
+          web_component: EMBEDDED_WEB_PACKAGE_NAME,
+          web_component_version: EMBEDDED_WEB_PACKAGE_VERSION,
+        },
+      },
+    ]);
+    expect(fired).to.deep.equal(["embedded.ready"]);
   });
 
   it("dispatches raw event and event payload via dispatchEmbeddedEvent", async () => {

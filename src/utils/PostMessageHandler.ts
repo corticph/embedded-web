@@ -2,6 +2,7 @@ import type { AnyEvent, EmbeddedRequest, EmbeddedResponse } from "../types";
 
 export interface PostMessageHandlerCallbacks {
   onEvent?: (event: { name: string; payload: unknown }) => void;
+  onReady?: () => Promise<void> | void;
   onError?: (error: {
     message: string;
     code?: string;
@@ -91,7 +92,15 @@ export class PostMessageHandler {
 
       // Check for Corti embedded events
       if (isEmbeddedEventMessage(data)) {
-        this.handleEvent(data);
+        this.handleEvent(data).catch(error => {
+          this.callbacks.onError?.({
+            message:
+              error instanceof Error
+                ? error.message
+                : "Embedded event handling failed",
+            details: error,
+          });
+        });
         return;
       }
 
@@ -107,7 +116,7 @@ export class PostMessageHandler {
     window.addEventListener("message", this.messageListener);
   }
 
-  private handleEvent(eventData: AnyEvent): void {
+  private async handleEvent(eventData: AnyEvent): Promise<void> {
     const eventType = eventData.event;
     const { payload } = eventData;
 
@@ -127,6 +136,19 @@ export class PostMessageHandler {
             message: `Protocol version mismatch: host supports '${PostMessageHandler.SUPPORTED_PROTOCOL_VERSION}', iframe reported '${version}'. Some features may not work correctly.`,
           });
         }
+      }
+
+      try {
+        await this.callbacks.onReady?.();
+      } catch (error) {
+        this.callbacks.onError?.({
+          message:
+            error instanceof Error
+              ? error.message
+              : "Embedded initialization failed",
+          details: error,
+        });
+        return;
       }
     }
 
