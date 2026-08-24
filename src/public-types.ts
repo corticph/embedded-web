@@ -22,7 +22,15 @@ import type {
   SetCredentialsPayload,
   SetInteractionOptionsPayload,
 } from "./types/payloads.js";
-import type { DefaultMode } from "./types/protocol.js";
+import type {
+  AnyEmbeddedRequest as ProtocolAnyEmbeddedRequest,
+  AnyEmbeddedResponse,
+  AnyEvent,
+  DefaultMode,
+  EmbeddedAction as ProtocolEmbeddedAction,
+  EmbeddedRequest as ProtocolEmbeddedRequest,
+  InitRequest,
+} from "./types/protocol.js";
 import type {
   AuthResponse,
   ConfigureAppResponse as GeneratedConfigureApplicationResponse,
@@ -62,16 +70,12 @@ export type {
 } from "./types/payloads.js";
 export type {
   AnyDeprecatedEmbeddedEvent,
-  AnyEmbeddedMessage,
-  AnyEmbeddedRequest,
   AnyEmbeddedResponse,
   AnyEvent,
   APIVersion,
   BaseMessage,
   DeprecatedEmbeddedEvent,
-  EmbeddedAction,
   EmbeddedEventMessage,
-  EmbeddedRequest,
   EmbeddedResponse,
   MessageType,
 } from "./types/protocol.js";
@@ -105,6 +109,23 @@ export type ConfigureAppResponse = ConfigureResponse;
 
 export type ConfigureApplicationResponse =
   GeneratedConfigureApplicationResponse;
+
+export type EmbeddedAction = Exclude<ProtocolEmbeddedAction, "_init">;
+
+export interface EmbeddedRequest
+  extends Omit<ProtocolEmbeddedRequest, "action"> {
+  action: EmbeddedAction;
+}
+
+export type AnyEmbeddedRequest = Exclude<
+  ProtocolAnyEmbeddedRequest,
+  InitRequest
+>;
+
+export type AnyEmbeddedMessage =
+  | AnyEmbeddedRequest
+  | AnyEmbeddedResponse
+  | AnyEvent;
 
 /**
  * User information returned from authentication
