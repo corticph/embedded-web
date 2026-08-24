@@ -5,16 +5,9 @@ export function validateAndNormalizeBaseURL(url: string): string {
   } catch {
     throw new Error("Invalid baseURL: not a parseable URL");
   }
-  const isLocalhost = ["localhost", "127.0.0.1", "[::1]"].includes(
-    parsed.hostname.toLowerCase(),
-  );
-  if (
-    parsed.protocol !== "https:" &&
-    !(isLocalhost && parsed.protocol === "http:")
-  ) {
-    throw new Error(
-      "Invalid baseURL: must use https unless using localhost for development",
-    );
+  const isLocalhost = ["localhost", "127.0.0.1", "[::1]"].includes(parsed.hostname.toLowerCase());
+  if (parsed.protocol !== "https:" && !(isLocalhost && parsed.protocol === "http:")) {
+    throw new Error("Invalid baseURL: must use https unless using localhost for development");
   }
   if (isLocalhost) {
     if (parsed.username || parsed.password) {

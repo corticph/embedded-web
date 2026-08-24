@@ -3,11 +3,7 @@ import type { AnyEvent, EmbeddedRequest, EmbeddedResponse } from "../types";
 export interface PostMessageHandlerCallbacks {
   onEvent?: (event: { name: string; payload: unknown }) => void;
   onReady?: () => Promise<void> | void;
-  onError?: (error: {
-    message: string;
-    code?: string;
-    details?: unknown;
-  }) => void;
+  onError?: (error: { message: string; code?: string; details?: unknown }) => void;
   /**
    * Default timeout in milliseconds for postMessage requests.
    * @default 10000
@@ -32,9 +28,7 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isEmbeddedEventMessage(value: unknown): value is AnyEvent {
   return (
-    isRecord(value) &&
-    value.type === "CORTI_EMBEDDED_EVENT" &&
-    typeof value.event === "string"
+    isRecord(value) && value.type === "CORTI_EMBEDDED_EVENT" && typeof value.event === "string"
   );
 }
 
@@ -65,10 +59,7 @@ export class PostMessageHandler {
 
   private callbacks: PostMessageHandlerCallbacks;
 
-  constructor(
-    iframe: HTMLIFrameElement,
-    callbacks: PostMessageHandlerCallbacks = {},
-  ) {
+  constructor(iframe: HTMLIFrameElement, callbacks: PostMessageHandlerCallbacks = {}) {
     this.iframe = iframe;
     this.callbacks = callbacks;
     this.requestTimeout = callbacks.requestTimeout ?? 10000;
@@ -92,12 +83,9 @@ export class PostMessageHandler {
 
       // Check for Corti embedded events
       if (isEmbeddedEventMessage(data)) {
-        this.handleEvent(data).catch(error => {
+        this.handleEvent(data).catch((error) => {
           this.callbacks.onError?.({
-            message:
-              error instanceof Error
-                ? error.message
-                : "Embedded event handling failed",
+            message: error instanceof Error ? error.message : "Embedded event handling failed",
             details: error,
           });
         });
@@ -105,10 +93,7 @@ export class PostMessageHandler {
       }
 
       // Check if this is a response to a pending request
-      if (
-        isEmbeddedResponseMessage(data) &&
-        this.pendingRequests.has(data.requestId)
-      ) {
+      if (isEmbeddedResponseMessage(data) && this.pendingRequests.has(data.requestId)) {
         this.handleResponse(data);
       }
     };
@@ -126,9 +111,7 @@ export class PostMessageHandler {
 
       // Store and validate the protocol version from the ready payload
       const version =
-        isRecord(payload) && typeof payload.version === "string"
-          ? payload.version
-          : undefined;
+        isRecord(payload) && typeof payload.version === "string" ? payload.version : undefined;
       if (typeof version === "string") {
         this._protocolVersion = version;
         if (version !== PostMessageHandler.SUPPORTED_PROTOCOL_VERSION) {
@@ -142,10 +125,7 @@ export class PostMessageHandler {
         await this.callbacks.onReady?.();
       } catch (error) {
         this.callbacks.onError?.({
-          message:
-            error instanceof Error
-              ? error.message
-              : "Embedded initialization failed",
+          message: error instanceof Error ? error.message : "Embedded initialization failed",
           details: error,
         });
         return;
@@ -154,24 +134,16 @@ export class PostMessageHandler {
 
     if (eventType === "error.triggered") {
       const errorPayload =
-        payload && typeof payload === "object"
-          ? (payload as Record<string, unknown>)
-          : undefined;
+        payload && typeof payload === "object" ? (payload as Record<string, unknown>) : undefined;
       const payloadMessage =
-        errorPayload && typeof errorPayload.message === "string"
-          ? errorPayload.message
-          : undefined;
+        errorPayload && typeof errorPayload.message === "string" ? errorPayload.message : undefined;
       const payloadCode =
-        errorPayload && typeof errorPayload.code === "string"
-          ? errorPayload.code
-          : undefined;
+        errorPayload && typeof errorPayload.code === "string" ? errorPayload.code : undefined;
 
       this.callbacks.onError?.({
         message:
           payloadMessage ||
-          (typeof payload === "string"
-            ? payload
-            : "Embedded event reported an error"),
+          (typeof payload === "string" ? payload : "Embedded event reported an error"),
         code: payloadCode,
         details: eventData,
       });
@@ -303,11 +275,11 @@ export class PostMessageHandler {
       }, effectiveTimeout);
 
       this.pendingRequests.set(requestId, {
-        resolve: value => {
+        resolve: (value) => {
           clearTimeout(timeoutId);
           resolve(value);
         },
-        reject: reason => {
+        reject: (reason) => {
           clearTimeout(timeoutId);
           reject(reason);
         },

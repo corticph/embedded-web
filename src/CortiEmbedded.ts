@@ -27,10 +27,7 @@ import type {
 } from "./public-types.js";
 import { baseStyles } from "./styles/base.js";
 import { containerStyles } from "./styles/container-styles.js";
-import {
-  EMBEDDED_WEB_PACKAGE_NAME,
-  EMBEDDED_WEB_PACKAGE_VERSION,
-} from "./packageMetadata.js";
+import { EMBEDDED_WEB_PACKAGE_NAME, EMBEDDED_WEB_PACKAGE_VERSION } from "./packageMetadata.js";
 import { validateAndNormalizeBaseURL } from "./utils/baseUrl.js";
 import { buildEmbeddedUrl, isRealEmbeddedLoad } from "./utils/embedUrl.js";
 import { formatError } from "./utils/errorFormatter.js";
@@ -39,14 +36,11 @@ import {
   type PostMessageHandlerCallbacks,
 } from "./utils/PostMessageHandler.js";
 
-const IFRAME_SANDBOX_POLICY =
-  "allow-forms allow-modals allow-scripts allow-same-origin";
+const IFRAME_SANDBOX_POLICY = "allow-forms allow-modals allow-scripts allow-same-origin";
 
-const DEPRECATION_TIMELINE_URL =
-  "https://docs.corti.ai/assistant/deprecation-timeline";
+const DEPRECATION_TIMELINE_URL = "https://docs.corti.ai/assistant/deprecation-timeline";
 
-const CONFIGURATION_MIGRATION_URL =
-  "https://docs.corti.ai/assistant/configuration-migration";
+const CONFIGURATION_MIGRATION_URL = "https://docs.corti.ai/assistant/configuration-migration";
 
 const DEPRECATED_EVENT_SUBSCRIPTIONS = new Set([
   "ready",
@@ -63,9 +57,7 @@ const DEPRECATED_EVENT_SUBSCRIPTIONS = new Set([
   "embedded-event",
 ]);
 
-type DOMEventListener =
-  | ((event: Event) => void)
-  | { handleEvent(event: Event): void };
+type DOMEventListener = ((event: Event) => void) | { handleEvent(event: Event): void };
 
 type DOMAddEventListenerOptions =
   | boolean
@@ -116,9 +108,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
   // eslint-disable-next-line class-methods-use-this
   private getIframeAllowPolicy(normalizedBaseURL?: string | null): string {
-    const permissionTarget = normalizedBaseURL
-      ? new URL(normalizedBaseURL).origin
-      : "*";
+    const permissionTarget = normalizedBaseURL ? new URL(normalizedBaseURL).origin : "*";
 
     return [
       `microphone ${permissionTarget}`,
@@ -181,10 +171,10 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
             },
           });
         },
-        onEvent: event => {
+        onEvent: (event) => {
           this.dispatchEmbeddedEvent(event.name, event.payload);
         },
-        onError: error => {
+        onError: (error) => {
           this.dispatchErrorEvent(error);
         },
       };
@@ -222,18 +212,11 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     });
   }
 
-  private dispatchErrorEvent(error: {
-    message: string;
-    code?: string;
-    details?: unknown;
-  }) {
+  private dispatchErrorEvent(error: { message: string; code?: string; details?: unknown }) {
     this.dispatchPublicEvent("error", error);
   }
 
-  private static warnDeprecatedAPI(
-    methodName: string,
-    replacement: string,
-  ): void {
+  private static warnDeprecatedAPI(methodName: string, replacement: string): void {
     console.warn(
       `[Corti Embedded] ${methodName} is deprecated and will be removed in a future release. Use ${replacement} instead. See ${CONFIGURATION_MIGRATION_URL} and ${DEPRECATION_TIMELINE_URL}.`,
     );
@@ -352,9 +335,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    * @param encounter Encounter request data
    * @returns Promise resolving to interaction details
    */
-  async createInteraction(
-    encounter: CreateInteractionPayload,
-  ): Promise<InteractionDetails> {
+  async createInteraction(encounter: CreateInteractionPayload): Promise<InteractionDetails> {
     if (!this.postMessageHandler) {
       throw new Error("Component not ready");
     }
@@ -392,10 +373,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
 
     try {
-      CortiEmbedded.warnDeprecatedAPI(
-        "configureSession()",
-        "setInteractionOptions()",
-      );
+      CortiEmbedded.warnDeprecatedAPI("configureSession()", "setInteractionOptions()");
       const payload: ConfigureSessionPayload = {
         defaultLanguage: config.defaultLanguage,
         defaultOutputLanguage: config.defaultOutputLanguage,
@@ -547,9 +525,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    * @param config Component configuration
    * @returns Promise that resolves when configuration is applied
    */
-  async configureApp(
-    config: ConfigureApplicationPayload,
-  ): Promise<ConfigureApplicationResponse> {
+  async configureApp(config: ConfigureApplicationPayload): Promise<ConfigureApplicationResponse> {
     if (!this.postMessageHandler) {
       throw new Error("Component not ready");
     }
@@ -596,10 +572,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       }
       throw new Error(response.error);
     } catch (error) {
-      const formattedError = formatError(
-        error,
-        "Failed to configure component",
-      );
+      const formattedError = formatError(error, "Failed to configure component");
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -609,9 +582,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    * @param config Interaction/session-level options
    * @returns Promise that resolves when options are applied
    */
-  async setInteractionOptions(
-    config: SetInteractionOptionsPayload,
-  ): Promise<void> {
+  async setInteractionOptions(config: SetInteractionOptionsPayload): Promise<void> {
     if (!this.postMessageHandler) {
       throw new Error("Component not ready");
     }
@@ -628,10 +599,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         throw new Error(response.error);
       }
     } catch (error) {
-      const formattedError = formatError(
-        error,
-        "Failed to set interaction options",
-      );
+      const formattedError = formatError(error, "Failed to set interaction options");
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -706,9 +674,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
    * @param payload Device-link token response to render as a QR code
    * @returns Promise resolving to the rendered QR code state
    */
-  async showDeviceLinkQR(
-    payload: DeviceLinkTokenResponse,
-  ): Promise<ShowDeviceLinkQRResponse> {
+  async showDeviceLinkQR(payload: DeviceLinkTokenResponse): Promise<ShowDeviceLinkQRResponse> {
     if (!this.postMessageHandler) {
       throw new Error("Component not ready");
     }
@@ -726,10 +692,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       }
       throw new Error(response.error);
     } catch (error) {
-      const formattedError = formatError(
-        error,
-        "Failed to show device link QR",
-      );
+      const formattedError = formatError(error, "Failed to show device link QR");
       throw new Error(JSON.stringify(formattedError));
     }
   }
@@ -770,9 +733,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         allow=${this.getIframeAllowPolicy(this.normalizedBaseURL)}
         @load=${(event: Event) => this.handleIframeLoad(event)}
         @unload=${() => this.postMessageHandler?.destroy()}
-        style=${this.visibility === "hidden"
-          ? "display: none;"
-          : "display: block;"}
+        style=${this.visibility === "hidden" ? "display: none;" : "display: block;"}
       ></iframe>
     `;
   }

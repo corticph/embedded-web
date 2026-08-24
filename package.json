@@ -1,26 +1,38 @@
 {
   "name": "@corti/embedded-web",
-  "description": "Web component for Corti Embedded",
-  "author": "Corti ApS",
   "version": "0.0.1",
-  "license": "MIT",
+  "description": "Web component for Corti Embedded",
+  "keywords": [
+    "corti",
+    "embedded",
+    "react",
+    "react-component",
+    "sdk",
+    "web"
+  ],
+  "homepage": "https://help.corti.app/",
   "bugs": {
     "url": "https://help.corti.app",
     "email": "help@corti.ai"
   },
+  "license": "MIT",
+  "author": "Corti ApS",
   "repository": "github:corticph/embedded-web",
-  "homepage": "https://help.corti.app/",
-  "keywords": [
-    "corti",
-    "embedded",
-    "web",
-    "sdk",
-    "react",
-    "react-component"
+  "files": [
+    "dist"
   ],
   "type": "module",
+  "sideEffects": [
+    "src/corti-embedded.ts",
+    "src/corti-embedded.js",
+    "dist/corti-embedded.js",
+    "dist/web-bundle.js",
+    "dist/bundle.js"
+  ],
   "main": "dist/web-bundle.js",
   "module": "dist/web-bundle.js",
+  "browser": "./dist/web-bundle.js",
+  "jsdelivr": "./dist/web-bundle.js",
   "exports": {
     ".": {
       "types": "./dist/web-index.d.ts",
@@ -34,18 +46,6 @@
       "default": "./dist/bundle.js"
     }
   },
-  "sideEffects": [
-    "src/corti-embedded.ts",
-    "src/corti-embedded.js",
-    "dist/corti-embedded.js",
-    "dist/web-bundle.js",
-    "dist/bundle.js"
-  ],
-  "jsdelivr": "./dist/web-bundle.js",
-  "browser": "./dist/web-bundle.js",
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "clean": "node -e \"const fs=require('fs');for(const p of ['dist','.tmp/test-dist','.tmp/tsconfig.tsbuildinfo','.tmp/tsconfig.test.tsbuildinfo'])fs.rmSync(p,{recursive:true,force:true});\"",
     "analyze": "cem analyze --litelement",
@@ -56,10 +56,10 @@
     "build:bundle": "esbuild dist/index.js --bundle --outfile=dist/bundle.js --format=esm --platform=browser --external:react --define:process.env.NODE_ENV='\"production\"'",
     "build:web-bundle": "esbuild dist/web-index.js --bundle --outfile=dist/web-bundle.js --format=esm --platform=browser --define:process.env.NODE_ENV='\"production\"'",
     "build:demo": "esbuild demo/react-demo.tsx --bundle --outfile=demo/react-demo-bundle.js --format=esm --platform=browser --jsx=automatic --loader:.tsx=tsx",
-    "prerelease": "npm run build",
+    "prerelease": "npm run build:metadata && npm run build",
     "start": "npm run build && npm run build:demo && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"esbuild demo/react-demo.tsx --bundle --outfile=demo/react-demo-bundle.js --format=esm --platform=browser --jsx=automatic --loader:.tsx=tsx --watch\" \"web-dev-server\"",
     "start:simple": "npm run build && concurrently -k -r \"tsc --watch --preserveWatchOutput\" \"web-dev-server\"",
-    "prepublish": "npm run build:metadata && tsc && npm run analyze -- --exclude dist",
+    "prepublish": "npm run build:metadata && tsc && npm run build:bundle && npm run build:web-bundle && npm run analyze -- --exclude dist",
     "lint": "eslint --ext .ts,.tsx src --ignore-path .gitignore && prettier \"src/**/*.{ts,tsx}\" --check --ignore-path .gitignore",
     "format": "eslint --ext .ts,.tsx src --fix --ignore-path .gitignore && prettier \"src/**/*.{ts,tsx}\" --write --ignore-path .gitignore",
     "test": "tsc -p tsconfig.test.json && npm run build:test-react-bundle && wtr --coverage && node scripts/print-coverage-summary.mjs",
@@ -96,22 +96,23 @@
   "peerDependencies": {
     "react": "^18.0.0 || ^19.0.0"
   },
-  "customElements": "custom-elements.json",
+  "prettier": {
+    "arrowParens": "avoid",
+    "singleQuote": false
+  },
   "eslintConfig": {
-    "parser": "@typescript-eslint/parser",
     "extends": [
       "@open-wc",
       "prettier"
     ],
+    "parser": "@typescript-eslint/parser",
     "plugins": [
       "@typescript-eslint"
     ],
     "rules": {
-      "no-unused-vars": "off",
       "@typescript-eslint/no-unused-vars": [
         "error"
       ],
-      "import/no-unresolved": "off",
       "import/extensions": [
         "error",
         "always",
@@ -131,11 +132,10 @@
             "**/*.test.ts"
           ]
         }
-      ]
+      ],
+      "import/no-unresolved": "off",
+      "no-unused-vars": "off"
     }
   },
-  "prettier": {
-    "singleQuote": false,
-    "arrowParens": "avoid"
-  }
+  "customElements": "custom-elements.json"
 }

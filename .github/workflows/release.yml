@@ -122,7 +122,7 @@ jobs:
           npm version --no-git-tag-version "$TAG_VERSION"
 
       - name: Build
-        run: npm run prerelease
+        run: npm run build:metadata && npm run prerelease
 
       - name: Publish to npm
         run: |
