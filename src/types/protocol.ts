@@ -87,8 +87,14 @@ export interface AuthRequest extends EmbeddedRequest {
   action: "auth";
 }
 
+export interface InitPayload {
+  web_component: string;
+  web_component_version: string;
+}
+
 export interface InitRequest extends EmbeddedRequest {
   action: "_init";
+  payload: InitPayload;
 }
 
 export interface CreateInteractionRequest extends EmbeddedRequest {

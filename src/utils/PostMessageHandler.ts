@@ -58,6 +58,8 @@ export class PostMessageHandler {
 
   private readyInitialization: Promise<void> | null = null;
 
+  private readyError: Error | null = null;
+
   private messageListener: ((event: MessageEvent) => void) | null = null;
 
   private iframe: HTMLIFrameElement;
@@ -189,18 +191,15 @@ export class PostMessageHandler {
     try {
       await this.callbacks.onReady?.();
     } catch (error) {
-      this.callbacks.onError?.({
-        message:
-          error instanceof Error
-            ? error.message
-            : "Embedded initialization failed",
-        details: error,
-      });
-      this.rejectReadyWaiters(
+      this.readyError =
         error instanceof Error
           ? error
-          : new Error("Embedded initialization failed"),
-      );
+          : new Error("Embedded initialization failed");
+      this.callbacks.onError?.({
+        message: this.readyError.message,
+        details: error,
+      });
+      this.rejectReadyWaiters(this.readyError);
       return;
     }
 
@@ -266,6 +265,10 @@ export class PostMessageHandler {
   async waitForReady(timeout = 30000): Promise<void> {
     if (this.isReady) {
       return Promise.resolve();
+    }
+
+    if (this.readyError) {
+      return Promise.reject(this.readyError);
     }
 
     return new Promise((resolve, reject) => {

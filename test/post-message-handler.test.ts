@@ -214,6 +214,43 @@ describe("PostMessageHandler", () => {
     iframe.remove();
   });
 
+  it("rejects later waitForReady calls after ready initialization fails", async () => {
+    const initError = new Error("Initialization failed");
+    const { handler, iframe, origin } = makeRealHandler();
+    handler.updateCallbacks({
+      onReady: async () => {
+        throw initError;
+      },
+    });
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          type: "CORTI_EMBEDDED_EVENT",
+          event: "embedded.ready",
+          payload: { version: "v1" },
+        },
+        origin,
+        source: iframe.contentWindow as any,
+      }),
+    );
+
+    await new Promise(resolve => {
+      setTimeout(resolve, 0);
+    });
+
+    let rejected: unknown;
+    await handler.waitForReady(500).catch(error => {
+      rejected = error;
+    });
+
+    expect(rejected).to.equal(initError);
+    expect(handler.ready).to.equal(false);
+
+    handler.destroy();
+    iframe.remove();
+  });
+
   it("waits for the ready callback before forwarding later events", async () => {
     const forwarded: Array<{
       name: string;
