@@ -112,8 +112,10 @@ export type ConfigureApplicationResponse =
 
 export type EmbeddedAction = Exclude<ProtocolEmbeddedAction, "_init">;
 
-export interface EmbeddedRequest
-  extends Omit<ProtocolEmbeddedRequest, "action"> {
+export interface EmbeddedRequest extends Omit<
+  ProtocolEmbeddedRequest,
+  "action"
+> {
   action: EmbeddedAction;
 }
 
