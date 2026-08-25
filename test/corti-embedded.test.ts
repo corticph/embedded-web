@@ -2,7 +2,10 @@
 import { expect, fixture } from "@open-wc/testing";
 import { html } from "lit";
 import { CortiEmbedded } from "../src/CortiEmbedded.js";
-import { EMBEDDED_WEB_PACKAGE_NAME, EMBEDDED_WEB_PACKAGE_VERSION } from "../src/packageMetadata.js";
+import {
+  EMBEDDED_WEB_PACKAGE_NAME,
+  EMBEDDED_WEB_PACKAGE_VERSION,
+} from "../src/packageMetadata.js";
 import "../src/corti-embedded.js";
 import type {
   ConfigureApplicationPayload,
@@ -59,6 +62,16 @@ describe("CortiEmbedded", () => {
     expect(iframe.getAttribute("src")).to.equal(`${localBaseURL}/embedded`);
   });
 
+  it("allows IPv6 localhost http baseURL for local development", async () => {
+    const localBaseURL = "http://[::1]:5173";
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${localBaseURL}></corti-embedded>`,
+    );
+    const iframe = el.shadowRoot!.querySelector("iframe") as HTMLIFrameElement;
+    expect(iframe).to.exist;
+    expect(iframe.getAttribute("src")).to.equal(`${localBaseURL}/embedded`);
+  });
+
   it("is hidden by default and toggles visibility with show/hide", async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
@@ -76,7 +89,7 @@ describe("CortiEmbedded", () => {
   it("dispatches an error event on invalid baseURL (connectedCallback) without throwing", async () => {
     const el = new CortiEmbedded();
     let errorEvent: CustomEvent | null = null;
-    el.addEventListener("error", (evt) => {
+    el.addEventListener("error", evt => {
       errorEvent = evt as unknown as CustomEvent;
     });
     el.baseURL = "https://example.com";
@@ -98,7 +111,7 @@ describe("CortiEmbedded", () => {
     );
     let count = 0;
     let thrown: Error | null = null;
-    el.addEventListener("error", (event) => {
+    el.addEventListener("error", event => {
       const detail = (event as unknown as CustomEvent).detail as {
         message?: string;
       };
@@ -130,7 +143,7 @@ describe("CortiEmbedded", () => {
     );
     let count = 0;
     let thrown: Error | null = null;
-    el.addEventListener("error", (event) => {
+    el.addEventListener("error", event => {
       const detail = (event as unknown as CustomEvent).detail as {
         message?: string;
       };
@@ -238,7 +251,9 @@ describe("CortiEmbedded", () => {
     expect(destroyed).to.equal(true);
     expect((el as any).postMessageHandler).to.equal(null);
     // Check new iframe src
-    expect(iframe.getAttribute("src")).to.equal("https://assistant.us.corti.app/embedded");
+    expect(iframe.getAttribute("src")).to.equal(
+      "https://assistant.us.corti.app/embedded",
+    );
     const allowAttr = iframe.getAttribute("allow")!;
     expect(allowAttr).to.include(`microphone ${el.baseURL}`);
     expect(allowAttr).to.include(`camera ${el.baseURL}`);
@@ -310,8 +325,9 @@ describe("CortiEmbedded", () => {
         source: iframe.contentWindow as any,
       }),
     );
-    await Promise.resolve();
-    await Promise.resolve();
+    await new Promise(resolve => {
+      setTimeout(resolve, 0);
+    });
 
     expect(messages).to.deep.equal([
       {
@@ -375,9 +391,15 @@ describe("CortiEmbedded", () => {
       el.addEventListener("event", () => {});
 
       expect(warnings).to.have.length(2);
-      expect(warnings[0]).to.contain("'recordingStarted' event subscription is deprecated");
-      expect(warnings[0]).to.contain("https://docs.corti.ai/assistant/deprecation-timeline");
-      expect(warnings[1]).to.contain("'embedded-event' event subscription is deprecated");
+      expect(warnings[0]).to.contain(
+        "'recordingStarted' event subscription is deprecated",
+      );
+      expect(warnings[0]).to.contain(
+        "https://docs.corti.ai/assistant/deprecation-timeline",
+      );
+      expect(warnings[1]).to.contain(
+        "'embedded-event' event subscription is deprecated",
+      );
     } finally {
       console.warn = originalWarn;
     }
@@ -593,7 +615,7 @@ describe("CortiEmbedded", () => {
     expect(iframe.getAttribute("src")).to.equal(`${validBaseURL}/embedded`);
 
     let errorEvent: CustomEvent | null = null;
-    el.addEventListener("error", (evt) => {
+    el.addEventListener("error", evt => {
       errorEvent = evt as unknown as CustomEvent;
     });
 
@@ -758,9 +780,13 @@ describe("CortiEmbedded", () => {
         },
       ]);
       expect(warnings[0]).to.contain("configure() is deprecated");
-      expect(warnings[0]).to.contain("https://docs.corti.ai/assistant/deprecation-timeline");
+      expect(warnings[0]).to.contain(
+        "https://docs.corti.ai/assistant/deprecation-timeline",
+      );
       expect(warnings[1]).to.contain("configureSession() is deprecated");
-      expect(warnings[1]).to.contain("https://docs.corti.ai/assistant/deprecation-timeline");
+      expect(warnings[1]).to.contain(
+        "https://docs.corti.ai/assistant/deprecation-timeline",
+      );
     } finally {
       console.warn = originalWarn;
     }

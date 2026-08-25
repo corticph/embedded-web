@@ -3,7 +3,11 @@ import type { AnyEvent, EmbeddedRequest, EmbeddedResponse } from "../types";
 export interface PostMessageHandlerCallbacks {
   onEvent?: (event: { name: string; payload: unknown }) => void;
   onReady?: () => Promise<void> | void;
-  onError?: (error: { message: string; code?: string; details?: unknown }) => void;
+  onError?: (error: {
+    message: string;
+    code?: string;
+    details?: unknown;
+  }) => void;
   /**
    * Default timeout in milliseconds for postMessage requests.
    * @default 10000
@@ -28,7 +32,9 @@ function isRecord(value: unknown): value is Record<string, unknown> {
 
 function isEmbeddedEventMessage(value: unknown): value is AnyEvent {
   return (
-    isRecord(value) && value.type === "CORTI_EMBEDDED_EVENT" && typeof value.event === "string"
+    isRecord(value) &&
+    value.type === "CORTI_EMBEDDED_EVENT" &&
+    typeof value.event === "string"
   );
 }
 
@@ -45,6 +51,13 @@ function isEmbeddedResponseMessage(value: unknown): value is EmbeddedResponse {
 export class PostMessageHandler {
   private pendingRequests = new Map<string, PendingRequest>();
 
+  private readyWaiters = new Set<{
+    resolve: () => void;
+    reject: (error: Error) => void;
+  }>();
+
+  private readyInitialization: Promise<void> | null = null;
+
   private messageListener: ((event: MessageEvent) => void) | null = null;
 
   private iframe: HTMLIFrameElement;
@@ -59,7 +72,10 @@ export class PostMessageHandler {
 
   private callbacks: PostMessageHandlerCallbacks;
 
-  constructor(iframe: HTMLIFrameElement, callbacks: PostMessageHandlerCallbacks = {}) {
+  constructor(
+    iframe: HTMLIFrameElement,
+    callbacks: PostMessageHandlerCallbacks = {},
+  ) {
     this.iframe = iframe;
     this.callbacks = callbacks;
     this.requestTimeout = callbacks.requestTimeout ?? 10000;
@@ -83,9 +99,12 @@ export class PostMessageHandler {
 
       // Check for Corti embedded events
       if (isEmbeddedEventMessage(data)) {
-        this.handleEvent(data).catch((error) => {
+        this.handleEvent(data).catch(error => {
           this.callbacks.onError?.({
-            message: error instanceof Error ? error.message : "Embedded event handling failed",
+            message:
+              error instanceof Error
+                ? error.message
+                : "Embedded event handling failed",
             details: error,
           });
         });
@@ -93,7 +112,10 @@ export class PostMessageHandler {
       }
 
       // Check if this is a response to a pending request
-      if (isEmbeddedResponseMessage(data) && this.pendingRequests.has(data.requestId)) {
+      if (
+        isEmbeddedResponseMessage(data) &&
+        this.pendingRequests.has(data.requestId)
+      ) {
         this.handleResponse(data);
       }
     };
@@ -107,53 +129,83 @@ export class PostMessageHandler {
 
     // Only 'embedded.ready' signals that the iframe is ready to receive messages
     if (eventType === "embedded.ready") {
-      this.isReady = true;
-
-      // Store and validate the protocol version from the ready payload
-      const version =
-        isRecord(payload) && typeof payload.version === "string" ? payload.version : undefined;
-      if (typeof version === "string") {
-        this._protocolVersion = version;
-        if (version !== PostMessageHandler.SUPPORTED_PROTOCOL_VERSION) {
-          this.callbacks.onError?.({
-            message: `Protocol version mismatch: host supports '${PostMessageHandler.SUPPORTED_PROTOCOL_VERSION}', iframe reported '${version}'. Some features may not work correctly.`,
-          });
-        }
-      }
-
-      try {
-        await this.callbacks.onReady?.();
-      } catch (error) {
-        this.callbacks.onError?.({
-          message: error instanceof Error ? error.message : "Embedded initialization failed",
-          details: error,
-        });
-        return;
-      }
+      this.readyInitialization ??= this.initializeReady(payload);
+      await this.readyInitialization;
+      if (!this.isReady) return;
     }
 
     if (eventType === "error.triggered") {
       const errorPayload =
-        payload && typeof payload === "object" ? (payload as Record<string, unknown>) : undefined;
+        payload && typeof payload === "object"
+          ? (payload as Record<string, unknown>)
+          : undefined;
       const payloadMessage =
-        errorPayload && typeof errorPayload.message === "string" ? errorPayload.message : undefined;
+        errorPayload && typeof errorPayload.message === "string"
+          ? errorPayload.message
+          : undefined;
       const payloadCode =
-        errorPayload && typeof errorPayload.code === "string" ? errorPayload.code : undefined;
+        errorPayload && typeof errorPayload.code === "string"
+          ? errorPayload.code
+          : undefined;
 
       this.callbacks.onError?.({
         message:
           payloadMessage ||
-          (typeof payload === "string" ? payload : "Embedded event reported an error"),
+          (typeof payload === "string"
+            ? payload
+            : "Embedded event reported an error"),
         code: payloadCode,
         details: eventData,
       });
       return;
     }
 
+    if (this.readyInitialization && !this.isReady) {
+      await this.readyInitialization;
+      if (!this.isReady) return;
+    }
+
     this.callbacks.onEvent?.({
       name: eventType,
       payload,
     });
+  }
+
+  private async initializeReady(payload: unknown): Promise<void> {
+    // Store and validate the protocol version from the ready payload
+    const version =
+      isRecord(payload) && typeof payload.version === "string"
+        ? payload.version
+        : undefined;
+    if (typeof version === "string") {
+      this._protocolVersion = version;
+      if (version !== PostMessageHandler.SUPPORTED_PROTOCOL_VERSION) {
+        this.callbacks.onError?.({
+          message: `Protocol version mismatch: host supports '${PostMessageHandler.SUPPORTED_PROTOCOL_VERSION}', iframe reported '${version}'. Some features may not work correctly.`,
+        });
+      }
+    }
+
+    try {
+      await this.callbacks.onReady?.();
+    } catch (error) {
+      this.callbacks.onError?.({
+        message:
+          error instanceof Error
+            ? error.message
+            : "Embedded initialization failed",
+        details: error,
+      });
+      this.rejectReadyWaiters(
+        error instanceof Error
+          ? error
+          : new Error("Embedded initialization failed"),
+      );
+      return;
+    }
+
+    this.isReady = true;
+    this.resolveReadyWaiters();
   }
 
   private handleResponse(data: EmbeddedResponse): void {
@@ -182,6 +234,7 @@ export class PostMessageHandler {
       this.messageListener = null;
     }
     this.pendingRequests.clear();
+    this.rejectReadyWaiters(new Error("PostMessageHandler destroyed"));
   }
 
   /**
@@ -216,36 +269,40 @@ export class PostMessageHandler {
     }
 
     return new Promise((resolve, reject) => {
-      let timeoutId: ReturnType<typeof setTimeout> | null = null;
-      let readyListener: (event: MessageEvent) => void = () => {};
-
-      function cleanup() {
-        if (timeoutId !== null) {
+      let timeoutId: ReturnType<typeof setTimeout>;
+      const waiter = {
+        resolve: () => {
           clearTimeout(timeoutId);
-        }
-        window.removeEventListener("message", readyListener);
-      }
-
-      // Create a one-time listener for the ready event
-      readyListener = (event: MessageEvent) => {
-        if (
-          event.source === this.iframe.contentWindow &&
-          event.origin === this.getTrustedOrigin() &&
-          event.data?.type === "CORTI_EMBEDDED_EVENT" &&
-          event.data.event === "embedded.ready"
-        ) {
-          cleanup();
+          this.readyWaiters.delete(waiter);
           resolve();
-        }
+        },
+        reject: (error: Error) => {
+          clearTimeout(timeoutId);
+          this.readyWaiters.delete(waiter);
+          reject(error);
+        },
       };
 
-      timeoutId = setTimeout(() => {
-        cleanup();
-        reject(new Error("Timeout waiting for iframe to be ready"));
-      }, timeout);
+      timeoutId = setTimeout(
+        () =>
+          waiter.reject(new Error("Timeout waiting for iframe to be ready")),
+        timeout,
+      );
 
-      window.addEventListener("message", readyListener);
+      this.readyWaiters.add(waiter);
     });
+  }
+
+  private resolveReadyWaiters(): void {
+    for (const waiter of this.readyWaiters) {
+      waiter.resolve();
+    }
+  }
+
+  private rejectReadyWaiters(error: Error): void {
+    for (const waiter of this.readyWaiters) {
+      waiter.reject(error);
+    }
   }
 
   /**
@@ -261,8 +318,10 @@ export class PostMessageHandler {
       throw new Error("Iframe not ready");
     }
 
-    // Ensure the iframe has signaled readiness before sending
-    await this.waitForReady();
+    // _init is sent by onReady before public readiness is exposed.
+    if (message.action !== "_init") {
+      await this.waitForReady();
+    }
 
     const { contentWindow } = this.iframe;
     const requestId = PostMessageHandler.generateRequestId();
@@ -275,11 +334,11 @@ export class PostMessageHandler {
       }, effectiveTimeout);
 
       this.pendingRequests.set(requestId, {
-        resolve: (value) => {
+        resolve: value => {
           clearTimeout(timeoutId);
           resolve(value);
         },
-        reject: (reason) => {
+        reject: reason => {
           clearTimeout(timeoutId);
           reject(reason);
         },
