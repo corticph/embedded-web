@@ -7,8 +7,13 @@ export function validateAndNormalizeBaseURL(url: string): string {
   }
   const hostname = parsed.hostname.toLowerCase().replace(/^\[(.*)\]$/, "$1");
   const isLocalhost = ["localhost", "127.0.0.1", "::1"].includes(hostname);
-  if (parsed.protocol !== "https:" && !(isLocalhost && parsed.protocol === "http:")) {
-    throw new Error("Invalid baseURL: must use https unless using localhost for development");
+  if (
+    parsed.protocol !== "https:" &&
+    !(isLocalhost && parsed.protocol === "http:")
+  ) {
+    throw new Error(
+      "Invalid baseURL: must use https unless using localhost for development",
+    );
   }
   if (isLocalhost) {
     if (parsed.username || parsed.password) {

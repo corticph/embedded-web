@@ -24,11 +24,11 @@ import type {
 } from "./types/payloads.js";
 import type {
   AnyEmbeddedRequest as ProtocolAnyEmbeddedRequest,
-  AnyEmbeddedResponse,
   AnyEvent,
   DefaultMode,
   EmbeddedAction as ProtocolEmbeddedAction,
   EmbeddedRequest as ProtocolEmbeddedRequest,
+  EmbeddedResponse as ProtocolEmbeddedResponse,
   InitRequest,
 } from "./types/protocol.js";
 import type {
@@ -70,13 +70,11 @@ export type {
 } from "./types/payloads.js";
 export type {
   AnyDeprecatedEmbeddedEvent,
-  AnyEmbeddedResponse,
   AnyEvent,
   APIVersion,
   BaseMessage,
   DeprecatedEmbeddedEvent,
   EmbeddedEventMessage,
-  EmbeddedResponse,
   MessageType,
 } from "./types/protocol.js";
 export type {
@@ -119,10 +117,19 @@ export interface EmbeddedRequest extends Omit<
   action: EmbeddedAction;
 }
 
+export interface EmbeddedResponse extends Omit<
+  ProtocolEmbeddedResponse,
+  "action"
+> {
+  action: EmbeddedAction;
+}
+
 export type AnyEmbeddedRequest = Exclude<
   ProtocolAnyEmbeddedRequest,
   InitRequest
 >;
+
+export type AnyEmbeddedResponse = EmbeddedResponse;
 
 export type AnyEmbeddedMessage =
   | AnyEmbeddedRequest
