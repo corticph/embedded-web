@@ -79,7 +79,7 @@ describe("PostMessageHandler", () => {
     }> = [];
     const { handler, iframe, origin } = makeRealHandler();
     handler.updateCallbacks({
-      onEvent: event => {
+      onEvent: (event) => {
         forwarded.push(event);
       },
     });
@@ -128,13 +128,13 @@ describe("PostMessageHandler", () => {
       payload: unknown;
     }> = [];
     let finishReady: (() => void) | undefined;
-    const readyCallback = new Promise<void>(resolve => {
+    const readyCallback = new Promise<void>((resolve) => {
       finishReady = resolve;
     });
     const { handler, iframe, origin } = makeRealHandler();
     handler.updateCallbacks({
       onReady: () => readyCallback,
-      onEvent: event => {
+      onEvent: (event) => {
         forwarded.push(event);
       },
     });
@@ -173,7 +173,7 @@ describe("PostMessageHandler", () => {
 
   it("waits for the ready callback before resolving waitForReady", async () => {
     let finishReady: (() => void) | undefined;
-    const readyCallback = new Promise<void>(resolve => {
+    const readyCallback = new Promise<void>((resolve) => {
       finishReady = resolve;
     });
     const { handler, iframe, origin } = makeRealHandler();
@@ -235,12 +235,12 @@ describe("PostMessageHandler", () => {
       }),
     );
 
-    await new Promise(resolve => {
+    await new Promise((resolve) => {
       setTimeout(resolve, 0);
     });
 
     let rejected: unknown;
-    await handler.waitForReady(500).catch(error => {
+    await handler.waitForReady(500).catch((error) => {
       rejected = error;
     });
 
@@ -257,13 +257,13 @@ describe("PostMessageHandler", () => {
       payload: unknown;
     }> = [];
     let finishReady: (() => void) | undefined;
-    const readyCallback = new Promise<void>(resolve => {
+    const readyCallback = new Promise<void>((resolve) => {
       finishReady = resolve;
     });
     const { handler, iframe, origin } = makeRealHandler();
     handler.updateCallbacks({
       onReady: () => readyCallback,
-      onEvent: event => {
+      onEvent: (event) => {
         forwarded.push(event);
       },
     });
@@ -299,7 +299,7 @@ describe("PostMessageHandler", () => {
     await readyCallback;
     await Promise.resolve();
 
-    expect(forwarded.map(event => event.name)).to.deep.equal([
+    expect(forwarded.map((event) => event.name)).to.deep.equal([
       "embedded.ready",
       "embedded.navigated",
     ]);
@@ -324,7 +324,7 @@ describe("PostMessageHandler", () => {
         },
         500,
       );
-      await new Promise(r => {
+      await new Promise((r) => {
         setTimeout(r, 0);
       });
       const requestId = (handler as any).pendingRequests.keys().next().value;
@@ -368,12 +368,11 @@ describe("PostMessageHandler", () => {
 
   it("routes error.triggered to onError and does not forward via onEvent", async () => {
     const forwarded: Array<{ name: string; payload: unknown }> = [];
-    const errors: Array<{ message: string; code?: string; details?: unknown }> =
-      [];
+    const errors: Array<{ message: string; code?: string; details?: unknown }> = [];
     const { handler, iframe, origin } = makeRealHandler();
     handler.updateCallbacks({
-      onEvent: event => forwarded.push(event),
-      onError: error => errors.push(error),
+      onEvent: (event) => forwarded.push(event),
+      onError: (error) => errors.push(error),
     });
 
     window.dispatchEvent(
@@ -419,7 +418,7 @@ describe("PostMessageHandler", () => {
         500,
       );
       // Allow pendingRequests to be set
-      await new Promise(r => {
+      await new Promise((r) => {
         setTimeout(r, 0);
       });
       const requestId = (handler as any).pendingRequests.keys().next().value;
@@ -446,7 +445,7 @@ describe("PostMessageHandler", () => {
         },
         500,
       );
-      await new Promise(r => {
+      await new Promise((r) => {
         setTimeout(r, 0);
       });
       const requestId = (handler as any).pendingRequests.keys().next().value;
@@ -467,12 +466,11 @@ describe("PostMessageHandler", () => {
   });
 
   it("emits onError when response indicates failure", async () => {
-    const errors: Array<{ message: string; code?: string; details?: unknown }> =
-      [];
+    const errors: Array<{ message: string; code?: string; details?: unknown }> = [];
     const { handler } = makeRealHandler();
     (handler as any).isReady = true;
     handler.updateCallbacks({
-      onError: error => errors.push(error),
+      onError: (error) => errors.push(error),
     });
 
     try {
@@ -485,7 +483,7 @@ describe("PostMessageHandler", () => {
         },
         500,
       );
-      await new Promise(r => {
+      await new Promise((r) => {
         setTimeout(r, 0);
       });
       const requestId = (handler as any).pendingRequests.keys().next().value;
@@ -548,8 +546,7 @@ describe("PostMessageHandler", () => {
 
   it("throws if iframe contentWindow not available", async () => {
     const fakeIframe: any = {
-      getAttribute: (n: string) =>
-        n === "src" ? "https://assistant.eu.corti.app/embedded" : null,
+      getAttribute: (n: string) => (n === "src" ? "https://assistant.eu.corti.app/embedded" : null),
       src: "https://assistant.eu.corti.app/embedded",
       contentWindow: null,
     };
