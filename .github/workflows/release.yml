@@ -93,7 +93,7 @@ jobs:
         run: npm ci
 
       - name: Build
-        run: npm run build:metadata && npm run prerelease
+        run: npm run prerelease
 
   publish:
     needs: [typecheck, test, edge-integration, build]
@@ -122,7 +122,7 @@ jobs:
           npm version --no-git-tag-version "$TAG_VERSION"
 
       - name: Build
-        run: npm run build:metadata && npm run prerelease
+        run: npm run prerelease
 
       - name: Publish to npm
         run: |
