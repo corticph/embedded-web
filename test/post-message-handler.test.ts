@@ -331,6 +331,73 @@ describe("PostMessageHandler", () => {
     }
   });
 
+  it("does not time out when timeout is disabled", async () => {
+    const { handler, iframe, origin } = makeRealHandler();
+    (handler as any).isReady = true;
+    const origGen = (PostMessageHandler as any).generateRequestId;
+    (PostMessageHandler as any).generateRequestId = () => "req_test";
+    try {
+      const promise = handler.postMessage(
+        {
+          type: "CORTI_EMBEDDED",
+          version: "v1",
+          action: "showDeviceLinkQR",
+          payload: {},
+        },
+        null,
+      );
+
+      await new Promise(resolve => setTimeout(resolve, 60));
+
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          data: {
+            type: "CORTI_EMBEDDED_RESPONSE",
+            action: "showDeviceLinkQR",
+            requestId: "req_test",
+            success: true,
+            payload: { status: "approved" },
+          },
+          origin,
+          source: iframe.contentWindow as any,
+        }),
+      );
+
+      const response = await promise;
+      expect(response.payload).to.deep.equal({ status: "approved" });
+    } finally {
+      (PostMessageHandler as any).generateRequestId = origGen;
+      handler.destroy();
+      iframe.remove();
+    }
+  });
+
+  it("rejects pending requests when destroyed", async () => {
+    const { handler, iframe } = makeRealHandler();
+    (handler as any).isReady = true;
+    const promise = handler.postMessage(
+      {
+        type: "CORTI_EMBEDDED",
+        version: "v1",
+        action: "showDeviceLinkQR",
+        payload: {},
+      },
+      null,
+    );
+
+    await new Promise(resolve => setTimeout(resolve, 0));
+    handler.destroy();
+
+    try {
+      await promise;
+      expect.fail("Expected pending request to reject on destroy");
+    } catch (e: any) {
+      expect(e.message).to.equal("PostMessageHandler destroyed");
+    } finally {
+      iframe.remove();
+    }
+  });
+
   it("throws if iframe contentWindow not available", async () => {
     const fakeIframe: any = {
       getAttribute: (n: string) =>

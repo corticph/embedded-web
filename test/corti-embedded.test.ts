@@ -499,6 +499,34 @@ describe("CortiEmbedded", () => {
     // Note: configure method would normally change baseURL, but our mock doesn't handle that
   });
 
+  it("exempts showDeviceLinkQR from the default postMessage timeout", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    const messages: Array<{ action: string; timeout?: number | null }> = [];
+
+    (el as any).postMessageHandler = {
+      postMessage: async (msg: { action: string }, timeout?: number | null) => {
+        messages.push({ action: msg.action, timeout });
+        return { success: true, payload: { status: "approved" } };
+      },
+      destroy: () => {},
+      ready: true,
+    };
+
+    const result = await el.showDeviceLinkQR({
+      access_token: "access-token",
+      expires_in: 300,
+      refresh_token: "refresh-token",
+      token_type: "Bearer",
+    });
+
+    expect(result).to.deep.equal({ status: "approved" });
+    expect(messages).to.deep.equal([
+      { action: "showDeviceLinkQR", timeout: null },
+    ]);
+  });
+
   it("normalizes legacy string navigate input before forwarding", async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,

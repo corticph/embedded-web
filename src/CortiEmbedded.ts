@@ -699,12 +699,15 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     }
 
     try {
-      const response = await this.postMessageHandler.postMessage({
-        type: "CORTI_EMBEDDED",
-        version: "v1",
-        action: "showDeviceLinkQR",
-        payload,
-      });
+      const response = await this.postMessageHandler.postMessage(
+        {
+          type: "CORTI_EMBEDDED",
+          version: "v1",
+          action: "showDeviceLinkQR",
+          payload,
+        },
+        null,
+      );
 
       if (response.success && response.payload) {
         return response.payload as ShowDeviceLinkQRResponse;
