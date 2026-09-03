@@ -79,7 +79,7 @@ describe("PostMessageHandler", () => {
     }> = [];
     const { handler, iframe, origin } = makeRealHandler();
     handler.updateCallbacks({
-      onEvent: event => {
+      onEvent: (event) => {
         forwarded.push(event);
       },
     });
@@ -122,6 +122,221 @@ describe("PostMessageHandler", () => {
     iframe.remove();
   });
 
+  it("waits for the ready callback before forwarding embedded.ready", async () => {
+    const forwarded: Array<{
+      name: string;
+      payload: unknown;
+    }> = [];
+    let finishReady: (() => void) | undefined;
+    const readyCallback = new Promise<void>((resolve) => {
+      finishReady = resolve;
+    });
+    const { handler, iframe, origin } = makeRealHandler();
+    handler.updateCallbacks({
+      onReady: () => readyCallback,
+      onEvent: (event) => {
+        forwarded.push(event);
+      },
+    });
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          type: "CORTI_EMBEDDED_EVENT",
+          event: "embedded.ready",
+          payload: { version: "v1" },
+        },
+        origin,
+        source: iframe.contentWindow as any,
+      }),
+    );
+
+    await Promise.resolve();
+    expect(forwarded).to.have.length(0);
+    expect(handler.ready).to.equal(false);
+
+    if (!finishReady) throw new Error("Ready resolver was not initialized");
+    finishReady();
+    await readyCallback;
+    await Promise.resolve();
+
+    expect(forwarded).to.deep.equal([
+      {
+        name: "embedded.ready",
+        payload: { version: "v1" },
+      },
+    ]);
+
+    handler.destroy();
+    iframe.remove();
+  });
+
+  it("waits for the ready callback before resolving waitForReady", async () => {
+    let finishReady: (() => void) | undefined;
+    const readyCallback = new Promise<void>((resolve) => {
+      finishReady = resolve;
+    });
+    const { handler, iframe, origin } = makeRealHandler();
+    handler.updateCallbacks({
+      onReady: () => readyCallback,
+    });
+
+    const readyPromise = handler.waitForReady(500);
+    let resolved = false;
+    readyPromise.then(() => {
+      resolved = true;
+    });
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          type: "CORTI_EMBEDDED_EVENT",
+          event: "embedded.ready",
+          payload: { version: "v1" },
+        },
+        origin,
+        source: iframe.contentWindow as any,
+      }),
+    );
+
+    await Promise.resolve();
+    expect(resolved).to.equal(false);
+    expect(handler.ready).to.equal(false);
+
+    if (!finishReady) throw new Error("Ready resolver was not initialized");
+    finishReady();
+    await readyPromise;
+
+    expect(resolved).to.equal(true);
+    expect(handler.ready).to.equal(true);
+
+    handler.destroy();
+    iframe.remove();
+  });
+
+  it("rejects later waitForReady calls after ready initialization fails", async () => {
+    const initError = new Error("Initialization failed");
+    const { handler, iframe, origin } = makeRealHandler();
+    handler.updateCallbacks({
+      onReady: async () => {
+        throw initError;
+      },
+    });
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          type: "CORTI_EMBEDDED_EVENT",
+          event: "embedded.ready",
+          payload: { version: "v1" },
+        },
+        origin,
+        source: iframe.contentWindow as any,
+      }),
+    );
+
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+
+    let rejected: unknown;
+    await handler.waitForReady(500).catch((error) => {
+      rejected = error;
+    });
+
+    expect(rejected).to.equal(initError);
+    expect(handler.ready).to.equal(false);
+
+    handler.destroy();
+    iframe.remove();
+  });
+
+  it("waits for the ready callback before forwarding later events", async () => {
+    const forwarded: Array<{
+      name: string;
+      payload: unknown;
+    }> = [];
+    let finishReady: (() => void) | undefined;
+    const readyCallback = new Promise<void>((resolve) => {
+      finishReady = resolve;
+    });
+    const { handler, iframe, origin } = makeRealHandler();
+    handler.updateCallbacks({
+      onReady: () => readyCallback,
+      onEvent: (event) => {
+        forwarded.push(event);
+      },
+    });
+
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          type: "CORTI_EMBEDDED_EVENT",
+          event: "embedded.ready",
+          payload: { version: "v1" },
+        },
+        origin,
+        source: iframe.contentWindow as any,
+      }),
+    );
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          type: "CORTI_EMBEDDED_EVENT",
+          event: "embedded.navigated",
+          payload: { path: "/summary" },
+        },
+        origin,
+        source: iframe.contentWindow as any,
+      }),
+    );
+
+    await Promise.resolve();
+    expect(forwarded).to.have.length(0);
+
+    if (!finishReady) throw new Error("Ready resolver was not initialized");
+    finishReady();
+    await readyCallback;
+    await Promise.resolve();
+
+    expect(forwarded.map((event) => event.name)).to.deep.equal([
+      "embedded.ready",
+      "embedded.navigated",
+    ]);
+
+    handler.destroy();
+    iframe.remove();
+  });
+
+  it("allows private _init requests", async () => {
+    const { handler } = makeRealHandler();
+    (handler as any).isReady = true;
+    try {
+      const promise = handler.postMessage(
+        {
+          type: "CORTI_EMBEDDED",
+          version: "v1",
+          action: "_init",
+          payload: {
+            web_component: "@corti/embedded-web",
+            web_component_version: "0.0.1",
+          },
+        },
+        500,
+      );
+      await new Promise((r) => {
+        setTimeout(r, 0);
+      });
+      const requestId = (handler as any).pendingRequests.keys().next().value;
+      (handler as any).handleResponse({ requestId, success: true });
+
+      const response = await promise;
+      expect(response.success).to.equal(true);
+    } finally {
+      handler.destroy();
+    }
+  });
+
   it("does not warn when deprecated event messages are dispatched", async () => {
     const warnings: string[] = [];
     const originalWarn = console.warn;
@@ -153,12 +368,11 @@ describe("PostMessageHandler", () => {
 
   it("routes error.triggered to onError and does not forward via onEvent", async () => {
     const forwarded: Array<{ name: string; payload: unknown }> = [];
-    const errors: Array<{ message: string; code?: string; details?: unknown }> =
-      [];
+    const errors: Array<{ message: string; code?: string; details?: unknown }> = [];
     const { handler, iframe, origin } = makeRealHandler();
     handler.updateCallbacks({
-      onEvent: event => forwarded.push(event),
-      onError: error => errors.push(error),
+      onEvent: (event) => forwarded.push(event),
+      onError: (error) => errors.push(error),
     });
 
     window.dispatchEvent(
@@ -204,7 +418,7 @@ describe("PostMessageHandler", () => {
         500,
       );
       // Allow pendingRequests to be set
-      await new Promise(r => {
+      await new Promise((r) => {
         setTimeout(r, 0);
       });
       const requestId = (handler as any).pendingRequests.keys().next().value;
@@ -231,7 +445,7 @@ describe("PostMessageHandler", () => {
         },
         500,
       );
-      await new Promise(r => {
+      await new Promise((r) => {
         setTimeout(r, 0);
       });
       const requestId = (handler as any).pendingRequests.keys().next().value;
@@ -252,12 +466,11 @@ describe("PostMessageHandler", () => {
   });
 
   it("emits onError when response indicates failure", async () => {
-    const errors: Array<{ message: string; code?: string; details?: unknown }> =
-      [];
+    const errors: Array<{ message: string; code?: string; details?: unknown }> = [];
     const { handler } = makeRealHandler();
     (handler as any).isReady = true;
     handler.updateCallbacks({
-      onError: error => errors.push(error),
+      onError: (error) => errors.push(error),
     });
 
     try {
@@ -270,7 +483,7 @@ describe("PostMessageHandler", () => {
         },
         500,
       );
-      await new Promise(r => {
+      await new Promise((r) => {
         setTimeout(r, 0);
       });
       const requestId = (handler as any).pendingRequests.keys().next().value;
@@ -400,8 +613,7 @@ describe("PostMessageHandler", () => {
 
   it("throws if iframe contentWindow not available", async () => {
     const fakeIframe: any = {
-      getAttribute: (n: string) =>
-        n === "src" ? "https://assistant.eu.corti.app/embedded" : null,
+      getAttribute: (n: string) => (n === "src" ? "https://assistant.eu.corti.app/embedded" : null),
       src: "https://assistant.eu.corti.app/embedded",
       contentWindow: null,
     };

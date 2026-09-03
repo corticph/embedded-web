@@ -2,11 +2,18 @@
 
 export type APIVersion = "v1";
 
-export type MessageType = "CORTI_EMBEDDED" | "CORTI_EMBEDDED_RESPONSE" | "CORTI_EMBEDDED_EVENT";
+export type MessageType =
+  | "CORTI_EMBEDDED"
+  | "CORTI_EMBEDDED_RESPONSE"
+  | "CORTI_EMBEDDED_EVENT";
 
 export type DefaultMode = "virtual" | "in-person";
 
+// WARNING: "_init" is an internal-only action used by the embedded Assistant component
+// for initialization handshake. External applications should NOT send _init messages.
+// Use only public actions listed below.
 export type EmbeddedAction =
+  | "_init" // @internal - Internal-only handshake action
   | "auth"
   | "createInteraction"
   | "addFacts"
@@ -78,6 +85,16 @@ export interface EmbeddedEventMessage extends BaseEventMessage {
 // Specific Request Types
 export interface AuthRequest extends EmbeddedRequest {
   action: "auth";
+}
+
+export interface InitPayload {
+  web_component: string;
+  web_component_version: string;
+}
+
+export interface InitRequest extends EmbeddedRequest {
+  action: "_init";
+  payload: InitPayload;
 }
 
 export interface CreateInteractionRequest extends EmbeddedRequest {
@@ -179,6 +196,7 @@ export interface UsageEvent extends DeprecatedEmbeddedEventMessage {
 
 // Request/Response/Event type unions
 export type AnyEmbeddedRequest =
+  | InitRequest
   | AuthRequest
   | CreateInteractionRequest
   | AddFactsRequest
@@ -211,4 +229,7 @@ export type AnyDeprecatedEmbeddedEvent =
 
 export type AnyEvent = EmbeddedEventMessage | AnyDeprecatedEmbeddedEvent;
 
-export type AnyEmbeddedMessage = AnyEmbeddedRequest | AnyEmbeddedResponse | AnyEvent;
+export type AnyEmbeddedMessage =
+  | AnyEmbeddedRequest
+  | AnyEmbeddedResponse
+  | AnyEvent;

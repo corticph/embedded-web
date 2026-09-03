@@ -27,6 +27,10 @@ import type {
 } from "./public-types.js";
 import { baseStyles } from "./styles/base.js";
 import { containerStyles } from "./styles/container-styles.js";
+import {
+  EMBEDDED_WEB_PACKAGE_NAME,
+  EMBEDDED_WEB_PACKAGE_VERSION,
+} from "./packageMetadata.js";
 import { validateAndNormalizeBaseURL } from "./utils/baseUrl.js";
 import { buildEmbeddedUrl, isRealEmbeddedLoad } from "./utils/embedUrl.js";
 import { formatError } from "./utils/errorFormatter.js";
@@ -166,6 +170,17 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
     if (iframe?.contentWindow) {
       const callbacks: PostMessageHandlerCallbacks = {
+        onReady: async () => {
+          await this.postMessageHandler?.postMessage({
+            type: "CORTI_EMBEDDED",
+            version: "v1",
+            action: "_init",
+            payload: {
+              web_component: EMBEDDED_WEB_PACKAGE_NAME,
+              web_component_version: EMBEDDED_WEB_PACKAGE_VERSION,
+            },
+          });
+        },
         onEvent: event => {
           this.dispatchEmbeddedEvent(event.name, event.payload);
         },
