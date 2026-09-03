@@ -187,6 +187,9 @@ export class PostMessageHandler {
       window.removeEventListener("message", this.messageListener);
       this.messageListener = null;
     }
+    for (const pendingRequest of this.pendingRequests.values()) {
+      pendingRequest.reject({ message: "PostMessageHandler destroyed" });
+    }
     this.pendingRequests.clear();
   }
 
@@ -257,11 +260,11 @@ export class PostMessageHandler {
   /**
    * Sends a postMessage to the iframe and returns a Promise that resolves with the response.
    * @param message - The message to send
-   * @param timeout - Optional timeout in milliseconds. Defaults to the requestTimeout set at construction.
+   * @param timeout - Optional timeout in milliseconds. Defaults to the requestTimeout set at construction. Pass null to disable the timeout.
    */
   async postMessage(
     message: Omit<EmbeddedRequest, "requestId">,
-    timeout?: number,
+    timeout?: number | null,
   ): Promise<EmbeddedResponse> {
     if (!this.iframe.contentWindow) {
       throw new Error("Iframe not ready");
@@ -272,21 +275,25 @@ export class PostMessageHandler {
 
     const { contentWindow } = this.iframe;
     const requestId = PostMessageHandler.generateRequestId();
-    const effectiveTimeout = timeout ?? this.requestTimeout;
+    const effectiveTimeout =
+      timeout === undefined ? this.requestTimeout : timeout;
 
     return new Promise((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        this.pendingRequests.delete(requestId);
-        reject(new Error("Request timeout"));
-      }, effectiveTimeout);
+      const timeoutId =
+        effectiveTimeout === null
+          ? null
+          : setTimeout(() => {
+              this.pendingRequests.delete(requestId);
+              reject(new Error("Request timeout"));
+            }, effectiveTimeout);
 
       this.pendingRequests.set(requestId, {
         resolve: value => {
-          clearTimeout(timeoutId);
+          if (timeoutId !== null) clearTimeout(timeoutId);
           resolve(value);
         },
         reject: reason => {
-          clearTimeout(timeoutId);
+          if (timeoutId !== null) clearTimeout(timeoutId);
           reject(reason);
         },
       });
@@ -299,6 +306,7 @@ export class PostMessageHandler {
       const targetOrigin = this.getTrustedOrigin();
       if (!targetOrigin) {
         this.pendingRequests.delete(requestId);
+        if (timeoutId !== null) clearTimeout(timeoutId);
         reject(new Error("Cannot determine trusted origin for postMessage"));
         return;
       }
