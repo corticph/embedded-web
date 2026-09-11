@@ -7,7 +7,14 @@ export type EmbeddedInterviewDetails = {
   /** Interview title */
   title: string | null;
   /** Current state of the interaction */
-  state: "planned" | "ongoing" | "paused" | "disconnected" | "ending" | "parsing" | "ended";
+  state:
+    | "planned"
+    | "ongoing"
+    | "paused"
+    | "disconnected"
+    | "ending"
+    | "parsing"
+    | "ended";
   /** ISO 8601 timestamp when interview started */
   startedAt: string;
   /** ISO 8601 timestamp when interview ended */

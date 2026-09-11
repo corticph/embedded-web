@@ -252,6 +252,17 @@ h1 {
   overflow-y: auto;
 }
 
+.auth-payload-section input {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 6px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  font-family: monospace;
+  font-size: 11px;
+  margin-bottom: 8px;
+}
+
 .auth-payload-section label {
   display: block;
   margin-bottom: 8px;

@@ -22,7 +22,9 @@ export interface KeycloakTokenResponse {
   };
 }
 
-export type DeviceLinkTokenResponse = KeycloakTokenResponse & { refresh_token: string };
+export type DeviceLinkTokenResponse = KeycloakTokenResponse & {
+  refresh_token: string;
+};
 
 // Fact structure
 export interface Fact {
