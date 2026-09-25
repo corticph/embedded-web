@@ -51,14 +51,25 @@ export interface EmbeddedTemplate {
   isCustom: boolean;
 }
 
-export interface GetStatusResponse {
+export interface MedicalDeviceMetadata {
+  buildDate: string;
+  deviceIdentifier: string;
+  udi: string;
+}
+
+export type MedicalDeviceStatus =
+  | { isMedicalDevice: false; medicalDevice?: undefined }
+  | { isMedicalDevice: true; medicalDevice: MedicalDeviceMetadata };
+
+export type GetStatusResponse = {
   auth: {
     isAuthenticated: boolean;
     user?: UserInfo;
   };
+  applicationVersion: string;
   currentUrl: string;
   interaction: EmbeddedInterviewDetails | null;
-}
+} & MedicalDeviceStatus;
 
 export interface GetTemplatesResponse {
   templates: EmbeddedTemplate[];
