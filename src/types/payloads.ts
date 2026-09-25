@@ -22,9 +22,7 @@ export interface KeycloakTokenResponse {
   };
 }
 
-export type DeviceLinkTokenResponse = KeycloakTokenResponse & {
-  refresh_token: string;
-};
+export type DeviceLinkTokenResponse = KeycloakTokenResponse & { refresh_token: string };
 
 // Fact structure
 export interface Fact {
@@ -131,6 +129,25 @@ export interface PersonalTemplateSectionFields {
   outputSchema?: PersonalTemplateSectionFieldConfig;
 }
 
+export interface InteractionSectionSources {
+  standard?: {
+    enabled?: boolean;
+    include?: {
+      regions?: string[];
+      families?: string[];
+    };
+  };
+  project?: {
+    enabled?: boolean;
+    include?: {
+      ids?: string[];
+    };
+    exclude?: {
+      ids?: string[];
+    };
+  };
+}
+
 export interface InteractionTemplateSources {
   personal?: {
     enabled?: boolean;
@@ -161,6 +178,7 @@ export interface InteractionTemplateSources {
 export interface InteractionTemplateOptions {
   sources?: InteractionTemplateSources;
   defaultTemplate?: DefaultInteractionTemplateOptions;
+  sectionSources?: InteractionSectionSources;
 }
 
 export interface InteractionDocumentOptions {

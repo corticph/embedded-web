@@ -1,4 +1,4 @@
-// Main exports for @assistant/embedded-types
+// Main exports for ~/contracts/embedded
 
 // Public API types
 export * from "./api.js";
