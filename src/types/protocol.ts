@@ -2,10 +2,7 @@
 
 export type APIVersion = "v1";
 
-export type MessageType =
-  | "CORTI_EMBEDDED"
-  | "CORTI_EMBEDDED_RESPONSE"
-  | "CORTI_EMBEDDED_EVENT";
+export type MessageType = "CORTI_EMBEDDED" | "CORTI_EMBEDDED_RESPONSE" | "CORTI_EMBEDDED_EVENT";
 
 export type DefaultMode = "virtual" | "in-person";
 
@@ -28,19 +25,6 @@ export type EmbeddedAction =
   | "configure"
   | "setCredentials"
   | "showDeviceLinkQR";
-
-export type DeprecatedEmbeddedEvent =
-  | "ready"
-  | "loaded"
-  | "recordingStarted"
-  | "recordingStopped"
-  | "documentGenerated"
-  | "documentUpdated"
-  | "documentSynced"
-  | "authChanged"
-  | "interactionCreated"
-  | "navigationChanged"
-  | "usage";
 
 // Base Message Types
 export interface BaseMessage {
@@ -66,20 +50,12 @@ export interface EmbeddedResponse extends BaseMessage {
   errorDetails?: unknown;
 }
 
-interface BaseEventMessage extends BaseMessage {
+export interface EmbeddedEventMessage extends BaseMessage {
   type: "CORTI_EMBEDDED_EVENT";
-  event: string | DeprecatedEmbeddedEvent;
-  payload?: unknown;
-}
-
-export interface DeprecatedEmbeddedEventMessage extends BaseEventMessage {
-  event: DeprecatedEmbeddedEvent;
-  deprecated: true;
-}
-
-export interface EmbeddedEventMessage extends BaseEventMessage {
+  event: string;
   payload: null | Record<string, unknown>;
   confidential: boolean;
+  deprecated?: boolean;
 }
 
 // Specific Request Types
@@ -87,14 +63,8 @@ export interface AuthRequest extends EmbeddedRequest {
   action: "auth";
 }
 
-export interface InitPayload {
-  web_component: string;
-  web_component_version: string;
-}
-
 export interface InitRequest extends EmbeddedRequest {
   action: "_init";
-  payload: InitPayload;
 }
 
 export interface CreateInteractionRequest extends EmbeddedRequest {
@@ -149,51 +119,6 @@ export interface ShowDeviceLinkQRRequest extends EmbeddedRequest {
   action: "showDeviceLinkQR";
 }
 
-// Event Types
-export interface ReadyEvent extends DeprecatedEmbeddedEventMessage {
-  event: "ready";
-}
-
-export interface LoadedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "loaded";
-}
-
-export interface RecordingStartedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "recordingStarted";
-}
-
-export interface RecordingStoppedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "recordingStopped";
-}
-
-export interface DocumentGeneratedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "documentGenerated";
-}
-
-export interface DocumentUpdatedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "documentUpdated";
-}
-
-export interface DocumentSyncedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "documentSynced";
-}
-
-export interface AuthChangedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "authChanged";
-}
-
-export interface InteractionCreatedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "interactionCreated";
-}
-
-export interface NavigationChangedEvent extends DeprecatedEmbeddedEventMessage {
-  event: "navigationChanged";
-}
-
-export interface UsageEvent extends DeprecatedEmbeddedEventMessage {
-  event: "usage";
-}
-
 // Request/Response/Event type unions
 export type AnyEmbeddedRequest =
   | InitRequest
@@ -214,22 +139,6 @@ export type AnyEmbeddedRequest =
 
 export type AnyEmbeddedResponse = EmbeddedResponse;
 
-export type AnyDeprecatedEmbeddedEvent =
-  | ReadyEvent
-  | LoadedEvent
-  | RecordingStartedEvent
-  | RecordingStoppedEvent
-  | DocumentGeneratedEvent
-  | DocumentUpdatedEvent
-  | DocumentSyncedEvent
-  | AuthChangedEvent
-  | InteractionCreatedEvent
-  | NavigationChangedEvent
-  | UsageEvent;
+export type AnyEvent = EmbeddedEventMessage;
 
-export type AnyEvent = EmbeddedEventMessage | AnyDeprecatedEmbeddedEvent;
-
-export type AnyEmbeddedMessage =
-  | AnyEmbeddedRequest
-  | AnyEmbeddedResponse
-  | AnyEvent;
+export type AnyEmbeddedMessage = AnyEmbeddedRequest | AnyEmbeddedResponse | AnyEvent;
