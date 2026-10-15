@@ -486,8 +486,10 @@ describe("CortiEmbedded", () => {
           email: mockUser.email,
         },
       },
+      applicationVersion: "1.0.0",
       currentUrl: "https://example.com",
       interaction: null,
+      isMedicalDevice: false,
     };
 
     // Inject a minimal mock handler that responds via the generic postMessage interface
@@ -657,8 +659,10 @@ describe("CortiEmbedded", () => {
         isAuthenticated: false,
         user: undefined,
       },
+      applicationVersion: "",
       currentUrl: "",
       interaction: null,
+      isMedicalDevice: false,
     });
   });
 

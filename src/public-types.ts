@@ -69,11 +69,9 @@ export type {
   SetInteractionOptionsPayload,
 } from "./types/payloads.js";
 export type {
-  AnyDeprecatedEmbeddedEvent,
   AnyEvent,
   APIVersion,
   BaseMessage,
-  DeprecatedEmbeddedEvent,
   EmbeddedEventMessage,
   MessageType,
 } from "./types/protocol.js";
