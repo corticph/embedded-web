@@ -22,9 +22,7 @@ export interface KeycloakTokenResponse {
   };
 }
 
-export type DeviceLinkTokenResponse = KeycloakTokenResponse & {
-  refresh_token: string;
-};
+export type DeviceLinkTokenResponse = KeycloakTokenResponse & { refresh_token: string };
 
 // Fact structure
 export interface Fact {
@@ -65,6 +63,10 @@ export interface ConfigureSessionPayload {
   defaultOutputLanguage?: string;
   defaultTemplateKey?: string;
   defaultMode?: DefaultMode;
+}
+
+export interface InteractionConsentOptions {
+  enabled: boolean;
 }
 
 export interface InteractionModeOptions {
@@ -131,6 +133,25 @@ export interface PersonalTemplateSectionFields {
   outputSchema?: PersonalTemplateSectionFieldConfig;
 }
 
+export interface InteractionSectionSources {
+  standard?: {
+    enabled?: boolean;
+    include?: {
+      regions?: string[];
+      families?: string[];
+    };
+  };
+  project?: {
+    enabled?: boolean;
+    include?: {
+      ids?: string[];
+    };
+    exclude?: {
+      ids?: string[];
+    };
+  };
+}
+
 export interface InteractionTemplateSources {
   personal?: {
     enabled?: boolean;
@@ -161,6 +182,7 @@ export interface InteractionTemplateSources {
 export interface InteractionTemplateOptions {
   sources?: InteractionTemplateSources;
   defaultTemplate?: DefaultInteractionTemplateOptions;
+  sectionSources?: InteractionSectionSources;
 }
 
 export interface InteractionDocumentOptions {
@@ -176,6 +198,8 @@ export interface SetInteractionOptionsPayload {
   spokenLanguage?: SpokenLanguageOptions;
   templates?: InteractionTemplateOptions;
   documents?: InteractionDocumentOptions;
+  /** Patient consent options. When enabled, a dialog appears where the patient gives explicit consent */
+  consent?: InteractionConsentOptions;
 }
 
 // Navigate payload

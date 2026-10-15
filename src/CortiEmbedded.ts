@@ -519,8 +519,10 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
           isAuthenticated: false,
           user: undefined,
         },
+        applicationVersion: "",
         currentUrl: "",
         interaction: null,
+        isMedicalDevice: false,
       };
     }
 
