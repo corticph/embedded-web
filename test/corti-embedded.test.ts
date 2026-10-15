@@ -344,16 +344,12 @@ describe("CortiEmbedded", () => {
     );
     let rawDetail: unknown;
     let embeddedDetail: unknown;
-    let legacyDetail: unknown;
 
     el.addEventListener("embedded.navigated", (event: Event) => {
       rawDetail = (event as CustomEvent).detail;
     });
     el.addEventListener("event", (event: Event) => {
       embeddedDetail = (event as CustomEvent).detail;
-    });
-    el.addEventListener("embedded-event", (event: Event) => {
-      legacyDetail = (event as CustomEvent).detail;
     });
 
     (el as any).dispatchEmbeddedEvent("embedded.navigated", { path: "/test" });
@@ -363,86 +359,20 @@ describe("CortiEmbedded", () => {
       name: "embedded.navigated",
       payload: { path: "/test" },
     });
-    expect(legacyDetail).to.deep.equal({
-      name: "embedded.navigated",
-      payload: { path: "/test" },
-    });
   });
 
-  it("warns when deprecated event names are subscribed to", async () => {
-    const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
-    );
-    const warnings: string[] = [];
-    const originalWarn = console.warn;
-    console.warn = (message?: unknown) => {
-      warnings.push(String(message));
-    };
-
-    try {
-      el.addEventListener("recordingStarted", () => {});
-      el.addEventListener("recordingStarted", () => {});
-      el.addEventListener("embedded-event", () => {});
-      el.addEventListener("event", () => {});
-
-      expect(warnings).to.have.length(2);
-      expect(warnings[0]).to.contain("'recordingStarted' event subscription is deprecated");
-      expect(warnings[0]).to.contain("https://docs.corti.ai/assistant/deprecation-timeline");
-      expect(warnings[1]).to.contain("'embedded-event' event subscription is deprecated");
-    } finally {
-      console.warn = originalWarn;
-    }
-  });
-
-  it("does not warn when deprecated events are dispatched without deprecated subscriptions", async () => {
-    const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
-    );
-    const warnings: string[] = [];
-    const originalWarn = console.warn;
-    console.warn = (message?: unknown) => {
-      warnings.push(String(message));
-    };
-
-    try {
-      el.addEventListener("event", () => {});
-      (el as any).dispatchEmbeddedEvent("recordingStarted", undefined);
-
-      expect(warnings).to.have.length(0);
-    } finally {
-      console.warn = originalWarn;
-    }
-  });
-
-  it("forwards 'embedded.ready' raw and fully suppresses raw 'ready'/'loaded'", async () => {
+  it("forwards 'embedded.ready' raw and through the event stream", async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
 
     const fired: string[] = [];
-    for (const name of ["ready", "loaded", "embedded.ready", "event"]) {
+    for (const name of ["embedded.ready", "event"]) {
       el.addEventListener(name, () => fired.push(name));
     }
 
-    // 'embedded.ready' should fire raw 'embedded.ready' + 'event'
     (el as any).dispatchEmbeddedEvent("embedded.ready", {});
-    expect(fired).to.not.include("ready");
-    expect(fired).to.include("event");
-    expect(fired).to.include("embedded.ready");
-
-    fired.length = 0;
-
-    // 'ready' from iframe should be fully suppressed.
-    (el as any).dispatchEmbeddedEvent("ready", {});
-    expect(fired).to.not.include("ready");
-    expect(fired).to.deep.equal([]);
-
-    fired.length = 0;
-
-    // 'loaded' from iframe should also be fully suppressed.
-    (el as any).dispatchEmbeddedEvent("loaded", {});
-    expect(fired).to.not.include("loaded");
-    expect(fired).to.deep.equal([]);
+    expect(fired).to.deep.equal(["embedded.ready", "event"]);
   });
 
   it("auth throws if component not ready", async () => {
@@ -476,6 +406,7 @@ describe("CortiEmbedded", () => {
     const mockInteraction: InteractionDetails = {
       id: "int123",
       createdAt: "2024-01-01T00:00:00Z",
+      status: "planned",
     };
 
     const mockStatus: GetStatusResponse = {

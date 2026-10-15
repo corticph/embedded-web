@@ -57,7 +57,7 @@ Use `onEvent` as the canonical event listener.
 - `onEvent` receives the wrapper's generic `event` `CustomEvent`
 - That generic stream includes `embedded.ready` and other forwarded embedded events
 - `onReady` listens to the raw `embedded.ready` `CustomEvent`
-- Raw `ready`, `loaded`, and `error.triggered` are not forwarded through `onEvent`
+- `error.triggered` is not forwarded through `onEvent`. It goes to `onError` instead
 - `onError` receives the raw `CustomEvent`, so use `event.detail`
 - Event names and payload contracts are documented publicly at:
   - https://docs.corti.ai/assistant/events

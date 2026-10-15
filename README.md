@@ -100,7 +100,7 @@ await myComponent.show()
 
 #### Generic Event Listener (Web Component)
 
-Use `event` as the canonical event stream for web component integrations (formerly `embedded-event`).
+Use `event` as the canonical event stream for web component integrations. The legacy `embedded-event` stream has been removed.
 
 - Event detail shape is `{ name: string; payload: unknown }`.
 - Full event catalog and payload details are documented at:
@@ -303,11 +303,27 @@ await component.startRecording();
 await component.stopRecording();
 ```
 
-#### getStatus (debugging)
+#### getStatus
 
 ```javascript
-console.log(await component.getStatus());
+const status = await component.getStatus();
 ```
+
+Returns:
+
+- `auth`: `{ isAuthenticated, user? }`
+- `applicationVersion`: version of the embedded Corti Assistant
+- `currentUrl`: current URL inside the iframe
+- `interaction`: details of the open interaction, or `null`
+- `isMedicalDevice`: whether the running build is a medical device. When `true`, `medicalDevice` contains `buildDate`, `deviceIdentifier`, and `udi`.
+
+#### getTemplates
+
+```javascript
+const { templates } = await component.getTemplates();
+```
+
+Each template has `id`, `name`, `language`, and `isCustom`, plus optional `description`, `templateType`, `outputLanguages`, and `sections`.
 
 ## Architecture
 
@@ -346,7 +362,7 @@ import {
 - `onEvent` receives the raw `event` `CustomEvent`, and `event.detail` has the following shape: `{ name: string; payload: unknown }`.
 - That generic stream includes `embedded.ready` and other forwarded embedded events listed in our documentation.
 - `onReady` is a convenience listener for the raw `embedded.ready` `CustomEvent`.
-- Raw `ready`, `loaded`, and `error.triggered` are not forwarded through `onEvent`.
+- `error.triggered` is not forwarded through `onEvent`. It goes to `onError` instead.
 - Full event catalog and payload details are documented at:
   - https://docs.corti.ai/assistant/events
 - `onEvent`, `onReady`, and `onError` pass through the raw `CustomEvent`.
