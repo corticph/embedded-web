@@ -4,14 +4,6 @@ import type {
   ConfigurePayload,
 } from "./types/config.js";
 import type {
-  AuthChangedEventPayload,
-  DocumentEventPayload,
-  ErrorEventPayload,
-  InteractionCreatedEventPayload,
-  NavigationChangedEventPayload,
-  UsageEventPayload,
-} from "./types/events.js";
-import type {
   AddFactsPayload,
   ConfigureSessionPayload,
   CreateInteractionPayload,
@@ -145,10 +137,7 @@ export interface User {
 /**
  * Details of a created interaction
  */
-export interface InteractionDetails {
-  id: string;
-  createdAt: string;
-}
+export type InteractionDetails = CreateInteractionResponse;
 
 /**
  * Session configuration options
@@ -158,23 +147,6 @@ export interface SessionConfig {
   defaultOutputLanguage?: string;
   defaultTemplateKey?: string;
   defaultMode?: DefaultMode;
-}
-
-/**
- * Event data types for component events
- */
-export interface EmbeddedEventData {
-  ready: undefined;
-  "auth-changed": AuthChangedEventPayload;
-  "interaction-created": InteractionCreatedEventPayload;
-  "recording-started": undefined;
-  "recording-stopped": undefined;
-  "document-generated": DocumentEventPayload;
-  "document-updated": DocumentEventPayload;
-  "document-synced": DocumentEventPayload;
-  "navigation-changed": NavigationChangedEventPayload;
-  usage: UsageEventPayload;
-  error: ErrorEventPayload;
 }
 
 // Window API Types

@@ -11,12 +11,12 @@ Deprecated Embedded API functionality remains functional for the announced migra
 
 ## Legacy Embedded Events
 
-- Status: migrate now.
+- Status: removed.
 - Announced: 2026-02-20 in Corti Assistant release notes v12.10.0.
-- Expected shutdown date: 2026-08-20.
-- Required action: update event subscriptions to the current event names and payloads.
+- Shutdown date: 2026-08-20.
+- Required action: subscribe to the `event` stream or to current event names such as `embedded.ready`.
 
-When consumer code subscribes to a deprecated DOM event name, this package emits a `console.warn` that points to the canonical deprecation timeline. Dispatching a deprecated event from the embedded app does not warn unless the host application subscribed to that deprecated event surface.
+The embedded app no longer sends the legacy event names (`ready`, `loaded`, `recordingStarted`, `recordingStopped`, `documentGenerated`, `documentUpdated`, `documentSynced`, `authChanged`, `interactionCreated`, `navigationChanged`, `usage`). This package no longer warns when you subscribe to them, and it no longer dispatches the `embedded-event` stream or exports the `EmbeddedEventData` type.
 
 ## Embedded Configuration API Split
 

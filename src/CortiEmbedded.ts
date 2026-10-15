@@ -48,34 +48,6 @@ const DEPRECATION_TIMELINE_URL =
 const CONFIGURATION_MIGRATION_URL =
   "https://docs.corti.ai/assistant/configuration-migration";
 
-const DEPRECATED_EVENT_SUBSCRIPTIONS = new Set([
-  "ready",
-  "loaded",
-  "recordingStarted",
-  "recordingStopped",
-  "documentGenerated",
-  "documentUpdated",
-  "documentSynced",
-  "authChanged",
-  "interactionCreated",
-  "navigationChanged",
-  "usage",
-  "embedded-event",
-]);
-
-type DOMEventListener =
-  | ((event: Event) => void)
-  | { handleEvent(event: Event): void };
-
-type DOMAddEventListenerOptions =
-  | boolean
-  | {
-      capture?: boolean;
-      once?: boolean;
-      passive?: boolean;
-      signal?: AbortSignal;
-    };
-
 export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   static styles = [baseStyles, containerStyles];
 
@@ -88,31 +60,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   private postMessageHandler: PostMessageHandler | null = null;
 
   private normalizedBaseURL: string | null = null;
-
-  private warnedDeprecatedEventSubscriptions = new Set<string>();
-
-  addEventListener(
-    type: string,
-    callback: DOMEventListener,
-    options?: DOMAddEventListenerOptions,
-  ): void {
-    this.warnDeprecatedEventSubscription(type);
-    super.addEventListener(type, callback, options);
-  }
-
-  private warnDeprecatedEventSubscription(eventName: string): void {
-    if (
-      !DEPRECATED_EVENT_SUBSCRIPTIONS.has(eventName) ||
-      this.warnedDeprecatedEventSubscriptions.has(eventName)
-    ) {
-      return;
-    }
-
-    this.warnedDeprecatedEventSubscriptions.add(eventName);
-    console.warn(
-      `[Corti Embedded] The '${eventName}' event subscription is deprecated and will be removed in a future release. Subscribe to the canonical 'event' stream instead. See ${DEPRECATION_TIMELINE_URL}.`,
-    );
-  }
 
   // eslint-disable-next-line class-methods-use-this
   private getIframeAllowPolicy(normalizedBaseURL?: string | null): string {
@@ -202,21 +149,12 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   }
 
   private dispatchEmbeddedEvent(rawEventName: string, payload: unknown) {
-    if (rawEventName === "ready" || rawEventName === "loaded") return;
-    // Pass all other events through as raw DOM events for direct listeners.
+    // Pass events through as raw DOM events for direct listeners.
     this.dispatchPublicEvent(rawEventName, payload);
 
     // Forward supported embedded events through the generic 'event' stream so
     // consumers can observe them without subscribing to each raw event name.
     this.dispatchPublicEvent("event", {
-      name: rawEventName,
-      payload,
-    });
-
-    // Also emit the legacy 'embedded-event' stream for backward compatibility.
-    // This allows existing integrations listening for 'embedded-event' to continue
-    // working while newer consumers can use the 'event' stream.
-    this.dispatchPublicEvent("embedded-event", {
       name: rawEventName,
       payload,
     });
@@ -368,11 +306,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       });
 
       if (response.success && response.payload) {
-        const result = response.payload as CreateInteractionResponse;
-        return {
-          id: result.id,
-          createdAt: result.createdAt,
-        };
+        return response.payload as CreateInteractionResponse;
       }
       throw new Error(response.error);
     } catch (error) {
