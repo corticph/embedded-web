@@ -57,7 +57,15 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   @property({ type: String, reflect: true })
   baseURL!: string;
 
+  // Used by the public API. Set once the iframe has loaded or the Assistant has
+  // sent 'embedded.ready', whichever comes first. Until then, API calls fail
+  // fast with "Component not ready".
   private postMessageHandler: PostMessageHandler | null = null;
+
+  // Listens from the moment the iframe is rendered, so 'embedded.ready' is not
+  // missed when it arrives before the iframe 'load' event. Promoted to
+  // postMessageHandler as described above.
+  private pendingPostMessageHandler: PostMessageHandler | null = null;
 
   private normalizedBaseURL: string | null = null;
 
@@ -97,28 +105,63 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       // Dispatch the error event rather than throwing so consumers can handle it
       // via the 'error' event listener without wrapping connectedCallback in try/catch.
     }
+
+    // Re-inserting a rendered element reloads its iframe
+    this.ensurePostMessageHandler();
   }
 
   disconnectedCallback() {
     super.disconnectedCallback();
-    if (this.postMessageHandler) {
-      this.postMessageHandler.destroy();
-      this.postMessageHandler = null;
-    }
+    this.teardownPostMessageHandler();
   }
 
-  private async setupPostMessageHandler() {
+  private teardownPostMessageHandler() {
+    this.postMessageHandler?.destroy();
+    this.pendingPostMessageHandler?.destroy();
+    this.postMessageHandler = null;
+    this.pendingPostMessageHandler = null;
+  }
+
+  /**
+   * Listen as soon as the iframe exists, not on its 'load' event. The Assistant
+   * sends 'embedded.ready' once, and on a cold load it can arrive before 'load'
+   * fires. A missed ready means the component never initializes.
+   */
+  private ensurePostMessageHandler() {
+    if (
+      this.postMessageHandler ||
+      this.pendingPostMessageHandler ||
+      !this.normalizedBaseURL ||
+      !this.isConnected ||
+      !this.getIframe()?.contentWindow
+    ) {
+      return;
+    }
+    this.setupPostMessageHandler();
+  }
+
+  private promotePostMessageHandler(handler: PostMessageHandler | null) {
+    if (!handler || handler !== this.pendingPostMessageHandler) {
+      return;
+    }
+    this.postMessageHandler = handler;
+    this.pendingPostMessageHandler = null;
+  }
+
+  private setupPostMessageHandler() {
     // Prevent multiple setups
-    if (this.postMessageHandler) {
+    if (this.postMessageHandler || this.pendingPostMessageHandler) {
       return;
     }
 
     const iframe = this.getIframe();
 
     if (iframe?.contentWindow) {
+      // Assigned below, before the iframe can trigger any callback
+      let handler: PostMessageHandler;
       const callbacks: PostMessageHandlerCallbacks = {
         onReady: async () => {
-          await this.postMessageHandler?.postMessage({
+          await handler.postMessage({
             type: "CORTI_EMBEDDED",
             version: "v1",
             action: "_init",
@@ -129,6 +172,10 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
           });
         },
         onEvent: event => {
+          // The Assistant is ready, so the API is usable even before 'load'
+          if (event.name === "embedded.ready") {
+            this.promotePostMessageHandler(handler);
+          }
           this.dispatchEmbeddedEvent(event.name, event.payload);
         },
         onError: error => {
@@ -136,7 +183,8 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         },
       };
 
-      this.postMessageHandler = new PostMessageHandler(iframe, callbacks);
+      handler = new PostMessageHandler(iframe, callbacks);
+      this.pendingPostMessageHandler = handler;
     } else {
       this.dispatchErrorEvent({
         message: "No iframe or contentWindow available",
@@ -183,7 +231,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
     return isRealEmbeddedLoad(src, this.normalizedBaseURL);
   }
 
-  private async handleIframeLoad(event: Event) {
+  private handleIframeLoad(event: Event) {
     const iframe = event.target as HTMLIFrameElement | null;
     if (!iframe) {
       return;
@@ -193,7 +241,9 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       return;
     }
     try {
-      await this.setupPostMessageHandler();
+      // Normally already listening since the iframe was rendered (see updated())
+      this.setupPostMessageHandler();
+      this.promotePostMessageHandler(this.pendingPostMessageHandler);
     } catch (error) {
       this.dispatchErrorEvent({
         message: `Failed to setup PostMessageHandler on iframe load: ${error}`,
@@ -208,16 +258,12 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   protected updated(changedProps: PropertyValues) {
     super.updated(changedProps);
     if (changedProps.has("baseURL")) {
-      // Tear down the existing handler; the new one is created in handleIframeLoad
-      if (this.postMessageHandler) {
-        this.postMessageHandler.destroy();
-        this.postMessageHandler = null;
-      }
-
       // Validate the new URL
+      let normalizedBaseURL: string;
       try {
-        this.normalizedBaseURL = validateAndNormalizeBaseURL(this.baseURL);
+        normalizedBaseURL = validateAndNormalizeBaseURL(this.baseURL);
       } catch (error) {
+        this.teardownPostMessageHandler();
         this.normalizedBaseURL = null;
         const iframe = this.getIframe();
         if (iframe) {
@@ -229,6 +275,14 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         return;
       }
 
+      // Tear down the existing handler; a new one is created below for the new
+      // URL. An equivalent URL keeps the current iframe document, which will not
+      // send 'embedded.ready' again, so its handler is kept.
+      if (normalizedBaseURL !== this.normalizedBaseURL) {
+        this.teardownPostMessageHandler();
+      }
+      this.normalizedBaseURL = normalizedBaseURL;
+
       // Update the iframe to the new URL
       const iframe = this.getIframe();
       if (iframe) {
@@ -239,6 +293,8 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         }
       }
     }
+
+    this.ensurePostMessageHandler();
   }
 
   // Public API Implementation
