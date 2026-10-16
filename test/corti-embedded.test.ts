@@ -2,6 +2,7 @@
 import { expect, fixture } from "@open-wc/testing";
 import { html } from "lit";
 import { CortiEmbedded } from "../src/CortiEmbedded.js";
+import { PostMessageHandler } from "../src/utils/PostMessageHandler.js";
 import { EMBEDDED_WEB_PACKAGE_NAME, EMBEDDED_WEB_PACKAGE_VERSION } from "../src/packageMetadata.js";
 import "../src/corti-embedded.js";
 import type {
@@ -247,12 +248,92 @@ describe("CortiEmbedded", () => {
     await el.updateComplete;
     expect(destroyed).to.equal(true);
     expect((el as any).postMessageHandler).to.equal(null);
+    expect((el as any).pendingPostMessageHandler).to.be.instanceOf(PostMessageHandler);
     // Check new iframe src
     expect(iframe.getAttribute("src")).to.equal("https://assistant.us.corti.app/embedded");
     const allowAttr = iframe.getAttribute("allow")!;
     expect(allowAttr).to.include(`microphone ${el.baseURL}`);
     expect(allowAttr).to.include(`camera ${el.baseURL}`);
     expect(allowAttr).to.include(`clipboard-write ${el.baseURL}`);
+  });
+
+  it("listens as soon as the iframe renders, before it loads", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    expect((el as any).pendingPostMessageHandler).to.be.instanceOf(PostMessageHandler);
+    // The public API stays unavailable until the iframe loads or sends ready
+    expect((el as any).postMessageHandler).to.equal(null);
+  });
+
+  it("handles embedded.ready posted before the iframe load event", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    const iframe = el.shadowRoot!.querySelector("iframe") as HTMLIFrameElement;
+    ensureContentWindow(iframe);
+    const handler = (el as any).pendingPostMessageHandler;
+
+    const actions: string[] = [];
+    handler.postMessage = async (message: { action: string }) => {
+      actions.push(message.action);
+      return { type: "CORTI_EMBEDDED_RESPONSE", success: true };
+    };
+    let handlerOnReady: unknown = null;
+    el.addEventListener("embedded.ready", () => {
+      handlerOnReady = (el as any).postMessageHandler;
+    });
+
+    // No 'load' event dispatched: the Assistant can post ready first on a cold load.
+    window.dispatchEvent(
+      new MessageEvent("message", {
+        data: {
+          type: "CORTI_EMBEDDED_EVENT",
+          event: "embedded.ready",
+          payload: { version: "v1" },
+        },
+        origin: validBaseURL,
+        source: iframe.contentWindow as any,
+      }),
+    );
+    await new Promise((resolve) => {
+      setTimeout(resolve, 0);
+    });
+
+    expect(actions).to.deep.equal(["_init"]);
+    // The API is usable by the time consumers receive 'embedded.ready'
+    expect(handlerOnReady).to.equal(handler);
+    expect((el as any).pendingPostMessageHandler).to.equal(null);
+  });
+
+  it("listens again when the element is re-added, before the iframe loads", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    const parent = el.parentNode!;
+    el.remove();
+    expect((el as any).pendingPostMessageHandler).to.equal(null);
+
+    // Re-inserting reloads the iframe, which can post 'embedded.ready' before 'load'
+    parent.appendChild(el);
+    expect((el as any).pendingPostMessageHandler).to.be.instanceOf(PostMessageHandler);
+  });
+
+  it("does not dispatch an error when updated while disconnected", async () => {
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
+    );
+    const errors: unknown[] = [];
+    el.addEventListener("error", (event) => {
+      errors.push((event as unknown as CustomEvent).detail);
+    });
+    el.remove();
+
+    el.show();
+    await el.updateComplete;
+
+    expect(errors).to.deep.equal([]);
+    expect((el as any).pendingPostMessageHandler).to.equal(null);
   });
 
   it("ignores about:blank iframe loads (no handler setup)", async () => {
