@@ -336,23 +336,6 @@ describe("CortiEmbedded", () => {
     expect((el as any).pendingPostMessageHandler).to.equal(null);
   });
 
-  it("keeps the handler when baseURL changes to an equivalent URL", async () => {
-    const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
-    );
-    const iframe = el.shadowRoot!.querySelector("iframe") as HTMLIFrameElement;
-    ensureContentWindow(iframe);
-    iframe.dispatchEvent(new Event("load"));
-    const handler = (el as any).postMessageHandler;
-    expect(handler).to.be.instanceOf(PostMessageHandler);
-
-    // Same origin, so the iframe does not reload and will not send 'embedded.ready' again
-    el.baseURL = `${validBaseURL}/`;
-    await el.updateComplete;
-
-    expect((el as any).postMessageHandler).to.equal(handler);
-  });
-
   it("ignores about:blank iframe loads (no handler setup)", async () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,

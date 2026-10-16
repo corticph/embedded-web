@@ -258,12 +258,13 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
   protected updated(changedProps: PropertyValues) {
     super.updated(changedProps);
     if (changedProps.has("baseURL")) {
+      // Tear down the existing handler; a new one is created below for the new URL
+      this.teardownPostMessageHandler();
+
       // Validate the new URL
-      let normalizedBaseURL: string;
       try {
-        normalizedBaseURL = validateAndNormalizeBaseURL(this.baseURL);
+        this.normalizedBaseURL = validateAndNormalizeBaseURL(this.baseURL);
       } catch (error) {
-        this.teardownPostMessageHandler();
         this.normalizedBaseURL = null;
         const iframe = this.getIframe();
         if (iframe) {
@@ -274,14 +275,6 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
         });
         return;
       }
-
-      // Tear down the existing handler; a new one is created below for the new
-      // URL. An equivalent URL keeps the current iframe document, which will not
-      // send 'embedded.ready' again, so its handler is kept.
-      if (normalizedBaseURL !== this.normalizedBaseURL) {
-        this.teardownPostMessageHandler();
-      }
-      this.normalizedBaseURL = normalizedBaseURL;
 
       // Update the iframe to the new URL
       const iframe = this.getIframe();
