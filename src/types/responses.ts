@@ -4,6 +4,7 @@ import type {
   AppearanceConfig,
   CompanionAppConfig,
   ConfigureFeaturesConfig,
+  ConsentConfig,
   LocaleConfig,
   NetworkConfig,
   UIConfig,
@@ -88,6 +89,7 @@ export interface ConfigureAppResponse {
   appearance: AppearanceConfig;
   ui: UIConfig;
   companionApp: CompanionAppConfig;
+  consent: ConsentConfig;
   locale: LocaleConfig;
   network: NetworkConfig;
 }

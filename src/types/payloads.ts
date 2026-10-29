@@ -65,10 +65,6 @@ export interface ConfigureSessionPayload {
   defaultMode?: DefaultMode;
 }
 
-export interface InteractionConsentOptions {
-  enabled: boolean;
-}
-
 export interface InteractionModeOptions {
   fallback?: DefaultMode;
   options: DefaultMode[];
@@ -198,8 +194,6 @@ export interface SetInteractionOptionsPayload {
   spokenLanguage?: SpokenLanguageOptions;
   templates?: InteractionTemplateOptions;
   documents?: InteractionDocumentOptions;
-  /** Patient consent options. When enabled, a dialog appears where the patient gives explicit consent */
-  consent?: InteractionConsentOptions;
 }
 
 // Navigate payload
