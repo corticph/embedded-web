@@ -1,5 +1,9 @@
 import { expect, fixture } from "@open-wc/testing";
 import { html } from "lit";
+import {
+  EMBEDDED_WEB_PACKAGE_NAME,
+  EMBEDDED_WEB_PACKAGE_VERSION,
+} from "../src/packageMetadata.js";
 import type { CortiEmbedded } from "../src/CortiEmbedded.js";
 import "../src/corti-embedded.js";
 import type {
@@ -152,6 +156,26 @@ async function withoutConsoleWarn<T>(callback: () => Promise<T>): Promise<T> {
 }
 
 describe("CortiEmbedded browser integration", () => {
+  it("sends clone-safe custom analytics through the real iframe init handshake", async () => {
+    const analytics = { is_console: true, integration: "ehr", revision: 2 };
+    const el = await fixture<CortiEmbedded>(
+      html`<corti-embedded
+        baseurl=${integrationBaseURL}
+        .analytics=${{ ...analytics, invalid: () => {} }}
+      ></corti-embedded>`,
+    );
+
+    const event = await waitForEmbeddedEvent(el, "test.request-received");
+    const request = event.detail.payload as RequestReceivedPayload;
+
+    expect(request.action).to.equal("_init");
+    expect(request.payload).to.deep.equal({
+      web_component: EMBEDDED_WEB_PACKAGE_NAME,
+      web_component_version: EMBEDDED_WEB_PACKAGE_VERSION,
+      analytics,
+    });
+  });
+
   it("round-trips public API calls through a real iframe", async () => {
     const el = await mountEmbeddedIntegration();
     const requestEvents: RequestReceivedPayload[] = [];

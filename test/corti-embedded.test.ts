@@ -1,9 +1,13 @@
 /* eslint-disable @typescript-eslint/no-unused-vars */
 import { expect, fixture } from "@open-wc/testing";
 import { html } from "lit";
+import { ifDefined } from "lit/directives/if-defined.js";
 import { CortiEmbedded } from "../src/CortiEmbedded.js";
 import { PostMessageHandler } from "../src/utils/PostMessageHandler.js";
-import { EMBEDDED_WEB_PACKAGE_NAME, EMBEDDED_WEB_PACKAGE_VERSION } from "../src/packageMetadata.js";
+import {
+  EMBEDDED_WEB_PACKAGE_NAME,
+  EMBEDDED_WEB_PACKAGE_VERSION,
+} from "../src/packageMetadata.js";
 import "../src/corti-embedded.js";
 import type {
   ConfigureApplicationPayload,
@@ -87,7 +91,7 @@ describe("CortiEmbedded", () => {
   it("dispatches an error event on invalid baseURL (connectedCallback) without throwing", async () => {
     const el = new CortiEmbedded();
     let errorEvent: CustomEvent | null = null;
-    el.addEventListener("error", (evt) => {
+    el.addEventListener("error", evt => {
       errorEvent = evt as unknown as CustomEvent;
     });
     el.baseURL = "https://example.com";
@@ -109,7 +113,7 @@ describe("CortiEmbedded", () => {
     );
     let count = 0;
     let thrown: Error | null = null;
-    el.addEventListener("error", (event) => {
+    el.addEventListener("error", event => {
       const detail = (event as unknown as CustomEvent).detail as {
         message?: string;
       };
@@ -141,7 +145,7 @@ describe("CortiEmbedded", () => {
     );
     let count = 0;
     let thrown: Error | null = null;
-    el.addEventListener("error", (event) => {
+    el.addEventListener("error", event => {
       const detail = (event as unknown as CustomEvent).detail as {
         message?: string;
       };
@@ -248,9 +252,13 @@ describe("CortiEmbedded", () => {
     await el.updateComplete;
     expect(destroyed).to.equal(true);
     expect((el as any).postMessageHandler).to.equal(null);
-    expect((el as any).pendingPostMessageHandler).to.be.instanceOf(PostMessageHandler);
+    expect((el as any).pendingPostMessageHandler).to.be.instanceOf(
+      PostMessageHandler,
+    );
     // Check new iframe src
-    expect(iframe.getAttribute("src")).to.equal("https://assistant.us.corti.app/embedded");
+    expect(iframe.getAttribute("src")).to.equal(
+      "https://assistant.us.corti.app/embedded",
+    );
     const allowAttr = iframe.getAttribute("allow")!;
     expect(allowAttr).to.include(`microphone ${el.baseURL}`);
     expect(allowAttr).to.include(`camera ${el.baseURL}`);
@@ -261,7 +269,9 @@ describe("CortiEmbedded", () => {
     const el = await fixture<CortiEmbedded>(
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
-    expect((el as any).pendingPostMessageHandler).to.be.instanceOf(PostMessageHandler);
+    expect((el as any).pendingPostMessageHandler).to.be.instanceOf(
+      PostMessageHandler,
+    );
     // The public API stays unavailable until the iframe loads or sends ready
     expect((el as any).postMessageHandler).to.equal(null);
   });
@@ -296,7 +306,7 @@ describe("CortiEmbedded", () => {
         source: iframe.contentWindow as any,
       }),
     );
-    await new Promise((resolve) => {
+    await new Promise(resolve => {
       setTimeout(resolve, 0);
     });
 
@@ -316,7 +326,9 @@ describe("CortiEmbedded", () => {
 
     // Re-inserting reloads the iframe, which can post 'embedded.ready' before 'load'
     parent.appendChild(el);
-    expect((el as any).pendingPostMessageHandler).to.be.instanceOf(PostMessageHandler);
+    expect((el as any).pendingPostMessageHandler).to.be.instanceOf(
+      PostMessageHandler,
+    );
   });
 
   it("does not dispatch an error when updated while disconnected", async () => {
@@ -324,7 +336,7 @@ describe("CortiEmbedded", () => {
       html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
     );
     const errors: unknown[] = [];
-    el.addEventListener("error", (event) => {
+    el.addEventListener("error", event => {
       errors.push((event as unknown as CustomEvent).detail);
     });
     el.remove();
@@ -370,54 +382,89 @@ describe("CortiEmbedded", () => {
     expect((el as any).postMessageHandler).to.exist;
   });
 
-  it("sends internal wrapper metadata before forwarding embedded.ready", async () => {
-    const el = await fixture<CortiEmbedded>(
-      html`<corti-embedded baseurl=${validBaseURL}></corti-embedded>`,
-    );
-    const iframe = el.shadowRoot!.querySelector("iframe") as HTMLIFrameElement;
-    ensureContentWindow(iframe);
-    iframe.setAttribute("src", `${validBaseURL}/embedded`);
-    iframe.dispatchEvent(new Event("load"));
+  for (const { name, attribute, analytics } of [
+    {
+      name: "sends legacy wrapper metadata when analytics is absent",
+      attribute: undefined,
+      analytics: undefined,
+    },
+    {
+      name: "sends custom analytics with wrapper metadata",
+      attribute: '{"is_console":true,"integration":"ehr","revision":2}',
+      analytics: { is_console: true, integration: "ehr", revision: 2 },
+    },
+    {
+      name: "drops non-primitive analytics values",
+      attribute: '{"is_console":true,"nested":{},"array":[],"empty":null}',
+      analytics: { is_console: true },
+    },
+    {
+      name: "ignores malformed analytics JSON",
+      attribute: "not-json",
+      analytics: undefined,
+    },
+    { name: "ignores analytics arrays", attribute: "[]", analytics: undefined },
+    {
+      name: "ignores non-object analytics",
+      attribute: "true",
+      analytics: undefined,
+    },
+  ]) {
+    it(`${name} before forwarding embedded.ready`, async () => {
+      const el = await fixture<CortiEmbedded>(
+        html`<corti-embedded
+          baseurl=${validBaseURL}
+          data-analytics=${ifDefined(attribute)}
+        ></corti-embedded>`,
+      );
+      const iframe = el.shadowRoot!.querySelector(
+        "iframe",
+      ) as HTMLIFrameElement;
+      ensureContentWindow(iframe);
+      iframe.setAttribute("src", `${validBaseURL}/embedded`);
+      iframe.dispatchEvent(new Event("load"));
 
-    const messages: unknown[] = [];
-    const fired: string[] = [];
-    (el as any).postMessageHandler.postMessage = async (message: unknown) => {
-      messages.push(message);
-      expect(fired).to.deep.equal([]);
-      return { type: "CORTI_EMBEDDED_RESPONSE", success: true };
-    };
-    el.addEventListener("embedded.ready", () => {
-      fired.push("embedded.ready");
-    });
+      const messages: unknown[] = [];
+      const fired: string[] = [];
+      (el as any).postMessageHandler.postMessage = async (message: unknown) => {
+        messages.push(message);
+        expect(fired).to.deep.equal([]);
+        return { type: "CORTI_EMBEDDED_RESPONSE", success: true };
+      };
+      el.addEventListener("embedded.ready", () => {
+        fired.push("embedded.ready");
+      });
 
-    window.dispatchEvent(
-      new MessageEvent("message", {
-        data: {
-          type: "CORTI_EMBEDDED_EVENT",
-          event: "embedded.ready",
-          payload: { version: "v1" },
+      window.dispatchEvent(
+        new MessageEvent("message", {
+          data: {
+            type: "CORTI_EMBEDDED_EVENT",
+            event: "embedded.ready",
+            payload: { version: "v1" },
+          },
+          origin: validBaseURL,
+          source: iframe.contentWindow as any,
+        }),
+      );
+      await new Promise(resolve => {
+        setTimeout(resolve, 0);
+      });
+
+      expect(messages).to.deep.equal([
+        {
+          type: "CORTI_EMBEDDED",
+          version: "v1",
+          action: "_init",
+          payload: {
+            web_component: EMBEDDED_WEB_PACKAGE_NAME,
+            web_component_version: EMBEDDED_WEB_PACKAGE_VERSION,
+            ...(analytics === undefined ? {} : { analytics }),
+          },
         },
-        origin: validBaseURL,
-        source: iframe.contentWindow as any,
-      }),
-    );
-    await new Promise((resolve) => {
-      setTimeout(resolve, 0);
+      ]);
+      expect(fired).to.deep.equal(["embedded.ready"]);
     });
-
-    expect(messages).to.deep.equal([
-      {
-        type: "CORTI_EMBEDDED",
-        version: "v1",
-        action: "_init",
-        payload: {
-          web_component: EMBEDDED_WEB_PACKAGE_NAME,
-          web_component_version: EMBEDDED_WEB_PACKAGE_VERSION,
-        },
-      },
-    ]);
-    expect(fired).to.deep.equal(["embedded.ready"]);
-  });
+  }
 
   it("dispatches raw event and event payload via dispatchEmbeddedEvent", async () => {
     const el = await fixture<CortiEmbedded>(
@@ -646,7 +693,7 @@ describe("CortiEmbedded", () => {
     expect(iframe.getAttribute("src")).to.equal(`${validBaseURL}/embedded`);
 
     let errorEvent: CustomEvent | null = null;
-    el.addEventListener("error", (evt) => {
+    el.addEventListener("error", evt => {
       errorEvent = evt as unknown as CustomEvent;
     });
 
@@ -813,9 +860,13 @@ describe("CortiEmbedded", () => {
         },
       ]);
       expect(warnings[0]).to.contain("configure() is deprecated");
-      expect(warnings[0]).to.contain("https://docs.corti.ai/assistant/deprecation-timeline");
+      expect(warnings[0]).to.contain(
+        "https://docs.corti.ai/assistant/deprecation-timeline",
+      );
       expect(warnings[1]).to.contain("configureSession() is deprecated");
-      expect(warnings[1]).to.contain("https://docs.corti.ai/assistant/deprecation-timeline");
+      expect(warnings[1]).to.contain(
+        "https://docs.corti.ai/assistant/deprecation-timeline",
+      );
     } finally {
       console.warn = originalWarn;
     }

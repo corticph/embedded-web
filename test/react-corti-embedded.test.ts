@@ -77,8 +77,35 @@ describe("CortiEmbeddedReact", () => {
     expect(readyCalls[0].detail).to.deep.equal({ a: 1 });
   });
 
+  it("sets and removes the optional analytics property", async () => {
+    const ref = React.createRef<CortiEmbeddedReactRef>();
+    const analytics = { is_console: true, integration: "ehr", revision: 2 };
+
+    root!.render(
+      React.createElement(CortiEmbeddedReact, {
+        ref,
+        baseURL: "https://assistant.eu.corti.app",
+        analytics,
+      }),
+    );
+
+    const element = await waitForRef(ref);
+    expect(element.analytics).to.deep.equal(analytics);
+
+    root!.render(
+      React.createElement(CortiEmbeddedReact, {
+        ref,
+        baseURL: "https://assistant.eu.corti.app",
+      }),
+    );
+    await flushReact();
+
+    expect(element.analytics).to.equal(undefined);
+  });
+
   it("forwards embedded.ready through onEvent as the generic event stream", async () => {
-    const eventCalls: Array<CustomEvent<{ name: string; payload: unknown }>> = [];
+    const eventCalls: Array<CustomEvent<{ name: string; payload: unknown }>> =
+      [];
     const ref = React.createRef<CortiEmbeddedReactRef>();
 
     root!.render(

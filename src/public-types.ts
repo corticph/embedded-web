@@ -121,6 +121,8 @@ export type AnyEmbeddedRequest = Exclude<
 
 export type AnyEmbeddedResponse = EmbeddedResponse;
 
+export type EmbeddedAnalytics = Record<string, string | number | boolean>;
+
 export type AnyEmbeddedMessage =
   | AnyEmbeddedRequest
   | AnyEmbeddedResponse
