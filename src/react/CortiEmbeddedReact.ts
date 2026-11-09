@@ -1,7 +1,7 @@
 import * as React from "react";
 import "../corti-embedded.js";
 import type { CortiEmbedded } from "../CortiEmbedded.js";
-import type { CortiEmbeddedAPI } from "../public-types.js";
+import type { CortiEmbeddedAPI, EmbeddedAnalytics } from "../public-types.js";
 
 export interface CortiEmbeddedEventDetail {
   name: string;
@@ -21,6 +21,7 @@ export interface CortiEmbeddedErrorDetail {
 export interface CortiEmbeddedReactProps {
   baseURL: string;
   visibility?: "visible" | "hidden";
+  analytics?: EmbeddedAnalytics;
 
   // Event handlers receive the raw CustomEvent emitted by the custom element.
   onEvent?: (event: CortiEmbeddedEvent) => void;
@@ -45,7 +46,16 @@ export const CortiEmbeddedReact = React.forwardRef<
   CortiEmbeddedReactProps
 >(
   (
-    { onEvent, onReady, onError, baseURL, visibility, className, style },
+    {
+      onEvent,
+      onReady,
+      onError,
+      baseURL,
+      visibility,
+      analytics,
+      className,
+      style,
+    },
     forwardedRef,
   ) => {
     const internalRef = React.useRef<CortiEmbeddedReactRef | null>(null);
@@ -69,6 +79,10 @@ export const CortiEmbeddedReact = React.forwardRef<
     React.useLayoutEffect(() => {
       if (internalRef.current) internalRef.current.baseURL = baseURL;
     }, [baseURL]);
+
+    React.useLayoutEffect(() => {
+      if (internalRef.current) internalRef.current.analytics = analytics;
+    }, [analytics]);
 
     React.useLayoutEffect(() => {
       if (internalRef.current == null || visibility === undefined) return;

@@ -17,6 +17,7 @@ import type {
   SetInteractionOptionsPayload,
   SetCredentialsPayload,
   CortiEmbeddedAPI,
+  EmbeddedAnalytics,
   InteractionDetails,
   SessionConfig,
   User,
@@ -56,6 +57,21 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
   @property({ type: String, reflect: true })
   baseURL!: string;
+
+  @property({
+    attribute: "data-analytics",
+    converter: {
+      fromAttribute(value: string | null): EmbeddedAnalytics | undefined {
+        if (!value) return undefined;
+        try {
+          return JSON.parse(value) as EmbeddedAnalytics;
+        } catch {
+          return undefined;
+        }
+      },
+    },
+  })
+  analytics?: EmbeddedAnalytics;
 
   // Used by the public API. Set once the iframe has loaded or the Assistant has
   // sent 'embedded.ready', whichever comes first. Until then, API calls fail
@@ -161,6 +177,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
       let handler: PostMessageHandler;
       const callbacks: PostMessageHandlerCallbacks = {
         onReady: async () => {
+          const analytics = this.getAnalytics();
           await handler.postMessage({
             type: "CORTI_EMBEDDED",
             version: "v1",
@@ -168,6 +185,7 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
             payload: {
               web_component: EMBEDDED_WEB_PACKAGE_NAME,
               web_component_version: EMBEDDED_WEB_PACKAGE_VERSION,
+              ...(analytics === undefined ? {} : { analytics }),
             },
           });
         },
@@ -194,6 +212,25 @@ export class CortiEmbedded extends LitElement implements CortiEmbeddedAPI {
 
   private dispatchPublicEvent(event: string, data: unknown) {
     this.dispatchEvent(new CustomEvent(event, { detail: data }));
+  }
+
+  private getAnalytics(): EmbeddedAnalytics | undefined {
+    if (
+      !this.analytics ||
+      typeof this.analytics !== "object" ||
+      Array.isArray(this.analytics)
+    ) {
+      return undefined;
+    }
+
+    return Object.fromEntries(
+      Object.entries(this.analytics).filter(
+        ([, value]) =>
+          typeof value === "string" ||
+          typeof value === "boolean" ||
+          (typeof value === "number" && Number.isFinite(value)),
+      ),
+    );
   }
 
   private dispatchEmbeddedEvent(rawEventName: string, payload: unknown) {
