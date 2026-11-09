@@ -1,4 +1,8 @@
-import { expect } from "@open-wc/testing";
+import { expect, waitUntil } from "@open-wc/testing";
+import {
+  EMBEDDED_WEB_PACKAGE_NAME,
+  EMBEDDED_WEB_PACKAGE_VERSION,
+} from "../src/packageMetadata.js";
 import {
   React,
   createRoot,
@@ -101,6 +105,39 @@ describe("CortiEmbeddedReact", () => {
     await flushReact();
 
     expect(element.analytics).to.equal(undefined);
+  });
+
+  it("sends analytics in the first init message without another React render", async () => {
+    const analytics = { is_console: true, integration: "qa", revision: 2 };
+    const initPayloads: unknown[] = [];
+
+    root!.render(
+      React.createElement(CortiEmbeddedReact, {
+        baseURL: "https://assistant.integration.corti.app",
+        analytics,
+        onEvent: event => {
+          if (event.detail.name !== "test.request-received") return;
+          const request = event.detail.payload as {
+            action: string;
+            payload: unknown;
+          };
+          if (request.action === "_init") initPayloads.push(request.payload);
+        },
+      }),
+    );
+
+    await waitUntil(
+      () => initPayloads.length > 0,
+      "React init request was not received",
+    );
+
+    expect(initPayloads).to.deep.equal([
+      {
+        web_component: EMBEDDED_WEB_PACKAGE_NAME,
+        web_component_version: EMBEDDED_WEB_PACKAGE_VERSION,
+        analytics,
+      },
+    ]);
   });
 
   it("forwards embedded.ready through onEvent as the generic event stream", async () => {
