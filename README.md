@@ -113,6 +113,54 @@ myComponent.addEventListener("event", event => {
 });
 ```
 
+### Custom Analytics Attribution
+
+Pass optional attribution as JSON in the `data-analytics` HTML attribute:
+
+```html
+<corti-embedded
+  baseurl="https://assistant.eu.corti.app"
+  data-analytics='{"integration":"ehr","is_console":true}'
+></corti-embedded>
+```
+
+Alternatively, set the `analytics` JavaScript property before the Assistant initializes:
+
+```js
+myComponent.analytics = { integration: "ehr", is_console: true };
+```
+
+React integrations accept the same object as a prop:
+
+```tsx
+<CortiEmbeddedReact
+  baseURL="https://assistant.eu.corti.app"
+  analytics={{ integration: "ehr", is_console: true }}
+/>
+```
+
+The Assistant adds these fields to `x-corti-analytics` on attributed REST,
+WebSocket and agent requests. Values are read during initialization; updating
+them does not change an already initialized Assistant. Recreate the component
+to initialize it with different attribution. Do not include credentials,
+personal information or patient data: attribution can appear in request URLs.
+
+The Assistant validates custom attribution using these rules:
+
+- The object must be flat, with string, finite-number or boolean values.
+- Keys must contain 1 to 64 characters. String values may contain up to 256 characters.
+- Casing and primitive value types are preserved.
+- `is_assistant`, `assistant_type`, `web_component` and `web_component_version`
+  are reserved, including differently cased spellings. Custom values cannot override them.
+- Invalid entries are dropped. Malformed JSON or non-object input is ignored.
+- Custom attribution is limited to 2 KiB of compact, ASCII-escaped JSON after
+  invalid and reserved entries are removed. If it exceeds the limit, all custom
+  attribution is omitted. Built-in attribution is always retained.
+
+Deploy the Assistant support before releasing this component change, then
+upgrade consuming applications to the published component version. Omitting
+analytics preserves the existing initialization payload.
+
 ### React Component
 
 ```tsx
