@@ -1,5 +1,6 @@
 // Response types for embedded API
 
+import type { AIChatConfig } from "./agent.js";
 import type {
   AppearanceConfig,
   CompanionAppConfig,
@@ -77,6 +78,7 @@ export interface GetTemplatesResponse {
 }
 
 export interface ConfigureResponse {
+  aiChat?: AIChatConfig;
   debug?: boolean;
   appearance: AppearanceConfig;
   features: ConfigureFeaturesConfig;
@@ -85,6 +87,7 @@ export interface ConfigureResponse {
 }
 
 export interface ConfigureAppResponse {
+  aiChat?: AIChatConfig;
   debug?: boolean;
   appearance: AppearanceConfig;
   ui: UIConfig;
