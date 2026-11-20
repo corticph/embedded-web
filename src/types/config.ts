@@ -1,5 +1,7 @@
 // Configuration types for the embedded component
 
+import type { AIChatConfig } from "./agent.js";
+
 export interface AppearanceConfig {
   primaryColor: string | null;
 }
@@ -40,6 +42,7 @@ export interface NetworkConfig {
 }
 
 export interface ConfigurePayload {
+  aiChat?: AIChatConfig;
   debug?: boolean;
   appearance?: Partial<AppearanceConfig>;
   features?: Partial<ConfigureFeaturesConfig>;
@@ -48,6 +51,7 @@ export interface ConfigurePayload {
 }
 
 export interface ConfigureAppPayload {
+  aiChat?: AIChatConfig;
   debug?: boolean;
   ui?: Partial<UIConfig>;
   companionApp?: CompanionAppConfig;
