@@ -2,6 +2,7 @@
 
 // Public API types
 export * from "./api.js";
+export * from "./agent.js";
 // Config types
 export * from "./config.js";
 // Event types

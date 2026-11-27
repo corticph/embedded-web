@@ -34,6 +34,12 @@ import type {
 } from "./types/responses.js";
 
 export type {
+  AIChatConfig,
+  EmbeddedAgentAuth,
+  EmbeddedAgentConnector,
+  EmbeddedAgentDefinition,
+} from "./types/agent.js";
+export type {
   AppearanceConfig,
   ConfigureFeaturesConfig,
   ConfigurePayload,
